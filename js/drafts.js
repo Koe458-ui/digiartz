@@ -151,44 +151,14 @@
     var dd = document.getElementById('pfUpSchedDd');
     if(dd && dd.classList.contains('open') && !dd.contains(ev.target)) pfSchedClose();
   });
-  function pfSchedBuildTime(){
-    var hs = document.getElementById('pfUpSchedH'), ms = document.getElementById('pfUpSchedM');
-    if(!hs || hs.options.length) return;
-    var i, o;
-    for(i=0;i<24;i++){ o=document.createElement('option'); o.value=i; o.textContent=pfSchedPad(i); hs.appendChild(o); }
-    for(i=0;i<60;i+=5){ o=document.createElement('option'); o.value=i; o.textContent=pfSchedPad(i); ms.appendChild(o); }
-    var t = new Date(Date.now()+60*60*1000);
-    hs.value = t.getHours(); ms.value = Math.floor(t.getMinutes()/5)*5;
-  }
+  function pfSchedBuildTime(){ window.dzSchedUI.hours('pfUpSchedH', 'pfUpSchedM'); }
   function pfSchedNav(delta, e){
     if(e){ e.stopPropagation(); }
-    pfSched.vm += delta;
-    if(pfSched.vm < 0){ pfSched.vm = 11; pfSched.vy--; }
-    else if(pfSched.vm > 11){ pfSched.vm = 0; pfSched.vy++; }
+    window.dzSchedUI.nav(pfSched, delta);
     pfSchedRender();
   }
   function pfSchedRender(){
-    var grid = document.getElementById('pfUpSchedGrid');
-    var mon  = document.getElementById('pfUpSchedMon');
-    if(!grid) return;
-    var y = pfSched.vy, m = pfSched.vm;
-    mon.textContent = new Date(y, m, 1).toLocaleString([], {month:'long', year:'numeric'});
-    var first = new Date(y, m, 1).getDay();
-    var days  = new Date(y, m+1, 0).getDate();
-    var now = new Date();
-    var todayKey = now.getFullYear()+'-'+now.getMonth()+'-'+now.getDate();
-    var html = '';
-    for(var p=0;p<first;p++) html += '<span class="upSchedDay pad"></span>';
-    for(var d=1; d<=days; d++){
-      var end = new Date(y, m, d, 23, 59, 59);
-      var past = end.getTime() < Date.now();
-      var cls = 'upSchedDay';
-      if(todayKey === y+'-'+m+'-'+d) cls += ' today';
-      if(pfSched.y===y && pfSched.m===m && pfSched.d===d) cls += ' sel';
-      html += '<button type="button" class="'+cls+'"'+(past?' disabled':'')+
-              ' onclick="pfSchedPick('+y+','+m+','+d+',event)">'+d+'</button>';
-    }
-    grid.innerHTML = html;
+    window.dzSchedUI.grid('pfUpSchedGrid', 'pfUpSchedMon', pfSched, 'pfSchedPick');
   }
   function pfSchedPick(y, m, d, e){
     if(e){ e.stopPropagation(); }

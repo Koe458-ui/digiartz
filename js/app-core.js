@@ -910,6 +910,76 @@
   }
   window.dzModifiedClick = dzModifiedClick;
 
+  /* Wiring a built card to open something. Three places build cards this way
+     — the front page rail, the hero search and the gallery search — and each
+     wants the same thing: a plain click opens it here, a modified click is
+     left to the browser, and a card that is not already a link answers Enter
+     and Space so the keyboard can reach it too. */
+  /* The month grid the two schedule pickers draw. There are two pickers
+     because there are two upload forms — the artwork form is markup in
+     index.html, the section forms are generated — and they genuinely differ
+     in what opening one closes, how a chosen time is formatted and what the
+     hint below says. None of that is the calendar, which was the same
+     calendar written twice. `st` is the caller's {y,m,d,vy,vm}. */
+  window.dzSchedUI = {
+    /* Fills the hour and minute lists once, defaulting to an hour from now. */
+    hours: function(hId, mId){
+      var hs = document.getElementById(hId), ms = document.getElementById(mId);
+      if(!hs || hs.options.length) return;
+      var i, o, pad = function(n){ return (n < 10 ? '0' : '') + n; };
+      for(i = 0; i < 24; i++){ o = document.createElement('option'); o.value = i; o.textContent = pad(i); hs.appendChild(o); }
+      for(i = 0; i < 60; i += 5){ o = document.createElement('option'); o.value = i; o.textContent = pad(i); ms.appendChild(o); }
+      var t = new Date(Date.now() + 60 * 60 * 1000);
+      hs.value = t.getHours(); ms.value = Math.floor(t.getMinutes() / 5) * 5;
+    },
+
+    /* Steps the shown month, carrying into the year. */
+    nav: function(st, delta){
+      st.vm += delta;
+      if(st.vm < 0){ st.vm = 11; st.vy--; }
+      else if(st.vm > 11){ st.vm = 0; st.vy++; }
+    },
+
+    /* Paints the month. `pick` names the global each day button calls. */
+    grid: function(gridId, monId, st, pick){
+      var grid = document.getElementById(gridId), mon = document.getElementById(monId);
+      if(!grid) return;
+      var y = st.vy, m = st.vm;
+      mon.textContent = new Date(y, m, 1).toLocaleString([], {month:'long', year:'numeric'});
+      var first = new Date(y, m, 1).getDay();
+      var days  = new Date(y, m + 1, 0).getDate();
+      var now = new Date();
+      var todayKey = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate();
+      var html = '';
+      for(var p = 0; p < first; p++) html += '<span class="upSchedDay pad"></span>';
+      for(var d = 1; d <= days; d++){
+        var past = new Date(y, m, d, 23, 59, 59).getTime() < Date.now();
+        var cls = 'upSchedDay';
+        if(todayKey === y + '-' + m + '-' + d) cls += ' today';
+        if(st.y === y && st.m === m && st.d === d) cls += ' sel';
+        html += '<button type="button" class="' + cls + '"' + (past ? ' disabled' : '') +
+                ' onclick="' + pick + '(' + y + ',' + m + ',' + d + ',event)">' + d + '</button>';
+      }
+      grid.innerHTML = html;
+    }
+  };
+
+  window.dzCardActivate = function(card, open){
+    card.onclick = function(e){
+      if(dzModifiedClick(e)) return true;
+      if(e) e.preventDefault();
+      open();
+      return false;
+    };
+    if(!card.href){
+      card.onkeydown = function(e){
+        if(e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        open();
+      };
+    }
+  };
+
   function itemHTML(img, idx){
     const eager = typeof idx === 'number' && idx < 4;
     const thumbAttrs=dzThumbAttrs(img.image_url||'');

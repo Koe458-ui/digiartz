@@ -1,4 +1,4 @@
-import { peekJwt, SB_URL_FALLBACK, SB_ANON_FALLBACK, SB_SIZE_RE } from '../lib/sb.js';
+import { peekJwt, underLimit, SB_URL_FALLBACK, SB_ANON_FALLBACK, SB_SIZE_RE } from '../lib/sb.js';
 import { UUID_RE, sameOrigin, allowedHost, json } from '../lib/http.js';
 
 export async function onRequestPost(context) {
@@ -103,26 +103,7 @@ export async function onRequestPost(context) {
 async function underIpLimit(env, ip) {
   const addr = String(ip || '').trim();
   if (!addr) return true;
-  const key = env.SB_SERVICE_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '';
-  if (!key) return true;
-  const base = String(env.SB_URL || env.SUPABASE_URL || SB_URL_FALLBACK).replace(/\/$/, '');
-  try {
-    const res = await fetch(base + '/rest/v1/rpc/dz_rate_take', {
-      method: 'POST',
-      headers: {
-        apikey: key,
-        authorization: 'Bearer ' + key,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        p_bucket: 'dl:edge:' + addr.slice(0, 64),
-        p_limit: 60,
-        p_seconds: 60
-      })
-    });
-    if (!res.ok) return true;
-    return (await res.json()) !== false;
-  } catch { return true; }
+  return underLimit(env, 'dl:edge:' + addr.slice(0, 64), 60, 60);
 }
 
 function previewUrl(url) {

@@ -1,4 +1,4 @@
-import { sbUrl, sbSvc, sbService, ledger } from '../lib/sb.js';
+import { sbUrl, sbSvc, sbService, ledger, hmacMatches } from '../lib/sb.js';
 import {
   PLAN_TIERS, applySubscription, revokeSubscription, recordEarning
 } from '../lib/billing.js';
@@ -6,22 +6,8 @@ import {
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
 
-async function signed(env, raw, signature) {
-  const sig = String(signature || '');
-  if (!sig) return false;
-
-  const key = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(env.RAZORPAY_WEBHOOK_SECRET),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-  );
-  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(raw));
-  const hex = [...new Uint8Array(mac)].map((b) => b.toString(16).padStart(2, '0')).join('');
-
-  const a = new TextEncoder().encode(hex);
-  const b = new TextEncoder().encode(sig);
-  if (a.byteLength !== b.byteLength) return false;
-  return crypto.subtle.timingSafeEqual(a, b);
-}
+const signed = (env, raw, signature) =>
+  hmacMatches(env.RAZORPAY_WEBHOOK_SECRET, raw, signature);
 
 async function rowFor(env, orderId, select) {
   const rows = await sbService(env,

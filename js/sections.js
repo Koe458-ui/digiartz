@@ -2407,36 +2407,14 @@
     var dd = document.getElementById('dzSchedDd');
     if(dd && dd.classList.contains('open') && !dd.contains(ev.target)) dzSchClose();
   });
-  function dzSchBuildTime(){
-    var hs=document.getElementById('dzSchedH'), ms=document.getElementById('dzSchedM');
-    if(!hs || hs.options.length) return;
-    var i,o;
-    for(i=0;i<24;i++){ o=document.createElement('option'); o.value=i; o.textContent=dzSchPad(i); hs.appendChild(o); }
-    for(i=0;i<60;i+=5){ o=document.createElement('option'); o.value=i; o.textContent=dzSchPad(i); ms.appendChild(o); }
-    var t=new Date(Date.now()+60*60*1000);
-    hs.value=t.getHours(); ms.value=Math.floor(t.getMinutes()/5)*5;
-  }
+  function dzSchBuildTime(){ window.dzSchedUI.hours('dzSchedH', 'dzSchedM'); }
   function dzSchNav(delta,e){
     if(e) e.stopPropagation();
-    dzSch.vm += delta;
-    if(dzSch.vm<0){ dzSch.vm=11; dzSch.vy--; } else if(dzSch.vm>11){ dzSch.vm=0; dzSch.vy++; }
+    window.dzSchedUI.nav(dzSch, delta);
     dzSchRender();
   }
   function dzSchRender(){
-    var grid=document.getElementById('dzSchedGrid'), mon=document.getElementById('dzSchedMon');
-    if(!grid) return;
-    var y=dzSch.vy, m=dzSch.vm;
-    mon.textContent=new Date(y,m,1).toLocaleString([], {month:'long', year:'numeric'});
-    var first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate(), now=new Date();
-    var todayKey=now.getFullYear()+'-'+now.getMonth()+'-'+now.getDate(), html='';
-    for(var p=0;p<first;p++) html+='<span class="upSchedDay pad"></span>';
-    for(var d=1; d<=days; d++){
-      var end=new Date(y,m,d,23,59,59), past=end.getTime()<Date.now(), cls='upSchedDay';
-      if(todayKey===y+'-'+m+'-'+d) cls+=' today';
-      if(dzSch.y===y && dzSch.m===m && dzSch.d===d) cls+=' sel';
-      html+='<button type="button" class="'+cls+'"'+(past?' disabled':'')+' onclick="dzSchPick('+y+','+m+','+d+',event)">'+d+'</button>';
-    }
-    grid.innerHTML=html;
+    window.dzSchedUI.grid('dzSchedGrid', 'dzSchedMon', dzSch, 'dzSchPick');
   }
   function dzSchPick(y,m,d,e){ if(e) e.stopPropagation(); dzSch.y=y; dzSch.m=m; dzSch.d=d; dzSchRender(); dzSchApply(); }
   function dzSchApply(){

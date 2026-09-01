@@ -1,4 +1,4 @@
-import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, sbService } from '../lib/sb.js';
+import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, sbService, hmacMatches } from '../lib/sb.js';
 import { fromPriceCents } from '../lib/money.js';
 import {
   memberCurrency, subscriptionAmount, marketplaceItem, alreadyPaid, resolvePromo,
@@ -21,19 +21,8 @@ async function rzp(env, path, init = {}) {
   return body;
 }
 
-async function validSignature(env, orderId, paymentId, signature) {
-  const key = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(env.RAZORPAY_KEY_SECRET),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-  );
-  const mac = await crypto.subtle.sign('HMAC', key,
-    new TextEncoder().encode(orderId + '|' + paymentId));
-  const hex = [...new Uint8Array(mac)].map(b => b.toString(16).padStart(2, '0')).join('');
-  const a = new TextEncoder().encode(hex);
-  const b = new TextEncoder().encode(String(signature || ''));
-  if (a.byteLength !== b.byteLength) return false;
-  return crypto.subtle.timingSafeEqual(a, b);
-}
+const validSignature = (env, orderId, paymentId, signature) =>
+  hmacMatches(env.RAZORPAY_KEY_SECRET, orderId + '|' + paymentId, signature);
 
 async function makeOrder(env, user, { amount, currency, kind, plan, itemId, label, promoId }) {
   const order = await rzp(env, '/v1/orders', {

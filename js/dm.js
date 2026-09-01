@@ -18,18 +18,7 @@
     if (diff < 10080)return Math.floor(diff / 1440) + 'd';
     return d.toLocaleDateString();
   }
-  function hhmm (iso) {
-    if (!iso) return '';
-    try { return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
-    catch (e) { return ''; }
-  }
-  function dayChip (d) {
-    var now = new Date(), y = new Date(); y.setDate(now.getDate() - 1);
-    if (d.toDateString() === now.toDateString()) return 'TODAY';
-    if (d.toDateString() === y.toDateString())   return 'YESTERDAY';
-    try { return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase(); }
-    catch (e) { return d.toDateString().toUpperCase(); }
-  }
+  var hhmm = window.dzHHMM, dayChip = window.dzDayChip;
 
   var FR_MAX_FRIENDS = 200;
   window.FR_MAX_FRIENDS = FR_MAX_FRIENDS;

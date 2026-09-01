@@ -101,16 +101,14 @@
     if (r === 0) return { dir: '', txt: 'same as last period' };
     return { dir: p > 0 ? 'up' : 'down', txt: (p > 0 ? '↑ ' : '↓ ') + Math.abs(r) + '% on previous' };
   }
-  function shortDate(iso) {
+  function dayName(iso, withYear) {
     var d = new Date(iso + 'T00:00:00Z');
     if (isNaN(d)) return iso;
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    return d.toLocaleDateString(undefined,
+      { month: 'short', day: 'numeric', year: withYear ? 'numeric' : undefined, timeZone: 'UTC' });
   }
-  function longDate(iso) {
-    var d = new Date(iso + 'T00:00:00Z');
-    if (isNaN(d)) return iso;
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-  }
+  function shortDate(iso) { return dayName(iso, false); }
+  function longDate(iso)  { return dayName(iso, true); }
   function ago(ts) {
     var t = new Date(ts).getTime();
     if (isNaN(t)) return '';
@@ -122,12 +120,7 @@
     return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
-  function el(tag, cls, txt) {
-    var n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (txt != null) n.textContent = txt;
-    return n;
-  }
+  var el = window.dzEl;   // tag, class, text
   function svgEl(tag, attrs) {
     var n = document.createElementNS('http://www.w3.org/2000/svg', tag);
     for (var k in attrs) if (attrs[k] != null) n.setAttribute(k, attrs[k]);

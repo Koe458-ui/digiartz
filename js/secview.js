@@ -563,11 +563,7 @@
       ? { user_id: currentUser.id, item_id: id }
       : { kind: kind, subject_id: id, user_id: currentUser.id };
   }
-  function vwEngMatch(what, kind, id){
-    return what === 'cart'
-      ? { user_id: currentUser.id, item_id: id }
-      : { kind: kind, subject_id: id, user_id: currentUser.id };
-  }
+  var vwEngMatch = vwEngRow;   // the row to write, and the row to look for
   async function vwEngPaint(kind, id){
     var tok = ++vwEngTok;
     ['like','bm','cart'].forEach(function(w){

@@ -96,16 +96,14 @@
   window.tgPickedTags = function(){ return tgPrefs; };
 
   function tgModOpen(){
-    document.getElementById('tgMod').classList.add('open');
-    document.body.style.overflow = 'hidden';
+    dzPanelOpen('tgMod');
     var s = document.getElementById('tgModSearch');
     if(s) s.value = '';
     tgModRender('');
     setTimeout(function(){ if(s) s.focus(); }, 80);
   }
   function tgModClose(){
-    document.getElementById('tgMod').classList.remove('open');
-    restoreScroll();
+    dzPanelShut('tgMod');
     tgSyncBtn();
     tgApply();
   }

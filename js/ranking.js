@@ -18,12 +18,7 @@
 
     function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
     function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
-    function el (tag, cls, text) {
-      var e = document.createElement(tag);
-      if (cls) e.className = cls;
-      if (text != null) e.textContent = text;
-      return e;
-    }
+    var el = window.dzEl;   // tag, class, text
     function num (n) { return (Number(n) || 0).toLocaleString(); }
     function thumb (u) {
       if (!u) return null;
@@ -302,22 +297,14 @@
     });
 
     window.openRankHub = function () {
-      var hub = document.getElementById('rankHub');
-      if (!hub) return;
-      hub.classList.add('open');
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
+      if (!dzPanelOpen('rankHub')) return;
       seen = true;
       if (started) tick(); else start();
     };
 
     window.closeRankHub = function () {
-      var hub = document.getElementById('rankHub');
-      if (!hub) return;
-      hub.classList.remove('open');
+      if (!dzPanelShut('rankHub')) return;
       seen = false;
-      if (typeof restoreScroll === 'function') restoreScroll();
-      else { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }
     };
 
     var pg = { board: 'level', rows: [], off: 0, total: 0, done: false, busy: false, wired: false };
@@ -412,21 +399,12 @@
         }, { passive: true });
       }
 
-      page.classList.add('open');
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-
+      dzPanelOpen('rankPage');
       pgTitle();
       pgReset();
     };
 
-    window.closeRankPage = function () {
-      var page = document.getElementById('rankPage');
-      if (!page) return;
-      page.classList.remove('open');
-      if (typeof restoreScroll === 'function') restoreScroll();
-      else { document.body.style.overflow = ''; document.documentElement.style.overflow = ''; }
-    };
+    window.closeRankPage = function () { dzPanelShut('rankPage'); };
 
     document.addEventListener('keydown', function (ev) {
       if (ev.key !== 'Escape') return;

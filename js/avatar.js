@@ -35,18 +35,14 @@
     return 'You can re-upload in '+days+' day'+(days===1?'':'s')+'.';
   }
 
-  function openPfAvatarPicker(){
+  function openPfAvBPicker(what, at, input){
     if(!pf.isOwner){ showToast('You can only edit your own profile'); return; }
-    var left = pfAvBCooldownLeft(pf.profile && pf.profile.avatar_updated_at);
-    if(left>0){ showToast('Profile photo was updated recently. '+pfAvBCooldownMsg(left)); return; }
-    document.getElementById('pfAvatarFileInput').click();
+    var left = pfAvBCooldownLeft(pf.profile && pf.profile[at]);
+    if(left>0){ showToast(what+' was updated recently. '+pfAvBCooldownMsg(left)); return; }
+    document.getElementById(input).click();
   }
-  function openPfBannerPicker(){
-    if(!pf.isOwner){ showToast('You can only edit your own profile'); return; }
-    var left = pfAvBCooldownLeft(pf.profile && pf.profile.banner_updated_at);
-    if(left>0){ showToast('Banner was updated recently. '+pfAvBCooldownMsg(left)); return; }
-    document.getElementById('pfBannerFileInput').click();
-  }
+  function openPfAvatarPicker(){ openPfAvBPicker('Profile photo', 'avatar_updated_at', 'pfAvatarFileInput'); }
+  function openPfBannerPicker(){ openPfAvBPicker('Banner', 'banner_updated_at', 'pfBannerFileInput'); }
 
   function handlePfAvBFile(e, kind){
     var f = e.target.files[0]; if(!f) return;

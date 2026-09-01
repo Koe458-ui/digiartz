@@ -325,13 +325,7 @@
     return base+'.'+ext;
   }
 
-  function avDlSaveBlob(blob, fileName){
-    var obj=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=obj; a.download=fileName; a.rel='noopener';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(obj); }, 60000);
-  }
+  var avDlSaveBlob = window.dzSaveBlob;
 
   async function avDownload(){
     if(avDlBusy) return;

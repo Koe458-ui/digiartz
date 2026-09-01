@@ -589,6 +589,65 @@
   ];
 
   function dzPanelEl(id){ return document.getElementById(id); }
+
+  /* Opening and closing one of the panels that slide in over the page. Every
+     one of them adds .open and locks what is behind it, and gives the scroll
+     position back on the way out; what each does while it is up is its own
+     business. Both hand back the element, or null when the page has no such
+     panel, so a caller can say `if (!pg) return;` as it always did. */
+  window.dzPanelOpen = function(id){
+    var pg = document.getElementById(id);
+    if(!pg) return null;
+    pg.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return pg;
+  };
+  window.dzPanelShut = function(id){
+    var pg = document.getElementById(id);
+    if(pg) pg.classList.remove('open');
+    restoreScroll();
+    return pg;
+  };
+
+  /* An element with a class and, where it is only text, its text. */
+  window.dzEl = function(tag, cls, text){
+    var e = document.createElement(tag);
+    if(cls) e.className = cls;
+    if(text != null) e.textContent = text;
+    return e;
+  };
+
+  /* Hand a blob to the browser as a download. */
+  window.dzSaveBlob = function(blob, name){
+    var obj = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = obj; a.download = name || 'file'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(obj); }, 60000);
+  };
+
+  /* A message's clock time, and the chip that heads a day of them. Direct
+     messages and the community rooms show both the same way. */
+  window.dzHHMM = function(iso){
+    if(!iso) return '';
+    try{ return new Date(iso).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
+    catch(e){ return ''; }
+  };
+  window.dzDayChip = function(d){
+    var now = new Date(), y = new Date(); y.setDate(now.getDate()-1);
+    if(d.toDateString() === now.toDateString()) return 'TODAY';
+    if(d.toDateString() === y.toDateString())   return 'YESTERDAY';
+    try{ return d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}).toUpperCase(); }
+    catch(e){ return d.toDateString().toUpperCase(); }
+  };
+
+  /* The placeholder that keeps a draft or schedule strip four cards wide. */
+  window.dzGhost = function(glyph, mark){
+    return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
+      '<span class="upDraftGhostIn">'+glyph+'</span>'+
+      '<span class="upDraftExp'+(mark ? ' upSchedMark' : '')+'">'+(mark || '7d')+'</span></div>';
+  };
   function dzPanelIsOpen(el){
     return !!el && (el.classList.contains('open') ||
                     el.getAttribute('data-state') === 'open');

@@ -1,4 +1,5 @@
 import { SB_URL_FALLBACK, SB_ANON_FALLBACK } from '../lib/sb.js';
+import { json } from '../lib/http.js';
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 6;
@@ -444,9 +445,3 @@ function toBase64(buf) {
   return btoa(bin);
 }
 
-function json(obj, status) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-  });
-}

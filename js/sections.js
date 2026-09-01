@@ -104,19 +104,11 @@
 
   function openCartPage(){
     if(typeof bnCloseAllSections === 'function') bnCloseAllSections();
-    var pg = document.getElementById('cartPage');
-    if(!pg) return;
-    pg.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
+    if(!dzPanelOpen('cartPage')) return;
     dzCartRender();
     if(typeof window.dzRouteAudit === 'function') window.dzRouteAudit();
   }
-  function closeCartPage(){
-    var pg = document.getElementById('cartPage');
-    if(pg) pg.classList.remove('open');
-    if(typeof restoreScroll === 'function') restoreScroll();
-  }
+  function closeCartPage(){ dzPanelShut('cartPage'); }
   function dzGoCart(){
     if(!window.currentUser){
       if(typeof openAuthMod === 'function'){ openAuthMod(); return; }
@@ -1091,18 +1083,10 @@
   }
   function upGuideBackdrop(e){ if(e && e.target && e.target.id === 'upGuideMod') upGuideClose(); }
 
-  function dzGhostCard(){
-    return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
-      '<span class="upDraftGhostIn">✦</span>'+
-      '<span class="upDraftExp">7d</span></div>';
-  }
-  function dzSchedGhostCard(){
-    return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
-      '<span class="upDraftGhostIn">⏱</span>'+
-      '<span class="upDraftExp upSchedMark">--</span></div>';
-  }
-  function dzGhost4(){ return dzGhostCard()+dzGhostCard()+dzGhostCard()+dzGhostCard(); }
-  function dzSchedGhost4(){ return dzSchedGhostCard()+dzSchedGhostCard()+dzSchedGhostCard()+dzSchedGhostCard(); }
+  function dzGhostCard(){ return window.dzGhost('✦'); }
+  function dzSchedGhostCard(){ return window.dzGhost('⏱', '--'); }
+  function dzGhost4(){ return dzGhostCard().repeat(4); }
+  function dzSchedGhost4(){ return dzSchedGhostCard().repeat(4); }
 
   function dzSchedField(){
     return ''+
@@ -1327,11 +1311,13 @@
       }
     }
   }
-  function dzSelSyncAll(sec){
+  /* Repaint every field of one kind in a section's form. */
+  function dzEachField(sec, kinds, fn){
     (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
-      if(fd.t === 'sel' || fd.t === 'cat') dzSelSync('dz_'+sec+'_'+fd.k);
+      if(kinds.indexOf(fd.t) !== -1) fn('dz_'+sec+'_'+fd.k, fd);
     });
   }
+  function dzSelSyncAll(sec){ dzEachField(sec, ['sel','cat'], dzSelSync); }
   document.addEventListener('click', function(ev){
     var open = document.querySelectorAll('#upSecForms .upCatDd.open, #pfUpMod .upCatDd.open');
     for(var i=0;i<open.length;i++){
@@ -1616,13 +1602,7 @@
       ? list.length + ' selected'
       : (lb.getAttribute('data-ph') || 'Pick from the list');
   }
-  function dzRefMenu(e, id){
-    if(e) e.stopPropagation();
-    var dd = document.getElementById(id+'_dd'); if(!dd) return;
-    dzCloseMenus(dd);
-    dzSchClose();
-    dd.classList.toggle('open');
-  }
+  var dzRefMenu = dzSelToggle;   // the same dropdown, opened from a list field
   function dzRefOpt(id, box, cap){
     var hid = document.getElementById(id);
     if(!hid) return;
@@ -1673,11 +1653,7 @@
     hid.value = list.join('\n');
     dzRefsRender(id);
   }
-  function dzRefsAll(sec){
-    (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
-      if(fd.t === 'list') dzRefsRender('dz_'+sec+'_'+fd.k);
-    });
-  }
+  function dzRefsAll(sec){ dzEachField(sec, ['list'], dzRefsRender); }
 
   var COND = {
     place:   function(v){ return v.work_mode !== 'remote'; },
@@ -2218,16 +2194,13 @@
     try{ URL.revokeObjectURL(u); }catch(e){}
   }
 
-  function dzDragOn(e, id){
+  function dzDragOver(e, id, on){
     if(e) e.preventDefault();
     var z = document.getElementById(id+'_z');
-    if(z) z.classList.add('over');
+    if(z) z.classList.toggle('over', on);
   }
-  function dzDragOff(e, id){
-    if(e) e.preventDefault();
-    var z = document.getElementById(id+'_z');
-    if(z) z.classList.remove('over');
-  }
+  function dzDragOn(e, id){ dzDragOver(e, id, true); }
+  function dzDragOff(e, id){ dzDragOver(e, id, false); }
   function dzDropFile(e, sec, key){
     if(e) e.preventDefault();
     dzDragOff(e, 'dz_'+sec+'_'+key);
@@ -3236,13 +3209,7 @@
     });
   }
 
-  function dzMarketSave(blob, name){
-    var obj = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = obj; a.download = name || 'file'; a.rel = 'noopener';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(obj); }, 60000);
-  }
+  var dzMarketSave = window.dzSaveBlob;
 
   window.dzMarketFetch = async function(item, file, name, btn){
     if(!sb || !window.currentUser){

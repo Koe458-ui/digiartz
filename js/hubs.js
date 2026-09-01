@@ -47,19 +47,13 @@
       return;
     }
     if (typeof bnCloseAllSections === 'function') bnCloseAllSections();
-    var pg = el(id); if (!pg) return;
+    if (!el(id)) return;
     if (bn && typeof bnSetActive === 'function') bnSetActive(bn);
     if (before) before();
-    pg.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
+    dzPanelOpen(id);
     if (typeof window.dzRouteAudit === 'function') window.dzRouteAudit();
   }
-  function closePage(id) {
-    var pg = el(id);
-    if (pg) pg.classList.remove('open');
-    if (typeof restoreScroll === 'function') restoreScroll();
-  }
+  function closePage(id) { dzPanelShut(id); }
 
   var AN = [
     { key:'artwork', name:'Artwork', a:'#A78BFA', b:'#6D28D9',

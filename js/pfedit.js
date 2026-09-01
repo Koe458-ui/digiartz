@@ -22,13 +22,9 @@
       var input = document.getElementById('pfConnect_'+p.key);
       if(input){ input.value = links[p.key] || ''; input.classList.remove('err'); }
     });
-    document.getElementById('pfEditPage').classList.add('open');
-    document.body.style.overflow='hidden';
+    dzPanelOpen('pfEditPage');
   }
-  function closePfEditPage(){
-    document.getElementById('pfEditPage').classList.remove('open');
-    restoreScroll();
-  }
+  function closePfEditPage(){ dzPanelShut('pfEditPage'); }
   function pfUpdateEditBioCount(){
     var len = document.getElementById('pfEditBio').value.length;
     document.getElementById('pfEditBioCount').textContent = len+'/500';

@@ -179,11 +179,7 @@
     if(h < 24) return h+'h';
     return Math.round(h/24)+'d';
   }
-  function uschGhost(){
-    return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
-      '<span class="upDraftGhostIn">\u23F1</span>'+
-      '<span class="upDraftExp upSchedMark">--</span></div>';
-  }
+  function uschGhost(){ return window.dzGhost('\u23F1', '--'); }
   async function uschLoad(){
     var sec = document.getElementById('upSchedSec');
     var row = document.getElementById('upSchedRow');
@@ -224,11 +220,7 @@
     }catch(err){ showToast('Could not cancel that schedule'); }
   }
 
-  function updrGhost(){
-    return '<div class="upDraftCard upDraftGhost" aria-hidden="true">'+
-      '<span class="upDraftGhostIn">\u2726</span>'+
-      '<span class="upDraftExp">7d</span></div>';
-  }
+  function updrGhost(){ return window.dzGhost('\u2726'); }
   async function updrLoadStrip(){
     var sec = document.getElementById('upDraftSec');
     var row = document.getElementById('upDraftRow');

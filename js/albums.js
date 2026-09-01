@@ -145,14 +145,10 @@
   }
   function albOpenPage(){
     if(!currentUser){ showToast('Sign in to manage albums'); if(typeof openAuthMod==='function') openAuthMod(); return; }
-    document.getElementById('albPage').classList.add('open');
-    document.body.style.overflow = 'hidden';
+    dzPanelOpen('albPage');
     albLoadMine(false);
   }
-  function albClosePage(){
-    document.getElementById('albPage').classList.remove('open');
-    restoreScroll();
-  }
+  function albClosePage(){ dzPanelShut('albPage'); }
 
   function albFind(src, id){
     var list = (src === 'me') ? albMine : (pf.albums || []);
@@ -219,11 +215,7 @@
     var shot = (typeof getViewUrl === 'function') ? getViewUrl(art.image_url) : art.image_url;
     if(typeof dzLightOpen === 'function') dzLightOpen(shot, art.name || '');
   }
-  function albCloseView(){
-    document.getElementById('albViewPage').classList.remove('open');
-    albView = null;
-    restoreScroll();
-  }
+  function albCloseView(){ dzPanelShut('albViewPage'); albView = null; }
   async function albRemoveItem(artId){
     if(!albView || !albView.owner) return;
     try{
@@ -520,18 +512,16 @@
     if(!pf.galleryIds) pf.galleryIds = Object.create(null);
     return pf.galleryIds[String(id)] === true;
   }
-  function pfGalleryAdopt(id){
+  /* The offset counts the rows already in hand, so it moves with the set. */
+  function pfGalleryMark(id, keep){
     if(!pf.galleryIds) pf.galleryIds = Object.create(null);
-    if(pf.galleryIds[String(id)] === true) return;
-    pf.galleryIds[String(id)] = true;
-    pf.galleryOffset = (pf.galleryOffset || 0) + 1;
+    if((pf.galleryIds[String(id)] === true) === keep) return;
+    if(keep) pf.galleryIds[String(id)] = true; else delete pf.galleryIds[String(id)];
+    pf.galleryOffset = keep ? (pf.galleryOffset || 0) + 1
+                            : Math.max(0, (pf.galleryOffset || 0) - 1);
   }
-  function pfGalleryForget(id){
-    if(!pf.galleryIds) pf.galleryIds = Object.create(null);
-    if(pf.galleryIds[String(id)] !== true) return;
-    delete pf.galleryIds[String(id)];
-    pf.galleryOffset = Math.max(0, (pf.galleryOffset || 0) - 1);
-  }
+  function pfGalleryAdopt(id){ pfGalleryMark(id, true); }
+  function pfGalleryForget(id){ pfGalleryMark(id, false); }
   async function pfLoadMoreGallery(){
     if(!pf.profile || pf.galleryDone || pf.galleryBusy) return;
     pf.galleryBusy = true;

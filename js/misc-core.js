@@ -69,12 +69,7 @@
     var t = window.DZ_MS && window.DZ_MS.tierFor(level);
     return t ? t.name : 'Newcomer';
   }
-  function el (tag, cls, text) {
-    var e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (text != null) e.textContent = text;
-    return e;
-  }
+  var el = window.dzEl;   // tag, class, text
   function svgIcon (d) {
     var w = document.createElement('span');
     w.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
@@ -219,21 +214,14 @@
 
   var xpLastFocus = null;
   window.openXpPage = function () {
-    var pg = document.getElementById('xpPage');
-    if (!pg) return;
     xpLastFocus = document.activeElement;
-    pg.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    if (!dzPanelOpen('xpPage')) return;
     var target = (window.pf && window.pf.profile && window.pf.profile.id) ||
                  (typeof currentUser !== 'undefined' && currentUser && currentUser.id) || null;
     window.xpLoadInto('xpPageWrap', target, { leaderboard: true });
   };
   window.closeXpPage = function () {
-    var pg = document.getElementById('xpPage');
-    if (!pg) return;
-    pg.classList.remove('open');
-    if (typeof restoreScroll === 'function') restoreScroll();
-    else document.body.style.overflow = '';
+    if (!dzPanelShut('xpPage')) return;
     if (xpLastFocus && xpLastFocus.focus) xpLastFocus.focus({ preventScroll: true });
   };
   document.addEventListener('keydown', function (e) {

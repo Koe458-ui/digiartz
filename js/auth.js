@@ -107,19 +107,14 @@
   var setBackMo = null;
 
   function openSettingsPage() {
-    var pg = document.getElementById('setPage');
-    if (!pg) return;
+    if (!dzPanelOpen('setPage')) return;
     setDropBack();
     if (!setLastFocus || setLastFocus.isConnected === false) setLastFocus = document.activeElement;
-    pg.classList.add('open');
-    document.body.style.overflow = 'hidden';
     pfMenuRefreshCounts();
   }
 
   function closeSettingsPage(keepBack) {
-    var pg = document.getElementById('setPage');
-    if (pg) pg.classList.remove('open');
-    restoreScroll();
+    dzPanelShut('setPage');
     if (keepBack === true) return;
     setDropBack();
     if (setLastFocus && setLastFocus.focus) { try { setLastFocus.focus(); } catch (e) {} }
@@ -640,21 +635,8 @@
   var notifList = [];
   var notifReadIds = {};
 
-  function openNotifications(){
-    var el = document.getElementById('notifPage');
-    if(!el) return;
-    el.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    notifLoad();
-  }
-
-  function closeNotifPage(){
-    var el = document.getElementById('notifPage');
-    if(!el) return;
-    el.classList.remove('open');
-    restoreScroll();
-  }
+  function openNotifications(){ if(dzPanelOpen('notifPage')) notifLoad(); }
+  function closeNotifPage(){ dzPanelShut('notifPage'); }
 
   function notifIcon(type){
     if(type==='artwork_approved' || type==='comic_approved') return '✓';

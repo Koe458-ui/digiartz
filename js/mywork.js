@@ -2,15 +2,11 @@
 
   function openMyWorkPage(){
     if(!currentUser){ showToast('Sign in first'); return; }
-    document.getElementById('pfMyWorkPage').classList.add('open');
-    document.body.style.overflow = 'hidden';
+    dzPanelOpen('pfMyWorkPage');
     mwSwitchTab('art');
     mwLoadData();
   }
-  function closeMyWorkPage(){
-    document.getElementById('pfMyWorkPage').classList.remove('open');
-    restoreScroll();
-  }
+  function closeMyWorkPage(){ dzPanelShut('pfMyWorkPage'); }
   function mwSwitchTab(tab){
     mw.tab = tab;
     document.getElementById('mwTabArt').classList.toggle('active', tab==='art');
@@ -172,10 +168,7 @@ function hideCommentThumbnail(){
 }
 
   function openCommunityHome(){
-    var page = document.getElementById('communityPage');
-    page.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
+    dzPanelOpen('communityPage');
     if(typeof cmChatPanelReset === 'function') cmChatPanelReset();
     cmCloseChat();
     if(typeof cmHomeReset === 'function') cmHomeReset();
@@ -184,13 +177,12 @@ function hideCommentThumbnail(){
 
   function closeCommunityPage(){
     clearInterval(cpPoll); cpPoll = null;
-    document.getElementById('communityPage').classList.remove('open');
+    dzPanelShut('communityPage');
     if(typeof cmChatPanelReset === 'function') cmChatPanelReset();
     document.getElementById('cpBar').style.display = 'none';
     var lockNote = document.getElementById('cpLockNote');
     if(lockNote) lockNote.style.display = 'none';
     cpCurrentChannel = null;
-    restoreScroll();
   }
 
   async function cmOpenCommunity(id){
@@ -1336,18 +1328,7 @@ function hideCommentThumbnail(){
   var CP_POLL_MS = 5000;
   var cpLastSig = '';
 
-  function cpHHMM(iso){
-    if(!iso) return '';
-    try{ return new Date(iso).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
-    catch(e){ return ''; }
-  }
-  function cpDayChip(d){
-    var now = new Date(), y = new Date(); y.setDate(now.getDate()-1);
-    if(d.toDateString() === now.toDateString()) return 'TODAY';
-    if(d.toDateString() === y.toDateString())   return 'YESTERDAY';
-    try{ return d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}).toUpperCase(); }
-    catch(e){ return d.toDateString().toUpperCase(); }
-  }
+  var cpHHMM = window.dzHHMM, cpDayChip = window.dzDayChip;
 
   var cpAuthors = {};
 

@@ -259,17 +259,5 @@
   window.fgSearchArtworks = fgSearchArtworks;
   window.fgArtistPattern = fgArtistPattern;
 
-  function openSubscription() {
-    var el = document.getElementById('subPage');
-    if (!el) return;
-    el.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-  }
-
-  function closeSubscription() {
-    var el = document.getElementById('subPage');
-    if (!el) return;
-    el.classList.remove('open');
-    restoreScroll();
-  }
+  function openSubscription() { dzPanelOpen('subPage'); }
+  function closeSubscription() { dzPanelShut('subPage'); }

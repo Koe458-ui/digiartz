@@ -155,7 +155,7 @@ them either — a new table still works behind its policies exactly as before.
 
 | # | What | Severity | Where |
 |---|------|----------|-------|
-| 13 | `TRUNCATE`, `REFERENCES`, `TRIGGER` on all 73 public tables, held by both roles; `TRUNCATE` is RLS-exempt | **MEDIUM** | `20260830_least_privilege.sql` §1 |
+| 13 | `TRUNCATE`, `REFERENCES`, `TRIGGER` on all 73 public tables, held by both roles; `TRUNCATE` is RLS-exempt | **MEDIUM** | the grants section of `20260901000000_baseline.sql` |
 | 14 | 80 further (table, role, privilege) triples held where RLS has no matching policy. Inert today — the grant reaches the table, the missing policy refuses every row — and removed because "inert" is a property of the current policy set, not of the grant. The day somebody adds a convenience `FOR ALL` policy, the write privilege is already sitting there | LOW | §2 |
 | 15 | `EXECUTE` on all 43 trigger functions, held by both roles, making each one an addressable `/rest/v1/rpc` name | LOW | §3 |
 | 16 | **`koe-media` accepted any content type** — the item Round 3 left open. See below | MEDIUM | §4 |
@@ -440,13 +440,13 @@ past it.
 | # | Fix | Where |
 |---|-----|-------|
 | 1 | The attacker's account, profile and all 4 comments deleted; footprint verified empty across every table and storage | production |
-| 2 | `dz_deobfuscate()` — decodes percent-escapes, homoglyphs, fullwidth and invisible characters, `[dot]`/` dot `, `hxxp` before anything is matched | `20260824_antiphish_content_guard.sql` |
+| 2 | `dz_deobfuscate()` — decodes percent-escapes, homoglyphs, fullwidth and invisible characters, `[dot]`/` dot `, `hxxp` before anything is matched | `20260901000000_baseline.sql` |
 | 3 | `dz_has_link()` / `dz_phish_score()` — link and scam-prose detection, matched against the decoded form | same |
 | 4 | Content guard on `item_comments` (insert **and** update), the community rooms, direct messages, and ten description/body columns — 23 triggers | same |
 | 5 | `dz_abuse_events` — **phishing attempts** logged with actor, IP, rule and sample; `dz_abuse_recent()` for staff | same |
 | 6 | `item_comments.body` capped at 1000 characters | same |
-| 7 | Reserved names — nobody can register or rename to anything containing "digiartz", or to `support`/`admin`/`verify`/… as a whole name. Checked on the folded form, so `D1giArtz_Support` is refused too | `20260824_reserved_names.sql` |
-| 8 | Anonymous writes are rate limited — `dz_write_rate` used to return early whenever `auth.uid()` was null, which is every anon caller, not just cron | `20260824_rate_limits_everywhere.sql` |
+| 7 | Reserved names — nobody can register or rename to anything containing "digiartz", or to `support`/`admin`/`verify`/… as a whole name. Checked on the folded form, so `D1giArtz_Support` is refused too | `20260901000000_baseline.sql` |
+| 8 | Anonymous writes are rate limited — `dz_write_rate` used to return early whenever `auth.uid()` was null, which is every anon caller, not just cron | `20260901000000_baseline.sql` |
 | 9 | A global per-actor write ceiling above the per-table ones (240 / 5 min) | same |
 | 10 | Limiters auto-attached to every member-writable table, found by asking `pg_policy` rather than by remembering — **27 previously unlimited write paths**, plus 23 delete paths | same |
 | 11 | Signup limited to 6 accounts per hour per address | same |

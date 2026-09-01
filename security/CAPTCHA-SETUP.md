@@ -103,7 +103,7 @@ sign-in again.
 
 ### What decides when to show it
 
-`dz_captcha_required()` (in `20260825_auth_attempt_tracking.sql`, live now)
+`dz_captcha_required()` (in `20260901000000_baseline.sql`, live now)
 returns true when, from one IP within the last hour, any of:
 
 | Signal | Threshold |
@@ -220,5 +220,5 @@ update public.user_bans set lifted_at = now()
  where user_id = '…' and lifted_at is null;
 ```
 
-To change the threshold from five, edit the trigger argument in
-`20260825_repeat_spam_autoban.sql` section 4 and re-run that block.
+To change the threshold from five, edit the trigger argument on
+`dz_repeat_guard` in `20260901000000_baseline.sql` and re-run that statement.

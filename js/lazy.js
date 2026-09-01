@@ -24,7 +24,7 @@
       api: ['openAnalyticsPage']
     },
     hubs: {
-      src: ['/js/hubs.js?v=4'],
+      src: ['/js/hubs.js?v=5'],
       css: ['/css/analytics.css?v=14'],
       api: ['anHubOpen', 'payHubOpen']
     },

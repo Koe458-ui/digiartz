@@ -1,4 +1,5 @@
 import { sbUrl, sbAnon, sbService, ledger } from './sb.js';
+import { minCharge, showAmount } from './money.js';
 
 export async function memberCurrency(env, userId) {
   const rows = await sbService(env,
@@ -138,4 +139,76 @@ export async function recordEarning(env, provider, row, prov) {
     p_provider_currency: (prov && prov.currency) || row.currency,
     p_ref_table: 'payments', p_ref_id: row.id,
   });
+}
+
+/* Only Max is ever discounted by a code. */
+export const PROMO_PLAN = 'max';
+
+/* What a subscription order should charge, or why it must be refused.
+   PayPal and Razorpay ask the same questions in the same order — does the
+   support amount sit inside its band, is the plan priced in this currency,
+   would this quietly downgrade a tier the member has already paid for, does
+   the code apply to the plan it was typed against.
+
+   The caller has already established that `key` names a real plan and that
+   it can take `currency`: those two refusals differ between the checkouts
+   and have to run in each one's own order. An `error` here means 400. */
+export async function subscriptionAmount(env, request, user, body, key, currency) {
+  let amount;
+
+  if (key === 'support') {
+    const lim = await supportLimits(env, currency);
+    if (!lim) return { error: 'Support is not available in ' + currency };
+    amount = Math.round(Number(body.amount));
+    if (!Number.isFinite(amount) || amount < lim.min || amount > lim.max)
+      return { error: 'Amount must be between ' + showAmount(lim.min, currency) +
+                      ' and ' + showAmount(lim.max, currency) };
+  } else {
+    amount = await planPrice(env, key, currency);
+    if (!amount) return { error: 'That plan is not priced in ' + currency };
+
+    const cur = await currentPlan(env, user.id);
+    if (cur.tier && (TIER_RANK[cur.tier] || 0) > (TIER_RANK[key] || 0)) {
+      return { error: 'Your ' + cur.tier + ' plan runs until ' +
+        new Date(cur.expires).toISOString().slice(0, 10) +
+        '. Buying ' + key + ' now would not add anything to it \u2014 ' +
+        'renew ' + cur.tier + ', or wait until it ends.' };
+    }
+  }
+
+  const promo = await resolvePromo(env, request, body.promo, 'subscription');
+  if (promo.error) return { error: promo.error };
+  if (promo.id && key !== PROMO_PLAN) return { error: 'That code only applies to Max' };
+  if (promo.discountBps > 0) {
+    amount = Math.round(amount * (10000 - promo.discountBps) / 10000);
+    amount = Math.max(amount, minCharge(currency));
+  }
+
+  return { amount, promoId: promo.id };
+}
+
+/* The listing a marketplace order is for, or why it cannot be bought. Both
+   checkouts ask the same four questions of it; each then decides for itself
+   whether it can take the listing's currency. */
+export async function marketplaceItem(env, user, itemId) {
+  if (!/^[0-9a-f-]{36}$/.test(itemId)) return { error: 'Bad item id', status: 400 };
+
+  const rows = await sbService(env,
+    '/marketplace_items?id=eq.' + itemId +
+    '&select=id,user_id,title,price_cents,currency,status&limit=1');
+  const item = rows && rows[0];
+  if (!item || item.status !== 'approved') return { error: 'Listing not found', status: 404 };
+  if (item.user_id === user.id) return { error: 'This is your own listing', status: 400 };
+  if (!(item.price_cents > 0))
+    return { error: 'This item is free \u2014 just download it', status: 400 };
+
+  return { item };
+}
+
+/* Whether this member has already paid for this listing. */
+export async function alreadyPaid(env, user, itemId) {
+  const paid = await sbService(env,
+    '/payments?item_id=eq.' + itemId + '&user_id=eq.' + user.id +
+    '&status=eq.paid&select=id&limit=1');
+  return !!(paid && paid.length);
 }

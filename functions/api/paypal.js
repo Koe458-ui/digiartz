@@ -1,9 +1,9 @@
 import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, sbService } from '../lib/sb.js';
 import { pp } from '../lib/paypal.js';
-import { fromPriceCents, toValue, minCharge, ppFee, showAmount } from '../lib/money.js';
+import { fromPriceCents, toValue, ppFee } from '../lib/money.js';
 import {
-  memberCurrency, planPrice, supportLimits, currentPlan, resolvePromo,
-  PLAN_TIERS, TIER_RANK, PLAN_LABEL, applySubscription, recordEarning
+  memberCurrency, subscriptionAmount, marketplaceItem, alreadyPaid, resolvePromo,
+  PLAN_TIERS, PLAN_LABEL, applySubscription, recordEarning
 } from '../lib/billing.js';
 
 const SUPPORTED = new Set(['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF',
@@ -12,8 +12,6 @@ const SUPPORTED = new Set(['USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF',
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
-
-const PROMO_PLAN = 'max';
 
 async function makeOrder(env, user, { minor, currency, kind, plan, itemId, label, promoId }) {
   const order = await pp(env, '/v2/checkout/orders', {
@@ -90,62 +88,26 @@ export async function onRequestPost({ env, request }) {
       if (!SUPPORTED.has(currency))
         return json({ error: 'PayPal cannot take ' + currency + ' \u2014 use the other checkout' }, 400);
 
-      let amount;
-      if (key === 'support') {
-        const lim = await supportLimits(env, currency);
-        if (!lim) return json({ error: 'Support is not available in ' + currency }, 400);
-        amount = Math.round(Number(body.amount));
-        if (!Number.isFinite(amount) || amount < lim.min || amount > lim.max)
-          return json({ error: 'Amount must be between ' + showAmount(lim.min, currency) +
-                               ' and ' + showAmount(lim.max, currency) }, 400);
-      } else {
-        amount = await planPrice(env, key, currency);
-        if (!amount) return json({ error: 'That plan is not priced in ' + currency }, 400);
-
-        const cur = await currentPlan(env, user.id);
-        if (cur.tier && (TIER_RANK[cur.tier] || 0) > (TIER_RANK[key] || 0)) {
-          return json({ error: 'Your ' + cur.tier + ' plan runs until ' +
-            new Date(cur.expires).toISOString().slice(0, 10) +
-            '. Buying ' + key + ' now would not add anything to it \u2014 ' +
-            'renew ' + cur.tier + ', or wait until it ends.' }, 400);
-        }
-      }
-
-      const promo = await resolvePromo(env, request, body.promo, 'subscription');
-      if (promo.error) return json({ error: promo.error }, 400);
-      if (promo.id && key !== PROMO_PLAN)
-        return json({ error: 'That code only applies to Max' }, 400);
-      if (promo.discountBps > 0) {
-        amount = Math.round(amount * (10000 - promo.discountBps) / 10000);
-        amount = Math.max(amount, minCharge(currency));
-      }
+      const order = await subscriptionAmount(env, request, user, body, key, currency);
+      if (order.error) return json({ error: order.error }, 400);
 
       return await makeOrder(env, user, {
-        minor: amount, currency, promoId: promo.id,
+        minor: order.amount, currency, promoId: order.promoId,
         kind: 'subscription', plan: key, label: PLAN_LABEL[key],
       });
     }
 
     if (body.action === 'market-order') {
       const itemId = String(body.itemId || '');
-      if (!/^[0-9a-f-]{36}$/.test(itemId)) return json({ error: 'Bad item id' }, 400);
-
-      const rows = await sbService(env,
-        '/marketplace_items?id=eq.' + itemId +
-        '&select=id,user_id,title,price_cents,currency,status&limit=1');
-      const item = rows && rows[0];
-      if (!item || item.status !== 'approved') return json({ error: 'Listing not found' }, 404);
-      if (item.user_id === user.id) return json({ error: 'This is your own listing' }, 400);
-      if (!(item.price_cents > 0)) return json({ error: 'This item is free — just download it' }, 400);
+      const found = await marketplaceItem(env, user, itemId);
+      if (found.error) return json({ error: found.error }, found.status);
+      const item = found.item;
 
       const currency = item.currency || 'USD';
       if (!SUPPORTED.has(currency))
         return json({ error: 'PayPal cannot take ' + currency + ' — use the other checkout' }, 400);
 
-      const paid = await sbService(env,
-        '/payments?item_id=eq.' + itemId + '&user_id=eq.' + user.id +
-        '&status=eq.paid&select=id&limit=1');
-      if (paid && paid.length) return json({ owned: true });
+      if (await alreadyPaid(env, user, itemId)) return json({ owned: true });
 
       const promo = await resolvePromo(env, request, body.promo, 'marketplace');
       if (promo.error) return json({ error: promo.error }, 400);

@@ -213,7 +213,10 @@
     friend: '<path d="M16 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.6V20"/>'+
             '<circle cx="10" cy="8" r="3.2"/><path d="M18 8v6"/><path d="M21 11h-6"/>',
     msg   : '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/>',
-    cred  : '<path d="m12 3.6 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 17l-5.25 2.75 1-5.85L3.5 9.75l5.9-.85Z"/>'
+    follow: '<path d="M16 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.6V20"/>'+
+            '<circle cx="10" cy="8" r="3.2"/><path d="M18 8v6"/><path d="M21 11h-6"/>',
+    check : '<path d="M16 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.6V20"/>'+
+            '<circle cx="10" cy="8" r="3.2"/><path d="m15.6 9.8 1.8 1.8 3.6-3.8"/>'
   };
   function vwSvg(k){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+(VW_ICO[k]||'')+'</svg>'; }
 
@@ -453,12 +456,12 @@
     if(!p || mine){ acts.innerHTML = ''; acts.hidden = true; return; }
     acts.hidden = false;
     acts.innerHTML =
-      '<button class="pfActBtn pfActBtn--pri" type="button" id="'+id+'_fr" '+
+      '<button class="pfActBtn pfActBtn--pri" type="button" id="'+id+'_fo" '+
+        'onclick="dzVwFollow(\''+id+'\')">'+vwSvg('follow')+
+        '<span class="pfActTxt">Follow</span></button>'+
+      '<button class="pfActBtn" type="button" id="'+id+'_fr" '+
         'onclick="dzVwFriend(\''+id+'\')">'+vwSvg('friend')+
-        '<span class="pfActTxt">Add friend</span></button>'+
-      '<button class="pfActBtn" type="button" id="'+id+'_cr" '+
-        'onclick="dzVwCred(\''+id+'\')">'+vwSvg('cred')+
-        '<span class="pfActTxt">Cred</span></button>';
+        '<span class="pfActTxt">Add friend</span></button>';
     vwLoadRel(id, p.id);
   }
   window.dzVwFill = vwFill;
@@ -476,26 +479,39 @@
     var svg = b.querySelector('svg');
     if(svg) svg.innerHTML = (state === 'friends') ? VW_ICO.msg : VW_ICO.friend;
   }
-  function vwCrPaint(id, on){
-    var b = document.getElementById(id+'_cr'); if(!b) return;
+  function vwFoPaint(id, on){
+    var b = document.getElementById(id+'_fo'); if(!b) return;
     var span = b.querySelector('.pfActTxt');
-    if(span) span.textContent = on ? 'Credited' : 'Cred';
-    b.setAttribute('aria-label', on ? 'Credited' : 'Cred');
+    if(span) span.textContent = on ? 'Following' : 'Follow';
+    b.setAttribute('aria-label', on ? 'Following' : 'Follow');
     b.classList.toggle('on', !!on);
+    b.classList.toggle('pfActBtn--pri', !on);
     b.dataset.on = on ? '1' : '';
+    var svg = b.querySelector('svg');
+    if(svg) svg.innerHTML = on ? VW_ICO.check : VW_ICO.follow;
   }
   async function vwLoadRel(id, uid){
     if(!window.currentUser || !sb) return;
     try{
+      if(window.dzFollow){
+        await window.dzFollow.load();
+        if(vwWho[id] && String(vwWho[id].id) === String(uid)) vwFoPaint(id, window.dzFollow.is(uid));
+      }
       if(window.pfFriendBridge){
         await window.pfFriendBridge.load();
         if(vwWho[id] && String(vwWho[id].id) === String(uid)) vwFrPaint(id, window.pfFriendBridge.state(uid));
       }
-      var c = await sb.from('profile_creds').select('giver_id')
-        .eq('giver_id', currentUser.id).eq('receiver_id', uid).maybeSingle();
-      if(vwWho[id] && String(vwWho[id].id) === String(uid)) vwCrPaint(id, !!(c && c.data));
     }catch(e){   }
   }
+
+  // a follow taken on the profile page repaints the card behind it
+  document.addEventListener('dz:follow', function(ev){
+    var d = ev && ev.detail;
+    if(!d) return;
+    Object.keys(vwWho).forEach(function(id){
+      if(vwWho[id] && String(vwWho[id].id) === String(d.id)) vwFoPaint(id, !!d.following);
+    });
+  });
   window.dzVwFriend = async function(id){
     var p = vwWho[id]; if(!p) return;
     if(!window.currentUser){
@@ -520,25 +536,20 @@
     }catch(e){ if(typeof showToast === 'function') showToast('Action failed \u2014 try again'); }
     finally{ b.disabled = false; }
   };
-  window.dzVwCred = async function(id){
-    var p = vwWho[id]; if(!p || !sb) return;
+  window.dzVwFollow = async function(id){
+    var p = vwWho[id]; if(!p || !window.dzFollow) return;
     if(!window.currentUser){
-      if(typeof showToast === 'function') showToast('Sign in to cred artists');
+      if(typeof showToast === 'function') showToast('Sign in to follow artists');
       if(typeof openAuthMod === 'function') openAuthMod();
       return;
     }
-    var b = document.getElementById(id+'_cr'); if(!b || b.disabled) return;
+    var b = document.getElementById(id+'_fo'); if(!b || b.disabled) return;
     var was = b.dataset.on === '1';
     b.disabled = true;
-    vwCrPaint(id, !was);
     try{
-      var r = was
-        ? await sb.from('profile_creds').delete().eq('giver_id', currentUser.id).eq('receiver_id', p.id)
-        : await sb.from('profile_creds').insert({ giver_id: currentUser.id, receiver_id: p.id });
-      if(r.error && !(!was && r.error.code === '23505')) throw r.error;
-    }catch(e){
-      vwCrPaint(id, was);
-      if(typeof showToast === 'function') showToast('Couldn\u2019t update cred \u2014 try again');
+      // dzFollow paints through the dz:follow event and reports what landed
+      var now = await window.dzFollow.set(p.id, !was);
+      vwFoPaint(id, now);
     }finally{ b.disabled = false; }
   };
 

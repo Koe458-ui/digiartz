@@ -3,7 +3,7 @@
 
   var CHUNKS = {
     analytics: {
-      src: ['/js/analytics.js?v=19'],
+      src: ['/js/analytics.js?v=20'],
       css: ['/css/analytics.css?v=14'],
       api: ['openAnalyticsPage']
     },
@@ -17,16 +17,16 @@
       api: ['openPfShare', 'closePfShare', 'pfShareCopy', 'pfShareNative']
     },
     zeo: {
-      src: ['/aiAssistantData.js?v=6', '/js/zeo.js?v=6'],
+      src: ['/aiAssistantData.js?v=7', '/js/zeo.js?v=6'],
       api: ['zeoOpen', 'zeoHide']
     },
     secview: {
-      src: ['/js/secview.js?v=5'],
+      src: ['/js/secview.js?v=6'],
       warm: true,
       api: ['dzOpenById', 'dzOpenRow', 'dzOpenView', 'dzOpenArtwork', 'dzOpenListing',
             'dzVwFill', 'dzVwCard', 'dzVwActRow', 'dzResourceDownload', 'dzReportItem',
             'dzCmLoad', 'dzCmMore', 'dzCmPost', 'dzCmDelAsk', 'dzCmDel',
-            'dzVwShare', 'dzVwDownload', 'dzVwProfile', 'dzVwFriend', 'dzVwCred', 'dzVwEng',
+            'dzVwShare', 'dzVwDownload', 'dzVwProfile', 'dzVwFriend', 'dzVwFollow', 'dzVwEng',
             'dzViewNav', 'dzConfirm', 'dzConfirmClose', 'dzConfirmYes',
             'dzQuotaOpen', 'avLoadQuota', 'dzAdMount', 'dzAdHtml']
     },

@@ -52,6 +52,7 @@
     'user:profile':      { ttl: 60 * SEC,  swr: 10 * MIN, scope: 'private', store: 'both', sync: true, offline: true },
     'user:list':         { ttl: 30 * SEC,  swr: 5 * MIN,  scope: 'private', store: 'both', cap: 40, capAt: 3, offline: true },
     'user:friends':      { ttl: 30 * SEC,  swr: 5 * MIN,  scope: 'private', store: 'both', sync: true, offline: true },
+    'user:follows':      { ttl: 30 * SEC,  swr: 5 * MIN,  scope: 'private', store: 'both', sync: true, offline: true },
     'user:convos':       { ttl: 20 * SEC,  swr: 5 * MIN,  scope: 'private', store: 'both', sync: true, offline: true },
     'user:thread':       { ttl: 10 * SEC,  swr: 2 * MIN,  scope: 'private', store: 'both', cap: 30, capAt: 3, offline: true },
     'user:settings':     { ttl: DAY,       swr: 7 * DAY,  scope: 'private', store: 'both', sync: true, offline: true },
@@ -621,6 +622,9 @@
   function invalidateFriends() {
     return deleteByPrefix([up('friends'), up('convos')]);
   }
+  function invalidateFollows() {
+    return deleteByPrefix(up('follows'));
+  }
   function invalidateThread(partnerId) {
     return deleteByPrefix(up('thread:' + (partnerId || '')));
   }
@@ -764,6 +768,7 @@
     invalidateRanking: invalidateRanking,
     invalidateSearch: invalidateSearch,
     invalidateFriends: invalidateFriends,
+    invalidateFollows: invalidateFollows,
     invalidateThread: invalidateThread,
     invalidateAnalytics: invalidateAnalytics,
     invalidateUserList: invalidateUserList,

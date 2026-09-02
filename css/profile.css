@@ -89,6 +89,15 @@
   letter-spacing:.02em;color:var(--txd);margin-top:.1rem;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+.pfFollowLine{
+  display:flex;align-items:center;flex-wrap:wrap;gap:.35rem;
+  font-family:var(--fb);font-size:clamp(.78rem,2.6vw,.86rem);
+  color:var(--txd);margin-top:.4rem;
+}
+.pfFollowLine[hidden]{display:none;}
+.pfFollowStat b{color:var(--tx);font-weight:700;font-family:var(--fm);}
+.pfFollowDot{color:var(--tc);}
+
 .pfWarnMark{
   display:none;flex:0 0 auto;color:var(--danger-strong);font-weight:900;
   cursor:help;line-height:1;

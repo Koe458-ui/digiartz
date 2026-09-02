@@ -697,6 +697,7 @@
     invalidateArtwork: noop2, invalidateProfile: noop2, invalidateCommunity: noop2,
     invalidateSection: noop2, invalidateComments: noop2, invalidateStats: noop2,
     invalidateRanking: noop2, invalidateSearch: noop2, invalidateFriends: noop2,
+    invalidateFollows: noop2,
     invalidateThread: noop2, invalidateAnalytics: noop2, invalidateUserList: noop2
   };
   function noop2(){ return Promise.resolve(); }

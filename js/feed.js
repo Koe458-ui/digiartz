@@ -2,6 +2,22 @@
   var feedTab  = 'trending';
 
   function feedIsArtists(){ return feedTab === 'artists'; }
+  function feedIsFollowing(){ return feedTab === 'following'; }
+
+  function feedFollowApi(){ return window.dzFollow || null; }
+
+  // The whole approved gallery is already in memory, so "artwork from artists I
+  // follow" is a filter over it rather than another query. Newest first: the
+  // point of the tab is what has landed since the reader was last here.
+  function feedFollowingOf(list){
+    var f = feedFollowApi();
+    if(!f || !f.ready()) return [];
+    var mine = {};
+    f.ids().forEach(function(id){ mine[String(id)] = 1; });
+    return sortByNewest((list || []).filter(function(a){
+      return a && a.user_id && mine[String(a.user_id)];
+    }));
+  }
 
   function feedSort(list){
     if(feedTab === 'new')     return sortByNewest(list);
@@ -119,6 +135,13 @@
 
   function feedEmptyText(){
     if(feedTab === 'artists') return 'NO ARTISTS YET';
+    if(feedIsFollowing()){
+      var signedIn = (typeof currentUser !== 'undefined' && currentUser);
+      if(!signedIn) return 'SIGN IN TO FOLLOW ARTISTS';
+      var f = feedFollowApi();
+      if(f && f.ready() && !f.count()) return 'FOLLOW ARTISTS TO FILL THIS FEED';
+      return 'NOTHING NEW FROM THE ARTISTS YOU FOLLOW';
+    }
     return 'NO ARTWORK YET';
   }
 
@@ -130,6 +153,8 @@
     var src = filterHidden((list || []).slice());
     if(feedIsArtists()){
       awRList = feedArtistsOf(src);
+    } else if(feedIsFollowing()){
+      awRList = feedFollowingOf(src).slice(0, FEED_CAP);
     } else {
       awRList = feedSort(src).slice(0, FEED_CAP);
     }
@@ -203,6 +228,9 @@
     }
     if(!picked) return;
     feedTab = id;
+    if(id === 'following' && feedFollowApi() && !feedFollowApi().ready()){
+      feedFollowApi().load().then(feedFollowRepaint, function(){});
+    }
     var grid = document.getElementById('awGrid');
     if(grid) grid.setAttribute('aria-labelledby', picked.id);
     ftReveal(picked);
@@ -248,4 +276,13 @@
     }
   })();
 
+  // Following is the one tab whose contents can change without the gallery
+  // changing: a follow taken anywhere on the site belongs in it straight away.
+  function feedFollowRepaint(){
+    if(!feedIsFollowing()) return;
+    renderAwGrid(awArtworksCache, true);
+  }
+  document.addEventListener('dz:follow', feedFollowRepaint);
+
   window.ftSelect = ftSelect;
+  window.dzFeedTab = function(){ return feedTab; };

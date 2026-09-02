@@ -583,7 +583,7 @@
     { id: 'engage',    short: 'Engagement', title: 'Engagement',            note: 'what a view turns into' },
     { id: 'revenue',   short: 'Revenue',    title: 'Revenue',               note: 'what your listings earned',
       only: 'marketplace' },
-    { id: 'account',   short: 'Account',    title: 'Account & Cred',        note: 'you, not this section' },
+    { id: 'account',   short: 'Account',    title: 'Account & Audience',    note: 'you, not this section' },
     { id: 'community', short: 'Community',  title: 'Community Analytics',   note: 'your part in the place' },
     { id: 'goals',     short: 'Goals',      title: 'Goals & Achievements',  note: 'what you are aiming at' },
     { id: 'compare',   short: 'Compare',    title: 'Comparisons',           note: 'against yourself, and the site' }
@@ -1259,33 +1259,51 @@
     b.innerHTML = '';
     var f = a.account || {};
 
-    factsCard(b, 'Cred received', [
-      { n: full(f.cred_total), l: 'Cred all time' },
-      { n: '+' + full(f.cred_gained), l: 'This period' },
-      { n: full(f.cred_givers), l: 'Artists who gave it' },
-      { n: full(f.cred_given), l: 'Cred you gave' }
-    ], { note: 'account-wide \u2014 cred is given to you, not to a ' + scopeOf(state.scope).noun });
+    factsCard(b, 'Your audience', [
+      { n: full(f.followers_total), l: 'Followers' },
+      { n: '+' + full(f.followers_gained), l: 'Gained this period' },
+      { n: full(f.followers_lost), l: 'Unfollowed this period' },
+      { n: full(f.following_total), l: 'You follow' }
+    ], { note: 'account-wide \u2014 people follow you, not a ' + scopeOf(state.scope).noun });
 
     var g = el('div', 'anGrid2 anStack');
 
-    var cHost = cardBody(g, 'Cred per day');
-    var srs = f.cred_series || [];
+    var cHost = cardBody(g, 'Followers gained per day');
+    var srs = f.followers_series || [];
     if (srs.some(function (x) { return x.gained > 0; })) {
       lineChart(cHost, srs.map(function (x) { return x.d; }), [{
-        key: 'cred', label: 'Cred', hex: '#16D95F',
+        key: 'followers', label: 'Followers', hex: '#16D95F',
         values: srs.map(function (x) { return Number(x.gained) || 0; })
       }]);
-    } else empty(cHost, 'NO CRED IN THIS PERIOD');
+    } else empty(cHost, 'NO NEW FOLLOWERS IN THIS PERIOD');
 
-    var rHost = cardBody(g, 'Who gave it');
-    var recent = f.cred_recent || [];
-    if (recent.length) {
-      var wrap = el('div', 'anPeople');
-      recent.forEach(function (p) { wrap.appendChild(personRow(p, ago(p.at))); });
-      rHost.appendChild(wrap);
-    } else empty(rHost, 'NOBODY HAS GIVEN YOU CRED YET');
+    peopleCard(g, 'Followers', f.followers_list || [], 'NOBODY IS FOLLOWING YOU YET');
+    peopleCard(g, 'Following', f.following_list || [], 'YOU ARE NOT FOLLOWING ANYONE YET');
 
     b.appendChild(g);
+  }
+
+  // The two audience lists. Newest edge first, the first CARD_ROWS shown and the
+  // rest a tap away, so a long list does not push the rest of the section down.
+  function peopleCard(host, title, list, emptyMsg) {
+    var body = cardBody(host, title,
+      { note: list.length >= 100 ? 'MOST RECENT 100' : (list.length ? full(list.length) : '') });
+    if (!list.length) { empty(body, emptyMsg); return; }
+    var wrap = el('div', 'anPeople');
+    var shown = 0;
+    function draw(n) {
+      var end = Math.min(shown + n, list.length);
+      for (; shown < end; shown++) wrap.appendChild(personRow(list[shown], ago(list[shown].at)));
+    }
+    draw(CARD_ROWS);
+    body.appendChild(wrap);
+    if (shown < list.length) {
+      var more = moreBtn('SHOW ALL ' + full(list.length), function () {
+        draw(list.length);
+        more.remove();
+      });
+      body.appendChild(more);
+    }
   }
 
   function paintCommunity() {

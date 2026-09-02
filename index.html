@@ -132,8 +132,8 @@
   <link rel="stylesheet" href="/css/viewer.css?v=50">
   <link rel="stylesheet" href="/css/community.css?v=38">
   <link rel="stylesheet" href="/css/connect.css?v=13">
-  <link rel="stylesheet" href="/css/ranking.css?v=15">
-  <link rel="stylesheet" href="/css/profile.css?v=28">
+  <link rel="stylesheet" href="/css/ranking.css?v=16">
+  <link rel="stylesheet" href="/css/profile.css?v=29">
   <link rel="stylesheet" href="/css/admin.css?v=11">
   <link rel="stylesheet" href="/css/auth.css?v=7">
   <link rel="stylesheet" href="/css/panels.css?v=31">
@@ -382,6 +382,19 @@
       </div>
     </div>
     <div class="ftRail" id="ftRail" role="tablist" aria-label="Feed boards">
+      <button type="button" class="ftTab" id="ftTab-following" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="following"
+              style="--ftA:#67E8F9;--ftB:#0891B2;--ftAL:#0E7490;--ftBL:#155E75">
+        <span class="ftIco" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><linearGradient id="ftgFollowing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--ftS1)"/><stop offset="1" style="stop-color:var(--ftS2)"/></linearGradient>
+            <g stroke="url(#ftgFollowing)">
+              <circle cx="9.6" cy="8" r="3.9"/>
+              <path d="M2.6 20.4v-.6a7 7 0 0 1 14 0v.6"/>
+              <path d="M17.4 9.4 19 11l3-3.2"/>
+            </g>
+          </svg>
+        </span>
+        <span class="ftLbl">Following</span>
+      </button>
       <button type="button" class="ftTab on" id="ftTab-trending" role="tab" aria-selected="true" aria-controls="awGrid" data-feed="trending"
               style="--ftA:#F97316;--ftB:#EF4444;--ftAL:#C2410C;--ftBL:#B91C1C">
         <span class="ftIco" aria-hidden="true">
@@ -484,8 +497,8 @@
     <div class="awEmpty" id="awEmpty" style="display:none;">NO ARTWORK YET</div>
   </section>
   <script defer src="/js/boot.js?v=3"></script>
-  <script defer src="/js/cache.js?v=3"></script>
-  <script defer src="/js/ranking.js?v=8"></script>
+  <script defer src="/js/cache.js?v=4"></script>
+  <script defer src="/js/ranking.js?v=9"></script>
 
   <div id="rankHub" role="dialog" aria-modal="true" aria-labelledby="rkTitle">
     <div class="subPgHdr">
@@ -645,17 +658,22 @@
                 <span class="pfWarnMark" id="pfWarnMark" title="This account has a low merit score" aria-label="Low merit warning">!</span>
               </div>
               <div class="pfHandle" id="pfHandle"></div>
+              <div class="pfFollowLine" id="pfFollowLine" hidden>
+                <span class="pfFollowStat"><b id="pfFollowers">0</b> Followers</span>
+                <span class="pfFollowDot" aria-hidden="true">·</span>
+                <span class="pfFollowStat"><b id="pfFollowing">0</b> Following</span>
+              </div>
               <div class="msRibbon" id="pfMsRibbon" hidden></div>
             </div>
           </div>
           <div class="pfActionRow" id="pfActionRow" hidden>
-            <button class="pfActBtn pfActBtn--pri" id="pfBtnFriend" onclick="pfFriendBtnTap()">
+            <button class="pfActBtn pfActBtn--pri" id="pfBtnFollow" onclick="pfFollowToggle()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.6V20"/><circle cx="10" cy="8" r="3.2"/><path d="M18 8v6"/><path d="M21 11h-6"/></svg>
+              <span class="pfActTxt">Follow</span>
+            </button>
+            <button class="pfActBtn" id="pfBtnFriend" onclick="pfFriendBtnTap()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.6V20"/><circle cx="10" cy="8" r="3.2"/><path d="M18 8v6"/><path d="M21 11h-6"/></svg>
               <span class="pfActTxt">Add friend</span>
-            </button>
-            <button class="pfActBtn" id="pfBtnCred" onclick="pfCredToggle()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3.6 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 17l-5.25 2.75 1-5.85L3.5 9.75l5.9-.85Z"/></svg>
-              <span class="pfActTxt">Cred</span>
             </button>
             <button class="pfActBtn pfActBtn--pri" id="pfBtnEdit" onclick="openPfEditPage()" hidden>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10a2.4 2.4 0 0 0-3.4-3.4L4.6 16.6Z"/><path d="m13.6 7.4 3 3"/></svg>
@@ -695,9 +713,9 @@
           <span class="pfTileLbl">Saves</span>
         </div>
         <div class="pfTile">
-          <span class="pfTileIco" style="--tileC:#FBBF24" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3.6 2.6 5.3 5.9.85-4.25 4.15 1 5.85L12 17l-5.25 2.75 1-5.85L3.5 9.75l5.9-.85Z"/></svg></span>
-          <span class="pfTileNum" id="pfStatCred">0</span>
-          <span class="pfTileLbl">Cred</span>
+          <span class="pfTileIco" style="--tileC:#FBBF24" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.6V20"/><circle cx="10" cy="8" r="3.2"/><path d="M18 8v6"/><path d="M21 11h-6"/></svg></span>
+          <span class="pfTileNum" id="pfStatFollowers">0</span>
+          <span class="pfTileLbl">Followers</span>
         </div>
         <div class="pfTile">
           <span class="pfTileIco" style="--tileC:#34D399" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5.2"/><path d="m8.4 13.4-1.6 7 5.2-2.7 5.2 2.7-1.6-7"/></svg></span>
@@ -2101,13 +2119,14 @@
   <script defer src="/js/captcha.js?v=4"></script>
   <script defer src="/config.js"></script>
   <script defer src="/uploadVerifier.js"></script>
-  <script defer src="/js/app-core.js?v=56"></script>
+  <script defer src="/js/app-core.js?v=57"></script>
   <script defer src="/js/protect.js?v=4"></script>
   <script defer src="/js/gallery.js?v=111"></script>
   <script defer src="/js/fghead.js?v=6"></script>
-  <script defer src="/js/auth.js?v=29"></script>
-  <script defer src="/js/profile.js?v=23"></script>
-  <script defer src="/js/albums.js?v=23"></script>
+  <script defer src="/js/auth.js?v=30"></script>
+  <script defer src="/js/follow.js?v=1"></script>
+  <script defer src="/js/profile.js?v=24"></script>
+  <script defer src="/js/albums.js?v=24"></script>
   <script defer src="/js/drafts.js?v=14"></script>
   <script defer src="/js/upqueue.js?v=8"></script>
   <script defer src="/js/avatar.js?v=6"></script>
@@ -2115,7 +2134,7 @@
   <script defer src="/js/mywork.js?v=30"></script>
   <script defer src="/js/startup.js?v=12"></script>
   <script defer src="/js/search.js?v=26"></script>
-  <script defer src="/js/feed.js?v=11"></script>
+  <script defer src="/js/feed.js?v=12"></script>
   <script defer src="/js/herosearch.js?v=8"></script>
 
  <div id="rippleHost"></div>
@@ -2459,7 +2478,7 @@
   <script defer src="/js/topnav.js?v=12"></script>
 
   <script defer src="/js/navprogress.js?v=7"></script>
-  <script defer src="/js/lazy.js?v=8"></script>
+  <script defer src="/js/lazy.js?v=9"></script>
 
 </body>
 </html>

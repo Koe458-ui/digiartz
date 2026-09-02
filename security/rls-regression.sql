@@ -249,14 +249,15 @@ select
   (select coalesce(string_agg(r.x||'.'||c.col, ', '), 'none')
      from unnest(array['role','max_claimed','partner_since','subscription_tier',
                        'subscription_expires_at','merit','merit_updated_at',
-                       'cred_received_count']) as c(col)
+                       'follower_count','following_count']) as c(col)
      cross join (values ('anon'),('authenticated')) r(x)
     where has_column_privilege(r.x, 'public.profiles', c.col, 'INSERT'))
     as privileged_profile_cols_insertable_expect_none,
 
   (select coalesce(string_agg(r.x||'.'||c.col, ', '), 'none')
      from unnest(array['role','max_claimed','partner_since','subscription_tier',
-                       'subscription_expires_at','merit','cred_received_count']) as c(col)
+                       'subscription_expires_at','merit',
+                       'follower_count','following_count']) as c(col)
      cross join (values ('anon'),('authenticated')) r(x)
     where has_column_privilege(r.x, 'public.profiles', c.col, 'UPDATE'))
     as privileged_profile_cols_updatable_expect_none;

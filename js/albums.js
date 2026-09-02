@@ -619,7 +619,7 @@
     return String(n);
   }
 
-  function pfPaintStats(likes, views, bms, level, merit, cred){
+  function pfPaintStats(likes, views, bms, level, merit, followers){
     function set(id, val){ var e=document.getElementById(id); if(e) e.textContent = val; }
     function setTotal(id, val){
       var e = document.getElementById(id);
@@ -630,7 +630,7 @@
     setTotal('pfStatLikes', pfFmtCount(likes));
     setTotal('pfStatViews', pfFmtCount(views));
     set('pfStatSaves', pfFmtCount(bms));
-    set('pfStatCred',  pfFmtCount(cred));
+    set('pfStatFollowers', pfFmtCount(followers));
     set('pfStatLevel', level);
     set('pfStatMerit', merit);
     var row = document.getElementById('pfStatsRow');
@@ -668,22 +668,49 @@
     }catch(e){   }
 
     if(!pf.profile || pf.profile.id !== forId) return;
-    pfCredTotal = 100*(+pf.profile.cred_received_count || 0) + 2*likes + 5*bms;
-    pfPaintStats(likes, views, bms, level, merit, pfCredTotal);
+    pfPaintStats(likes, views, bms, level, merit, +pf.profile.follower_count || 0);
+    pfPaintFollowLine();
   }
 
-  var pfCredTotal = 0;
-  var pfCredited = false, pfCredBusy = false, pfFrBusy = false;
+  var pfFollowing = false, pfFollowBusy = false, pfFrBusy = false;
+
+  // the audience line under the handle — the counts live on the profile row, so
+  // this is a repaint, not a query
+  function pfPaintFollowLine(){
+    var line = document.getElementById('pfFollowLine');
+    if(!line) return;
+    // a row out of an older cache has no counters yet; wait for the fresh one
+    // rather than telling the reader this artist has nobody
+    if(!pf.profile || pf.profile.follower_count == null){ line.hidden = true; return; }
+    var fmt = (window.dzFollow && window.dzFollow.fmt)
+      ? window.dzFollow.fmt
+      : function(n){ return String(+n || 0); };
+    var a = document.getElementById('pfFollowers');
+    var b = document.getElementById('pfFollowing');
+    if(a) a.textContent = fmt(pf.profile.follower_count);
+    if(b) b.textContent = fmt(pf.profile.following_count);
+    line.hidden = false;
+  }
 
   function pfActLabel(btn, text){
     var span = btn.querySelector('.pfActTxt');
     if(span) span.textContent = text; else btn.textContent = text;
     btn.setAttribute('aria-label', text);
   }
-  function pfPaintCredBtn(){
-    var b = document.getElementById('pfBtnCred'); if(!b) return;
-    pfActLabel(b, pfCredited ? 'Credited' : 'Cred');
-    b.classList.toggle('on', pfCredited);
+  var PF_ICO_FOLLOW =
+    '<path d="M16 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.6V20"/>'+
+    '<circle cx="10" cy="8" r="3.2"/><path d="M18 8v6"/><path d="M21 11h-6"/>';
+  var PF_ICO_FOLLOWING =
+    '<path d="M16 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.6V20"/>'+
+    '<circle cx="10" cy="8" r="3.2"/><path d="m15.6 9.8 1.8 1.8 3.6-3.8"/>';
+
+  function pfPaintFollowBtn(){
+    var b = document.getElementById('pfBtnFollow'); if(!b) return;
+    pfActLabel(b, pfFollowing ? 'Following' : 'Follow');
+    b.classList.toggle('on', pfFollowing);
+    b.classList.toggle('pfActBtn--pri', !pfFollowing);
+    var svg = b.querySelector('svg');
+    if(svg) svg.innerHTML = pfFollowing ? PF_ICO_FOLLOWING : PF_ICO_FOLLOW;
   }
   function pfPaintFriendBtn(state){
     var b = document.getElementById('pfBtnFriend'); if(!b) return;
@@ -691,7 +718,7 @@
     if(state === 'blocked_by_me' || state === 'blocked'){ b.hidden = true; return; }
     b.hidden = false;
     pfActLabel(b, map[state] || 'Add friend');
-    b.classList.toggle('pfActBtn--pri', state !== 'sent');
+    b.classList.toggle('pfActBtn--pri', state === 'incoming');
     b.dataset.frState = state || 'none';
   }
 
@@ -699,62 +726,68 @@
     var row = document.getElementById('pfActionRow');
     if(!row || !pf.profile) return;
     var bF = document.getElementById('pfBtnFriend'),
-        bC = document.getElementById('pfBtnCred'),
+        bW = document.getElementById('pfBtnFollow'),
         bE = document.getElementById('pfBtnEdit');
     row.hidden = false;
     if(pf.isOwner){
       if(bF) bF.hidden = true;
-      if(bC) bC.hidden = true;
+      if(bW) bW.hidden = true;
       if(bE) bE.hidden = false;
       return;
     }
     if(bE) bE.hidden = true;
-    if(bC) bC.hidden = false;
+    if(bW) bW.hidden = false;
     var forId = pf.profile.id;
-    pfCredited = false; pfPaintCredBtn(); pfPaintFriendBtn('none');
+    pfFollowing = false; pfPaintFollowBtn(); pfPaintFriendBtn('none');
     if(!currentUser) return;
     try{
+      if(window.dzFollow){
+        await window.dzFollow.load();
+        if(!pf.profile || pf.profile.id !== forId) return;
+        pfFollowing = window.dzFollow.is(forId);
+        pfPaintFollowBtn();
+      }
       if(window.pfFriendBridge){
         await window.pfFriendBridge.load();
         if(!pf.profile || pf.profile.id !== forId) return;
         pfPaintFriendBtn(window.pfFriendBridge.state(forId));
       }
-      var c = await sb.from('profile_creds').select('id')
-        .eq('giver_id', currentUser.id).eq('receiver_id', forId).maybeSingle();
-      if(!pf.profile || pf.profile.id !== forId) return;
-      pfCredited = !!(c && c.data);
-      pfPaintCredBtn();
     }catch(e){   }
   }
 
-  async function pfCredToggle(){
-    if(!pf.profile || pf.isOwner || pfCredBusy) return;
-    if(!currentUser){ showToast('Sign in to cred artists'); openAuthMod(); return; }
+  async function pfFollowToggle(){
+    if(!pf.profile || pf.isOwner || pfFollowBusy || !window.dzFollow) return;
+    if(!currentUser){ showToast('Sign in to follow artists'); openAuthMod(); return; }
     var forId = pf.profile.id;
-    var tileEl = document.getElementById('pfStatCred');
-    pfCredBusy = true;
-    var was = pfCredited;
-    pfCredited = !was; pfPaintCredBtn();
-    pfCredTotal += pfCredited ? 100 : -100;
-    if(tileEl) tileEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
+    pfFollowBusy = true;
+    var was = pfFollowing;
+    // paint the button and the counts now; dzFollow reports what actually landed
+    pfSetFollowState(!was);
     try{
-      if(was){
-        var d = await sb.from('profile_creds').delete()
-          .eq('giver_id', currentUser.id).eq('receiver_id', forId);
-        if(d.error) throw d.error;
-      } else {
-        var i = await sb.from('profile_creds').insert({ giver_id: currentUser.id, receiver_id: forId });
-        if(i.error && i.error.code !== '23505') throw i.error;
-        if(typeof window.dzAnTrack === 'function') window.dzAnTrack('cred', null, { scope:'profile', owner: String(forId) });
-      }
-      pf.profile.cred_received_count = Math.max((+pf.profile.cred_received_count||0) + (pfCredited?1:-1), 0);
-    }catch(e){
-      pfCredited = was; pfPaintCredBtn();
-      pfCredTotal += pfCredited ? 100 : -100;
-      if(tileEl) tileEl.textContent = pfFmtCount(Math.max(pfCredTotal,0));
-      showToast('Couldn\u2019t update cred \u2014 try again');
-    }finally{ pfCredBusy = false; }
+      var now = await window.dzFollow.set(forId, !was);
+      if(pf.profile && pf.profile.id === forId && now !== !was) pfSetFollowState(now);
+    }finally{ pfFollowBusy = false; }
   }
+
+  // the button, the header line and the tile all move together
+  function pfSetFollowState(on){
+    if(!pf.profile) return;
+    if(on === pfFollowing) return;
+    pfFollowing = !!on;
+    pf.profile.follower_count = Math.max((+pf.profile.follower_count || 0) + (pfFollowing ? 1 : -1), 0);
+    pfPaintFollowBtn();
+    pfPaintFollowLine();
+    var tile = document.getElementById('pfStatFollowers');
+    if(tile) tile.textContent = pfFmtCount(pf.profile.follower_count);
+  }
+
+  // a follow taken from the artwork card, or anywhere else, lands here too
+  document.addEventListener('dz:follow', function(ev){
+    var d = ev && ev.detail;
+    if(!d || !pf.profile || pf.isOwner) return;
+    if(String(d.id) !== String(pf.profile.id)) return;
+    pfSetFollowState(!!d.following);
+  });
 
   async function pfFriendBtnTap(){
     if(!pf.profile || pf.isOwner || pfFrBusy || !window.pfFriendBridge) return;

@@ -8,7 +8,7 @@
 
     var BOARDS = [
       { key:'level',     name:'LEVEL',     word:'LEVEL' },
-      { key:'cred',      name:'CRED',      word:'CRED' },
+      { key:'followers', name:'FOLLOWERS', word:'FOLLOWERS' },
       { key:'likes',     name:'LIKES',     word:'LIKES' },
       { key:'bookmarks', name:'BOOKMARKS', word:'SAVES' }
     ];

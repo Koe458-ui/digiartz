@@ -26,7 +26,7 @@
     }catch(e){ return ''; }
   }
 
-  var PF_PROFILE_COLS = 'id,username,display_name,bio,role,created_at,username_changed_at,cred_received_count,merit,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links';
+  var PF_PROFILE_COLS = 'id,username,display_name,bio,role,created_at,username_changed_at,follower_count,following_count,merit,avatar_url,avatar_storage_path,avatar_updated_at,banner_url,banner_storage_path,banner_updated_at,social_links';
 
   function pfOwnKey(){
     var c = window.dzCached ? window.dzCached() : null;
@@ -164,6 +164,7 @@
       var _hb=document.getElementById('pfHeadBio'); if(_hb) _hb.textContent='';
       var _hn=document.getElementById('pfHandle'); if(_hn) _hn.textContent='';
       var _sr=document.getElementById('pfStatsRow'); if(_sr) _sr.hidden=true;
+      var _fl=document.getElementById('pfFollowLine'); if(_fl) _fl.hidden=true;
       var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.hidden=true;
       var _wm=document.getElementById('pfWarnMark'); if(_wm) _wm.classList.remove('on');
       pfPaintTopBar(null);
@@ -272,6 +273,7 @@
       pfRenderBio();
       pfRenderHeadBio();
       pfRenderConnect();
+      if(typeof pfPaintFollowLine === 'function') pfPaintFollowLine();
       pfLoadStats();
       pfLoadHeadStats();
       pfLoadActionRow();

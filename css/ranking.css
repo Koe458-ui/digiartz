@@ -62,7 +62,7 @@
   color:var(--txd);
 }
 .rkCard--level     .rkHeadT{ color:#a855f7; }
-.rkCard--cred      .rkHeadT{ color:#eab308; }
+.rkCard--followers .rkHeadT{ color:#eab308; }
 .rkCard--likes     .rkHeadT{ color:#f43f5e; }
 .rkCard--bookmarks .rkHeadT{ color:#3b82f6; }
 

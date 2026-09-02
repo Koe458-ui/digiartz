@@ -69,8 +69,9 @@ Optional paid subscription tiers add extra perks — see the "Subscriptions & Bi
 1. Browse art under Explore → Artworks
 2. Open any piece to download, share, like or comment
 3. Post your own with Upload → Upload Artwork in the top bar
-4. Join Communities and chat with other artists
-5. Message friends directly (DMs)
+4. Follow artists and read your Following feed
+5. Join Communities and chat with other artists
+6. Message friends directly (DMs)
 
 Pick any of those topics from the menu and I'll guide you.`
       }
@@ -200,6 +201,30 @@ I won't ask for your password — never share it with anyone.`
     ],
 
     profile: [
+      {
+        question: "How do I follow an artist?",
+        answer:
+`To follow someone whose work you like:
+
+1. Open their profile, or open one of their artworks
+2. Tap Follow
+
+Their profile shows how many followers they have and how many artists they
+follow. Following is one-way and needs no approval — tap Following again to
+stop. The artist gets a notification when you follow them.`
+      },
+      {
+        question: "Where do I see work from artists I follow?",
+        answer:
+`Every new piece from an artist you follow lands in your Following feed:
+
+1. Go to Explore → Artworks
+2. Pick the "Following" board — it is the first one on the row
+
+The board is empty until you follow someone, and it shows the newest work
+first. Your own follower and following counts, and the full lists of both,
+are on the Analytics page under Account & Audience.`
+      },
       {
         question: "How do I edit my profile?",
         answer:

@@ -8,6 +8,7 @@ https://digiartz.net
 - Dynamic gallery with Supabase backend
 - Subscription tiers (Lite / Premium / Max)
 - Comment systems
+- Follow artists, with a personalised Following feed
 - Communities, friends & merit system
 
 ## 🛠 Built With

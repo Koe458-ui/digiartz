@@ -632,7 +632,7 @@
 
   var NOTIF_ICON = {
     like:'♥', comment:'“', comment_reply:'↩', mention:'@',
-    friend_request:'✦', friend_accepted:'✦',
+    follow:'⊕', friend_request:'✦', friend_accepted:'✦',
     community_join:'◉', community_post:'◉', community_comment:'@',
     message:'✉', artwork_featured:'★',
     artwork_approved:'✓', artwork_rejected:'✕',

@@ -528,7 +528,6 @@
     { id:'showcasePicker',  close:['closeShowcasePicker'] },
     { id:'pfSearchPage',    close:['closePfSearch', true] },
     { id:'fgSearchPage',    close:['closeFgSearch', true],  lock:1 },
-    { id:'cmSearchPage',    close:['cmCloseSearch'],        lock:1 },
     { id:'cmBrowsePage',    close:['cmCloseBrowse'],        lock:1 },
     { id:'cmInfoPage',      close:['cmiClose'],             lock:1 },
     { id:'frdPage',         close:['closeFriendsPage'],     lock:1 },

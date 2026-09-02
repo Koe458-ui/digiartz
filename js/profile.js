@@ -105,6 +105,8 @@
     try{ if(typeof closeLB==='function') closeLB(true); }catch(e){}
     try{ if(typeof closeFG==='function') closeFG(); }catch(e){}
     try{ if(typeof closePfUpload==='function') closePfUpload(); }catch(e){}
+    try{ if(typeof window.cmCloseChat==='function') window.cmCloseChat(); }catch(e){}
+    try{ if(typeof window.closeFriendsPage==='function') window.closeFriendsPage(); }catch(e){}
     try{ if(typeof closeCommunityPage==='function') closeCommunityPage(); }catch(e){}
     try{ if(typeof window.closeRankPage==='function') window.closeRankPage(); }catch(e){}
     try{ if(typeof window.dzCloseViewSilent==='function') window.dzCloseViewSilent(); else if(typeof window.dzCloseView==='function') window.dzCloseView(); }catch(e){}

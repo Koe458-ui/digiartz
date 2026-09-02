@@ -266,10 +266,24 @@ html.thmFade #themePage{
 }
 .avTitleRow{display:flex;align-items:flex-start;gap:.75rem;}
 .avTitleRow .avTitle{flex:1 1 auto;min-width:0;}
-.frdBdy{max-width:640px;margin:0 auto;padding:1.2rem 1rem 3rem;}
+/* the friends header reads as one of the section headers (COMMUNITIES,
+   ARTWORKS), not as a small sub-page label */
+#frdPage .subPgHdr{min-height:3.5rem;padding-block:.35rem;gap:.6rem;}
+#frdPage .subPgX{
+  width:42px;height:42px;border-radius:12px;margin-left:-.55rem;
+  color:var(--tx);transition:background .18s,color .18s,transform .15s;
+}
+@media(hover:hover){ #frdPage .subPgX:hover{background:var(--sur2);color:var(--tx);} }
+#frdPage .subPgTitle{
+  font-family:var(--fd);font-weight:800;
+  font-size:clamp(.95rem,3.4vw,1.15rem);letter-spacing:.05em;
+  color:var(--tx);text-transform:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+}
+.frdBdy{max-width:640px;margin:0 auto;padding:.85rem 1rem 3rem;}
 .frdSection{
   font-family:var(--fm);font-size:.68rem;letter-spacing:.14em;
-  color:var(--txd);margin:1.5rem 0 .7rem;
+  color:var(--txd);margin:1.15rem 0 .5rem;
 }
 .xpWrap{display:flex;flex-direction:column;gap:1rem;max-width:640px;margin:0 auto;padding:.35rem 0 1.2rem;}
 .xpCard{

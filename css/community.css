@@ -285,20 +285,20 @@
 .cpMsgAct:hover{opacity:1;background:rgba(128,128,128,.16);}
 .cpBubble--act{padding-right:1.7rem;}
 
-#cmSearchPage,#cmBrowsePage{
+#cmBrowsePage{
   position:fixed;inset:0;z-index:540;background:var(--bg);color:var(--tx);
   overflow-y:auto;overflow-x:hidden;transform:translateX(100%);
   transition:transform .38s cubic-bezier(.22,1,.36,1);
 }
-#cmSearchPage.open,#cmBrowsePage.open{transform:translateX(0);}
+#cmBrowsePage.open{transform:translateX(0);}
 @media(prefers-reduced-motion:reduce){
-  #cmSearchPage,#cmBrowsePage{transition:none;}
+  #cmBrowsePage{transition:none;}
 }
-#cmSrchRes,#cmBrwList{
+#cmBrwList{
   display:flex;flex-direction:column;
   padding:.4rem var(--pfPad) 0;
 }
-#cmSearchPage .pfSrchChip.on,#cmBrowsePage .pfSrchChip.on{
+#cmBrowsePage .pfSrchChip.on{
   background:rgba(47,163,124,.14);border-color:#2FA37C;color:var(--tx);
 }
 
@@ -472,7 +472,7 @@
 }
 .cmCard:hover{background:var(--sur);}
 .cmCard:active{background:var(--sur2);}
-.cmGrid .cmCard:last-child,#cmSrchRes .cmCard:last-child{border-bottom:0;}
+.cmGrid .cmCard:last-child{border-bottom:0;}
 .cmCardIcon{
   width:46px;height:46px;border-radius:50%;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
@@ -580,7 +580,6 @@
 #communityPage .cmTopBar::before{background:color-mix(in srgb,var(--cmBg) 92%,transparent);}
 #communityPage .fgTopTitle,#communityPage .fgTopBtn{color:var(--cmTx);}
 #communityPage .fgTopBtn:focus-visible{outline-color:var(--cmAccent);}
-#communityPage .cmHdrBadge{background:var(--cmCoral);border-color:var(--cmBg);}
 @media(hover:hover){
   #communityPage .fgTopBtn:hover{background:var(--cmAccentDim);color:var(--cmAccentSoft);}
 }

@@ -281,17 +281,6 @@
   .cmHdrBack{left:1rem;}
 }
 
-.cmHdrBadge{
-  position:absolute;top:5px;right:5px;
-  min-width:17px;height:17px;padding:0 .25rem;border-radius:999px;
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--fm);font-size:.55rem;line-height:1;
-  background:#E4572E;color:#fff;
-  border:2px solid var(--bg);
-  pointer-events:none;
-}
-.cmHdrBadge[hidden]{display:none;}
-
 .cmHdrChat{display:none;align-items:center;gap:.7rem;flex:1;min-width:0;}
 .cmHdr.chat{justify-content:flex-start;gap:.5rem;padding:.7rem var(--shellPad);}
 .cmHdr.chat .cmHdrChat{display:flex;}

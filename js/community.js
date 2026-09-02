@@ -67,96 +67,7 @@
         }
       };
 
-      var searchTimer = null;
-      var srchLastFocus = null;
-
-      window.cmOpenSearch = function () {
-        var pg = $('cmSearchPage'); if (!pg) return;
-        srchLastFocus = document.activeElement;
-        var inp = $('cmSearchInput');
-        if (inp) { inp.value = ''; inp.placeholder = 'Search communities'; }
-        runSearch();
-        pg.classList.add('open');
-        document.body.style.overflow = 'hidden';
-        if (inp) setTimeout(function () { try { inp.focus(); } catch (e) {} }, 60);
-      };
-
-      window.cmCloseSearch = function () {
-        var pg = $('cmSearchPage');
-        if (!pg || !pg.classList.contains('open')) return;
-        pg.classList.remove('open');
-        clearTimeout(searchTimer);
-        var back = srchLastFocus; srchLastFocus = null;
-        if (back && back.isConnected && back.focus) {
-          try { back.focus({ preventScroll: true }); } catch (e) { try { back.focus(); } catch (e2) {} }
-        }
-      };
-      window.cmSearchReset = window.cmCloseSearch;
-
-      window.cmClearSearch = function () {
-        var inp = $('cmSearchInput');
-        if (inp) { inp.value = ''; try { inp.focus(); } catch (e) {} }
-        runSearch();
-      };
-
-      function srchNote (msg) {
-        var n = $('cmSrchNote');
-        if (n) { n.textContent = msg || ''; n.hidden = !msg; }
-      }
-
-      function searchCommunities (needle) {
-        var pane = $('cmGridScroll'), box = $('cmSrchRes');
-        if (!pane || !box) return;
-        box.innerHTML = '';
-        var cards = pane.querySelectorAll('.cmCard'), hits = 0;
-        Array.prototype.forEach.call(cards, function (card) {
-          if ((card.textContent || '').toLowerCase().indexOf(needle) === -1) return;
-          hits++;
-          var row = card.cloneNode(true);
-          row.removeAttribute('onclick');
-          Array.prototype.forEach.call(row.querySelectorAll('[onclick]'), function (el) {
-            el.removeAttribute('onclick');
-          });
-          Array.prototype.forEach.call(row.querySelectorAll('button'), function (el) { el.remove(); });
-          row.setAttribute('role', 'button');
-          row.tabIndex = 0;
-          function go () { window.cmCloseSearch(); card.click(); }
-          row.addEventListener('click', go);
-          row.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
-          });
-          box.appendChild(row);
-        });
-        srchNote(hits ? '' : 'No communities match that.');
-      }
-
-      function runSearch () {
-        var inp = $('cmSearchInput');
-        var q = inp ? inp.value.trim() : '';
-        var box = $('cmSrchRes');
-        clearTimeout(searchTimer);
-        if (box) box.innerHTML = '';
-
-        if (!q) { srchNote('Type to search communities.'); return; }
-        searchCommunities(q.toLowerCase());
-      }
-
-      document.addEventListener('keydown', function (e) {
-        var pg = $('cmSearchPage');
-        if (!pg || !pg.classList.contains('open')) return;
-        if (e.key === 'Escape') { e.stopImmediatePropagation(); window.cmCloseSearch(); return; }
-        if (typeof window.dzTrapTab === 'function') window.dzTrapTab(pg, e);
-      }, true);
-
-      window.cmSetFriendBadge = function (n) {
-        var el = $('cmFrdBadge'); if (!el) return;
-        n = Number(n) || 0;
-        el.textContent = n > 9 ? '9+' : String(n);
-        el.hidden = n < 1;
-      };
-
       window.cmHomeReset = function () {
-        window.cmCloseSearch();
         var scroll = $('cmGridScroll');
         if (scroll) scroll.scrollTop = 0;
       };
@@ -278,8 +189,6 @@
       document.addEventListener('DOMContentLoaded', function () {
         window.dzChat.watch('cpBarSend', 'Send');
         window.dzChat.watch('dmSendBtn', 'Send');
-        var inp = $('cmSearchInput');
-        if (inp) inp.addEventListener('input', runSearch);
         window.cmSyncCount();
       });
     })();

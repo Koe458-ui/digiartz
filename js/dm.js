@@ -26,16 +26,7 @@
   function frCount (status) {
     return Object.keys(frMap).filter(function (k) { return frMap[k].status === status; }).length;
   }
-  function frPending () {
-    var uid = me() && me().id;
-    if (!uid) return 0;
-    return Object.keys(frMap).filter(function (k) {
-      var f = frMap[k];
-      return f.status === 'pending' && f.addressee_id === uid;
-    }).length;
-  }
   function frPaintBadge () {
-    if (typeof window.cmSetFriendBadge === 'function') window.cmSetFriendBadge(frPending());
     if (typeof window.cmSetFriendCount === 'function') window.cmSetFriendCount(frCount('accepted'));
   }
   function frAtCap () {
@@ -87,10 +78,8 @@
     frPaintBadge();
     if ($('frdPage') && $('frdPage').classList.contains('open')) loadFriendsPage();
     if (dmPartner) dmApplyGate();
-    ['cmSearchInput', 'frdSearchInput'].forEach(function (id) {
-      var i = $(id);
-      if (i && i.value.trim().length >= 2) i.dispatchEvent(new Event('input'));
-    });
+    var frdInp = $('frdSearchInput');
+    if (frdInp && frdInp.value.trim().length >= 2) frdInp.dispatchEvent(new Event('input'));
   }
   function frErr (e, fallback) {
     var m = (e && e.message) || '';
@@ -325,7 +314,6 @@
       });
     }
     var res = $('dmResults');   if (res) res.innerHTML = '';
-    if (typeof window.cmSearchReset === 'function') window.cmSearchReset();
     $('dmBody').innerHTML = '<div class="dmSearchNote">LOADING…</div>';
     var gEl = $('dmGate'), bEl = document.querySelector('#dmChatView .dmBar');
     if (frMap[p.id]) {

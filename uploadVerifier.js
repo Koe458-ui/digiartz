@@ -62,6 +62,12 @@
     return d;
   }
 
+  // The IPTC code Photoshop writes when a generative edit was applied to work a
+  // person made, as opposed to a wholly generated image. It contains the plain
+  // AI code as a substring, so it has to be masked before the blocking pass or
+  // every generative-fill touch-up reads as a fully generated image.
+  var COMPOSITE_AI = 'compositewithtrainedalgorithmicmedia';
+
   // Blocking signatures. Each one is a generator writing its own name or its own
   // parameters into the file — evidence a person does not produce by accident.
   var STRONG_SIGS = [
@@ -81,11 +87,11 @@
     { k: 'dall-e',                 label: 'DALL\u00b7E' },
     { k: 'dall\u00b7e',            label: 'DALL\u00b7E' },
     { k: 'openai.com',             label: 'OpenAI' },
-    { k: 'adobe firefly',          label: 'Adobe Firefly' },
-    { k: 'firefly generative',     label: 'Adobe Firefly' },
     { k: 'leonardo.ai',            label: 'Leonardo.Ai' },
     { k: 'stability.ai',           label: 'Stability AI' },
-    // The one C2PA assertion that actually means "made by a model".
+    // The one C2PA assertion that actually means "made by a model" outright. The
+    // composite form, which means a generative edit on someone's own work, is
+    // masked out before this runs — see scanMeta.
     { k: 'trainedalgorithmicmedia',label: 'C2PA AI credential' }
   ];
 
@@ -94,6 +100,11 @@
   // Photoshop and Lightroom write a C2PA manifest for ordinary human edits, and
   // the loose phrases match an artist's own "not AI generated" tag.
   var SOFT_SIGS = [
+    // Photoshop stamps these on a hand-painted file that had one generative-fill
+    // cleanup, so the marker does not say how much of the piece is a person's.
+    { k: 'adobe firefly',          label: 'Adobe Firefly' },
+    { k: 'firefly generative',     label: 'Adobe Firefly' },
+    { k: COMPOSITE_AI,             label: 'C2PA partial-AI credential' },
     { k: 'c2pa.assertions',        label: 'C2PA credential' },
     { k: 'contentauthenticity',    label: 'Content Authenticity' },
     { k: 'ai generated',           label: 'AI-generated tag' },
@@ -183,7 +194,10 @@
 
       var s = (raw + '\n' + raw.replace(/\u0000/g, '')).toLowerCase();
 
-      return { strong: match(s, STRONG_SIGS), soft: match(s, SOFT_SIGS) };
+      return {
+        strong: match(s.split(COMPOSITE_AI).join('\u0000composite-ai-edit\u0000'), STRONG_SIGS),
+        soft: match(s, SOFT_SIGS)
+      };
     } catch (e) { return { strong: [], soft: [] }; }
   }
 

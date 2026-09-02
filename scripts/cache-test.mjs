@@ -164,16 +164,16 @@ ok('answer from before an invalidation is not stored',
 let resolveShared;
 const shared = new Promise((r) => { resolveShared = r; });
 const both = Promise.all([
-  c.getOrSet('gallery:oldest:page:1', () => shared, 'gallery:oldest'),
-  c.getOrSet('gallery:oldest:page:1', () => shared, 'gallery:oldest'),
+  c.getOrSet('gallery:trending:page:2', () => shared, 'gallery:trending'),
+  c.getOrSet('gallery:trending:page:2', () => shared, 'gallery:trending'),
 ]);
-await c.deleteByPrefix('gallery:oldest');
+await c.deleteByPrefix('gallery:trending');
 resolveShared(['from-before']);
 const got = await both;
 ok('both deduped callers still get the answer', got[0][0] === 'from-before' && got[1] === got[0]);
 ok('and neither of them stores it',
-  c.peek('gallery:oldest:page:1', 'gallery:oldest') === null,
-  c.peek('gallery:oldest:page:1', 'gallery:oldest'));
+  c.peek('gallery:trending:page:2', 'gallery:trending') === null,
+  c.peek('gallery:trending:page:2', 'gallery:trending'));
 
 let loaderRan = false;
 const early = c.getOrSet('gallery:category:anime:page:1',

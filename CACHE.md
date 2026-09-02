@@ -162,7 +162,6 @@ Set in one place, `POLICY` in `js/cache.js`. Roughly:
 |---|---|---|---|---|
 | `gallery:latest` | 45s | +5m | public | yes |
 | `gallery:trending` | 3m | +10m | public | yes |
-| `gallery:oldest` | 10m | +15m | public | yes |
 | `artwork` | 3m | +10m | public | yes |
 | `artwork:stats` | 15s | +45s | public | no |
 | `profile:public` | 5m | +10m | public | yes |

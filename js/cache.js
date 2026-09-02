@@ -18,7 +18,6 @@
   var POLICY = {
     'gallery:latest':    { ttl: 45 * SEC,  swr: 5 * MIN,  scope: 'public', store: 'both', sync: true },
     'gallery:trending':  { ttl: 3 * MIN,   swr: 10 * MIN, scope: 'public', store: 'both', offline: true },
-    'gallery:oldest':    { ttl: 10 * MIN,  swr: 15 * MIN, scope: 'public', store: 'both', offline: true },
     'gallery:category':  { ttl: 3 * MIN,   swr: 10 * MIN, scope: 'public', store: 'both', cap: 24, capAt: 1, offline: true },
     'gallery:tag':       { ttl: 3 * MIN,   swr: 10 * MIN, scope: 'public', store: 'both', cap: 24, capAt: 1, offline: true },
 

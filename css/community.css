@@ -538,7 +538,7 @@
   .cmStats{gap:1.3rem;}
 }
 
-#artworks, #subOverview, #connect, footer.siteFooter{
+#artworks, #subOverview, footer.siteFooter{
   --bg:inherit;--sur:inherit;--sur2:inherit;
   --bdr:inherit;--bdrh:inherit;
   --tx:inherit;--txd:inherit;
@@ -705,11 +705,6 @@ html[data-theme="offwhite"] #cmChatPanel{--cmAmberInk:#9A6A08;}
   .cpBar{padding:.6rem var(--shellPad);gap:.55rem;}
 }
 
-#connect{padding:4rem var(--shellPad);text-align:center;margin:0 auto;box-sizing:border-box;}
-.cDiv{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:2.5rem;}
-.cDiv::before,.cDiv::after{content:'';flex:1;height:1px;background:var(--bdr);}
-.cLbl{font-family:var(--fm);font-size:.75rem;letter-spacing:.35em;color:var(--txd);display:flex;align-items:center;gap:.5rem;}
-.cLbl .s{color:var(--pg);}
 
 .cmGraceBar{
   display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;

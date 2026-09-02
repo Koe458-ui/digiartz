@@ -62,6 +62,8 @@
     return d;
   }
 
+  // Blocking signatures. Each one is a generator writing its own name or its own
+  // parameters into the file — evidence a person does not produce by accident.
   var STRONG_SIGS = [
     { k: 'negative prompt',        label: 'SD prompt params' },
     { k: 'denoising strength',     label: 'SD params' },
@@ -83,7 +85,15 @@
     { k: 'firefly generative',     label: 'Adobe Firefly' },
     { k: 'leonardo.ai',            label: 'Leonardo.Ai' },
     { k: 'stability.ai',           label: 'Stability AI' },
-    { k: 'trainedalgorithmicmedia',label: 'C2PA AI credential' },
+    // The one C2PA assertion that actually means "made by a model".
+    { k: 'trainedalgorithmicmedia',label: 'C2PA AI credential' }
+  ];
+
+  // Noted in the audit trail, never blocking — Gemini decides these on the image.
+  // They read as AI markers but fire on innocent files just as readily:
+  // Photoshop and Lightroom write a C2PA manifest for ordinary human edits, and
+  // the loose phrases match an artist's own "not AI generated" tag.
+  var SOFT_SIGS = [
     { k: 'c2pa.assertions',        label: 'C2PA credential' },
     { k: 'contentauthenticity',    label: 'Content Authenticity' },
     { k: 'ai generated',           label: 'AI-generated tag' },
@@ -157,7 +167,7 @@
 
   var META_TAIL_BYTES = 65536;
 
-  async function scanAIMeta(file) {
+  async function scanMeta(file) {
     try {
       var headEnd = Math.min(file.size, CONFIG.scanBytes);
       var head = new Uint8Array(await file.slice(0, headEnd).arrayBuffer());
@@ -173,14 +183,21 @@
 
       var s = (raw + '\n' + raw.replace(/\u0000/g, '')).toLowerCase();
 
-      var found = [];
-      for (var i = 0; i < STRONG_SIGS.length; i++) {
-        if (s.indexOf(STRONG_SIGS[i].k) !== -1 && found.indexOf(STRONG_SIGS[i].label) === -1) {
-          found.push(STRONG_SIGS[i].label);
-        }
-      }
-      return found;
-    } catch (e) { return []; }
+      return { strong: match(s, STRONG_SIGS), soft: match(s, SOFT_SIGS) };
+    } catch (e) { return { strong: [], soft: [] }; }
+  }
+
+  function match(s, sigs) {
+    var found = [];
+    for (var i = 0; i < sigs.length; i++) {
+      if (s.indexOf(sigs[i].k) !== -1 && found.indexOf(sigs[i].label) === -1) found.push(sigs[i].label);
+    }
+    return found;
+  }
+
+  // Public surface: the blocking hits only, so callers keep the array they expect.
+  async function scanAIMeta(file) {
+    return (await scanMeta(file)).strong;
   }
 
   async function rateCheck(sb, userId) {
@@ -229,23 +246,36 @@
   }
   function setAiHook(fn) { _aiApiHook = typeof fn === 'function' ? fn : null; }
 
+  function addAll(into, from) {
+    for (var i = 0; i < from.length; i++) if (into.indexOf(from[i]) === -1) into.push(from[i]);
+  }
+
+  function list(hits) {
+    return hits.slice(0, 3).join(', ') + (hits.length > 3 ? '\u2026' : '');
+  }
+
   async function aiCheck(file, pages) {
     var files = [file].concat(pages || []);
-    var hits = [];
+    var hits = [], soft = [];
     for (var i = 0; i < files.length; i++) {
-      var m = await scanAIMeta(files[i]);
-      for (var j = 0; j < m.length; j++) if (hits.indexOf(m[j]) === -1) hits.push(m[j]);
+      var m = await scanMeta(files[i]);
+      addAll(hits, m.strong);
+      addAll(soft, m.soft);
     }
     var hook = aiHook();
     if (CONFIG.aiApiEnabled && hook) {
       try {
         var api = await hook(file);
-        if (api && api.flag && hits.indexOf(api.detail || 'AI model') === -1) hits.push(api.detail || 'AI model');
+        if (api && api.flag) addAll(hits, [api.detail || 'AI model']);
       } catch (e) {   }
     }
     if (hits.length)
-      return { flag: true, detail: 'AI markers in file metadata: ' + hits.slice(0, 3).join(', ') + (hits.length > 3 ? '…' : '') };
-    return { flag: false, detail: 'no AI metadata' };
+      return { flag: true, detail: 'AI markers in file metadata: ' + list(hits), soft: soft };
+    // Soft markers alone are not enough — they fire on ordinary edited files, so
+    // they are recorded and the image goes on to the moderator to be judged.
+    if (soft.length)
+      return { flag: false, detail: 'Inconclusive markers, left to the moderator: ' + list(soft), soft: soft };
+    return { flag: false, detail: 'no AI metadata', soft: soft };
   }
 
   function fire(onStep, id, state, detail) {

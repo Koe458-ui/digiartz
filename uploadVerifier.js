@@ -4,10 +4,13 @@
   var CONFIG = {
     rate10min:     10,
     rateDay:       40,
-    nearThreshold: 6,
     scanBytes:     524288,
-    recentPull:    800,
-    aiApiEnabled:  false
+    aiApiEnabled:  false,
+    // Duplicates are informational only — see dupCheck.
+    reportDuplicates: true,
+    // DigiArtz has an AI Art category, so AI markers in file metadata are a note
+    // on the upload, not a reason to stop it.
+    blockAiMetadata: false
   };
 
   function fileToBitmap(file) {
@@ -198,38 +201,25 @@
     return { block: false, detail: n10 + '/' + CONFIG.rate10min + ' in 10 min' };
   }
 
+  // Duplicates do not stop an upload. An artist may post the same drawing two or
+  // three times — a variant, a redraw, a re-export — and that is allowed here.
+  // We still compute the hash so it can be stored, and still report what we saw,
+  // but the verdict never turns on it.
   async function dupCheck(sb, phash) {
     if (!phash) return { block: false, flag: false, detail: 'skipped' };
-    var ex = await Promise.all([
-      sb.from('artworks').select('id', { count: 'exact', head: true }).eq('phash', phash),
-      sb.from('comics').select('id', { count: 'exact', head: true }).eq('phash', phash)
-    ]);
-    if (((ex[0].count || 0) + (ex[1].count || 0)) > 0)
-      return { block: true, flag: false, detail: 'This exact image is already on DigiArtz.' };
-
-    var rc = await Promise.all([
-      sb.from('artworks').select('phash').not('phash', 'is', null)
-        .order('created_at', { ascending: false }).limit(CONFIG.recentPull),
-      sb.from('comics').select('phash').not('phash', 'is', null)
-        .order('created_at', { ascending: false }).limit(CONFIG.recentPull)
-    ]);
-    var pool = [];
-    (rc[0].data || []).forEach(function (r) { if (r.phash) pool.push(r.phash); });
-    (rc[1].data || []).forEach(function (r) { if (r.phash) pool.push(r.phash); });
-    var partial = ((rc[0].data || []).length >= CONFIG.recentPull) ||
-                  ((rc[1].data || []).length >= CONFIG.recentPull);
-    var scope = pool.length + ' recent' + (partial ? ' (window, not the whole catalogue)' : '');
-
-    var best = 64;
-    for (var i = 0; i < pool.length; i++) {
-      var dd = hamming(phash, pool[i]);
-      if (dd < best) best = dd;
-      if (best === 0) break;
+    if (!CONFIG.reportDuplicates) return { block: false, flag: false, detail: 'duplicates allowed' };
+    try {
+      var ex = await Promise.all([
+        sb.from('artworks').select('id', { count: 'exact', head: true }).eq('phash', phash),
+        sb.from('comics').select('id', { count: 'exact', head: true }).eq('phash', phash)
+      ]);
+      var n = (ex[0].count || 0) + (ex[1].count || 0);
+      return { block: false, flag: false,
+               detail: n > 0 ? n + ' matching upload' + (n === 1 ? '' : 's') + ' already on DigiArtz (allowed)'
+                             : 'no duplicates' };
+    } catch (e) {
+      return { block: false, flag: false, detail: 'duplicates allowed' };
     }
-    if (best >= 1 && best <= CONFIG.nearThreshold)
-      return { block: false, flag: true,
-               detail: 'Very similar to an existing upload (possible repost).' };
-    return { block: false, flag: false, detail: 'no duplicates in ' + scope };
   }
 
   var _aiApiHook = null;
@@ -286,11 +276,13 @@
     fire(onStep, 'ai', 'run');
     var ai = await aiCheck(file, meta.pages);
     checks.push({ name: 'ai', result: ai });
-    fire(onStep, 'ai', ai.flag ? 'flag' : 'pass', ai.detail);
+    fire(onStep, 'ai', (ai.flag && CONFIG.blockAiMetadata) ? 'flag' : 'pass', ai.detail);
 
-    if (dup.flag || ai.flag) {
-      var reason = [dup.flag ? dup.detail : null, ai.flag ? ai.detail : null].filter(Boolean).join(' · ');
-      return { verdict: 'review', reason: reason, phash: phash, checks: checks };
+    var blocking = [];
+    if (dup.flag) blocking.push(dup.detail);
+    if (ai.flag && CONFIG.blockAiMetadata) blocking.push(ai.detail);
+    if (blocking.length) {
+      return { verdict: 'review', reason: blocking.join(' · '), phash: phash, checks: checks };
     }
     return { verdict: 'approve', reason: 'All checks passed', phash: phash, checks: checks };
   }

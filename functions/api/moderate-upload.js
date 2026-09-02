@@ -4,7 +4,20 @@ import { json } from '../lib/http.js';
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 6;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const MIN_CONFIDENCE = 0.6;
+// A rejection has to be confident. Anything below this is treated as the model
+// hedging, and a hedge must never cost an artist their upload.
+const REJECT_CONFIDENCE = 0.75;
+
+// These stop an upload however the rest of the verdict reads.
+const HARD_REJECT = [
+  'ADULT_CONTENT', 'PROHIBITED_CONTENT', 'NSFW_CONTENT', 'GORE_CONTENT'
+];
+
+// The codes the model reaches for when it is unsure rather than when it has
+// actually seen a photo, a screenshot, or a document. We accept on all of them.
+const SOFT_CODES = [
+  'UNCLEAR', 'LOW_QUALITY', 'TEXT_ONLY', 'NOT_ARTWORK', 'NOT_RESOURCE'
+];
 
 const CATEGORIES = [
   'ARTWORK_OK','SELFIE','MIRROR_SELFIE','FAMILY_PHOTO','GROUP_PHOTO','COUPLE_PHOTO',
@@ -100,6 +113,8 @@ const RESOURCE_PROMPT = `You are the preview moderator for DigiArtz, a digital c
 
 The user is offering a downloadable FILE — either a creative resource (a brush, texture, font, template, code pack, 3D model, etc.) or a piece of ARTWORK sold or shared as a file (an illustration, print, digital painting, clipart or sticker pack, etc.). You are shown its PREVIEW IMAGE only — judge whether that preview is acceptable.
 
+Your job is to keep out photographs of people, screenshots, documents, spam, and explicit content. It is NOT to judge whether the file is good, original, or new. Creators lose real listings every time you reject wrongly, so ACCEPT is the default and a rejection has to be earned.
+
 Step 1: Preview Check
 
 ACCEPT the preview when it shows a usable digital file a creator would download and use, for example:
@@ -114,16 +129,20 @@ ACCEPT the preview when it shows a usable digital file a creator would download 
 - commission and service listings previewed with samples of the creator's own work
 
 CRITICAL clarifications — do NOT reject these:
+- GAME ART AND GAME ASSETS ARE VALID FILES. Game characters, game fan art, sprite and pixel-art sheets, tilesets, game UI and HUD kits, item/weapon/skin designs, splash and key art, level and map art, and game-ready 3D models are all acceptable previews. SCREENSHOT is ONLY for an unmodified capture of a running game or app — visible live HUD, health bars, minimap, menus, chat overlays, or platform UI. Without those, it is game art: accept it.
+- REPOSTS AND DUPLICATES ARE NOT YOUR CONCERN. Whether the preview already exists on DigiArtz, resembles another listing, or is one of several near-identical pieces from the same pack or series is irrelevant. Never reject a preview as a duplicate, a repost, a copy, unoriginal, or "already seen".
 - ARTWORK IS A VALID FILE TO SELL OR SHARE HERE. A preview that is simply a finished artwork is acceptable on its own — it does not have to show a brush, template, or asset sheet. Never answer NOT_RESOURCE just because the preview is "art rather than a resource".
+- MANGA, MANHWA, WEBTOON, AND COMIC FILES ARE VALID: pages, panels, spreads, covers, screentoned or inked pages, and page templates. Speech bubbles and dialogue do not make a page TEXT_ONLY or a DOCUMENT.
+- 3D MODELS AND RENDERS ARE VALID in every form: renders, clay and matcap previews, wireframes, retopology and UV shots, turntables, sculpts, texture and material previews, and rig or pose sheets. A capture of a Blender, Maya, ZBrush, Cinema4D, Substance, or Unreal/Unity viewport showing the model being offered is a legitimate preview, not a SCREENSHOT, and a 3D render is never AI-generated art.
 - A drawn, painted, or rendered PERSON or portrait is artwork, not PERSON_PHOTO. Only a real camera photograph of a real person is PERSON_PHOTO.
 - Typography, lettering, and calligraphy artwork are accepted; they are not TEXT_ONLY.
 - Fan art of existing anime, game, or movie characters is accepted. Reject only unmodified official media (anime screencaps, official posters, scanned published pages).
 - A single artwork with no packaging, mockup, or watermark is still fine.
 
-The bias: if it plausibly shows a downloadable creative file — artwork included — ACCEPT it (resource=true).
+The bias: if it plausibly shows a downloadable creative file — artwork included — ACCEPT it (resource=true). When you are weighing "usable file" against "photo/screenshot/document" and it is not obvious, accept. UNCLEAR means you truly cannot read the image, and it is treated as an acceptance.
 
 Step 2: Always-reject rules (set resource=false and the matching category)
-- AI_GENERATED — the preview is an AI-generated / generative-diffusion image (Midjourney, Stable Diffusion, DALL·E, etc.). IMPORTANT: hand-drawn, digitally painted, and vector artwork are NOT AI-generated, and a 3D RENDER from Blender/Maya/C4D/ZBrush is NOT AI-generated — all of these must be ACCEPTED. Do not confuse polished human artwork or rendered CGI with AI art. Only flag AI_GENERATED when there is clear evidence of generative AI art.
+- AI_GENERATED — the preview is an AI-generated / generative-diffusion image (Midjourney, Stable Diffusion, DALL·E, etc.). IMPORTANT: hand-drawn, digitally painted, and vector artwork are NOT AI-generated, and a 3D RENDER from Blender/Maya/C4D/ZBrush is NOT AI-generated — all of these must be ACCEPTED. Do not confuse polished human artwork or rendered CGI with AI art. Only flag AI_GENERATED when there is clear evidence of generative AI art — a visible generator watermark, or the unmistakable artefacts of diffusion output. "It looks too polished", "the anatomy is off", or "it feels AI-ish" is NOT evidence: accept those.
 - PERSON_PHOTO — a real camera photograph of a person (selfie, portrait, casual photo of people). Drawn or painted people do not count.
 - NSFW_CONTENT — sexual, adult, or explicit content.
 - GORE_CONTENT — graphic gore or extreme violence.
@@ -140,62 +159,66 @@ Step 3: Rating — SAFE, MATURE, or ADULT (same meaning as art). SAFE (no nudity
 
 Step 4: Quality — GOOD unless blank, corrupted, extremely blurry, or unusably low resolution. Deliberate style (pixel art, low-poly, rough sketching, minimal) is NOT a quality failure.
 
+Confidence: report how sure you are of the verdict you gave. A rejection you are not sure about will be overridden and let through, so give an honest low number rather than inflating it.
+
 Return JSON: allow (true when the preview shows an acceptable artwork or resource file, the rating is SAFE or MATURE, quality is GOOD, and it is not AI-generated), resource (bool — true for artwork previews too), rating, ai_generated (bool), quality, category (one code from the allowed list), reason (short internal note), confidence (0 to 1).`;
 
 const MODERATION_PROMPT = `You are the artwork upload moderator for DigiArtz, a digital art community.
 
-Decide whether a user-uploaded image should be allowed or rejected.
+Your job is to keep out photographs, screenshots, documents, and explicit content. It is NOT to judge whether the artwork is good, original, popular, or new. Artists lose real work every time you reject something wrongly, so ACCEPT is the default and a rejection has to be earned.
 
 Step 1: Artwork Check
 
-DigiArtz accepts artwork in these categories, so ACCEPT images of this kind:
-characters, anime, manga, comic pages, fan art, chibi, sketches, illustrations, concept art, AI-generated art, digital art, traditional art (pencil, ink, watercolor, oil, acrylic), abstract art, typography and lettering art, poster art designs, logo designs, icon designs, wallpaper art, cars, bikes, trucks, buses, aircraft, ships, robots, mecha, weapon designs, fantasy, dragons, monsters, mythology, sci-fi, space art, nature art, animal art, bird art, marine life art, landscape paintings, scenery art, cityscape art, architecture art, building art, interior design art, food art, flower art, tree art, patterns, 3D art and stylized renders, pixel art, aesthetic art, sculptures and handcrafted artwork.
+Start from allow = true. Only move away from it if you can point at a concrete non-art thing in the image.
 
-CRITICAL clarifications — do NOT reject these:
-- FAN ART IS ALLOWED. Hand-drawn, painted, or digitally created artwork depicting existing anime, manga, movie, game, or cartoon characters is accepted. Only reject direct reposts of OFFICIAL media: unmodified screencaps from anime or games, official posters, movie stills, scanned published manga pages, or official promotional images.
-- AI-GENERATED ART IS ALLOWED. DigiArtz has an AI Art category. Accept AI-generated or AI-assisted images when they are artistic in nature.
-- TYPOGRAPHY AND LETTERING ART IS ALLOWED. Reject only plain documents, screenshots of text, or images that are just unstylized writing.
-- LOGO AND ICON DESIGNS ARE ALLOWED as original design work. Reject only reposted logos of real existing brands or companies.
-- POSTER ART IS ALLOWED as designed or illustrated work. Reject only real-world commercial advertisements and promotional flyers for actual products, events, or services.
-- Artwork depicting realistic people, animals, food, vehicles, buildings, or landscapes is still artwork. A painting or rendering OF a landscape is accepted; a PHOTOGRAPH of a landscape is not.
+DigiArtz accepts artwork of every kind, including:
+characters, anime, manga, comic and manhwa pages, fan art, chibi, sketches, doodles, line art, illustrations, concept art, AI-generated art, digital art, traditional art (pencil, ink, watercolor, oil, acrylic, marker), abstract art, typography and lettering art, calligraphy, poster art, logo and icon design, wallpaper art, tattoo flash, emotes and avatars, cars, bikes, trucks, buses, aircraft, ships, robots, mecha, weapon designs, fantasy, dragons, monsters, mythology, sci-fi, space art, nature and animal and bird and marine art, landscape and scenery painting, cityscape and architecture art, interior art, food art, flower and tree art, patterns, 3D art and renders of every style, pixel art, aesthetic art, sculptures and handcrafted work, photographs of a physical artwork the artist made (a scanned drawing, a photographed canvas or sculpture).
 
-The bias is: if the image shows artistic rendering of any kind — linework, brushwork, shading, cel shading, painterly texture, pixel art, vector shapes, 3D stylization, sculpting, or crafting — ACCEPT it.
+CRITICAL clarifications — these are ACCEPTED, never reject them:
+- GAME ART IS ALLOWED, and this is the mistake to avoid most. Game characters, game fan art, game-style illustrations, game concept art, character sheets, sprite and pixel-art sheets, UI and HUD art, item and weapon and skin designs, map and level art, splash art, key art, box art, 3D game models and renders, and art posted in a games or gaming category are all artwork. GAME_SCREENSHOT is ONLY for an unmodified capture of a game as it ran on a screen — visible live HUD, health bars, minimap, subtitle bars, menus, chat overlays, FPS counters, or platform/console UI. If those are absent, it is game ART: accept it.
+- MANGA, MANHWA, MANHUA, WEBTOON, AND COMIC WORK IS ALLOWED in every form: finished pages, single panels, multi-panel spreads, page layouts with speech bubbles and sound effects, black-and-white screentoned pages, inked or pencilled roughs, storyboards and thumbnails, covers, character sheets, and strips read left-to-right or right-to-left. Speech bubbles and dialogue do NOT make a page TEXT_ONLY or a DOCUMENT, and a photographed or scanned page of the artist's own comic is artwork, not a photo. Reject only an unmodified scan of an officially published book.
+- 3D MODELS AND RENDERS ARE ALLOWED in every form: finished renders, clay and matcap renders, wireframes, retopology and topology shots, UV layouts, turntable sheets, sculpts, high-poly and low-poly models, texture and material previews, rigs and pose sheets, and multi-angle model sheets. A capture of a Blender, Maya, ZBrush, Cinema4D, Substance, or Unreal/Unity viewport showing the artist's own model is ARTWORK, not APP_SCREENSHOT — the software chrome around a model the artist made does not turn it into a screenshot. A 3D render is never AI-generated art.
+- FAN ART IS ALLOWED. Drawn, painted, or rendered artwork of existing anime, manga, movie, game, or cartoon characters is accepted. Only reject an unmodified repost of OFFICIAL media: an anime screencap, an official poster or key visual, a movie still, a scanned published manga page.
+- AI-GENERATED ART IS ALLOWED. DigiArtz has an AI Art category. Never reject an image for looking AI-made, too polished, too clean, or too perfect.
+- REPOSTS AND DUPLICATES ARE NOT YOUR CONCERN. Whether the image already exists on DigiArtz, resembles another upload, or is one of several near-identical pieces from the same series is irrelevant. An artist may post two or three versions of the same drawing. Never reject an image as a duplicate, a repost, a copy, unoriginal, or "already seen".
+- TYPOGRAPHY, LETTERING, AND CALLIGRAPHY ART IS ALLOWED. TEXT_ONLY is only for a plain unstyled wall of writing with no design intent.
+- LOGO AND ICON DESIGN IS ALLOWED as original design work. Reject only a reposted logo of a real existing brand.
+- POSTER ART IS ALLOWED. Reject only a real commercial advertisement or promotional flyer for an actual product, event, or service.
+- Artwork of realistic people, animals, food, vehicles, buildings, or landscapes is still artwork. A PAINTING or RENDER of a landscape is accepted; only a camera PHOTOGRAPH of one is not.
+- Rough, unfinished, minimal, low-contrast, small, or heavily stylised work is still artwork.
 
-REJECT only when the image is clearly one of these non-art types:
-real photographs (selfies, mirror selfies, family or group or couple or baby photos, pet photos, casual camera photos, travel photos, food or drink photos, product photos, photographs of vehicles, houses, rooms, landscapes, cities, streets, buildings, or objects), screenshots (chat, game, app, social media, screen recordings), identity or financial or official documents (ID cards, passports, licences, bank or medical or school or office or legal documents, receipts, bills, invoices, salary slips, tax or loan or insurance papers), QR codes or barcodes as the main content, real-world advertisements or spam, blank images, or plain unstylized text.
+REJECT only when the image is plainly one of these and you can say so with confidence:
+- a real camera photograph (selfie, mirror selfie, family/group/couple/baby photo, pet photo, casual snapshot, travel, food or drink, product, or a photo of a vehicle, house, room, landscape, city, street, building, or object) — this does not cover a photo or scan of the artist's own physical artwork
+- a raw screenshot of a chat, app, social feed, screen recording, or a live game as described above
+- an identity, financial, or official document (ID card, passport, licence, bank/medical/school/office/legal document, receipt, bill, invoice, salary slip, tax/loan/insurance paper)
+- a QR code or barcode as the main subject
+- a real-world advertisement or spam image
+- a genuinely blank image
 
-Reject as UNCLEAR only when you genuinely cannot tell whether the image is a photograph, screenshot, or document rather than artwork.
+If you are weighing "artwork" against "photo/screenshot/document" and it is not obvious, answer ARTWORK_OK with allow = true. Use UNCLEAR only when the image is truly unreadable, and know that UNCLEAR is treated as an acceptance.
 
 Step 2: Content Rating
 
-If the image is artwork, classify it as SAFE, MATURE, or ADULT.
+SAFE: no nudity, no sexual content.
+MATURE: artistic nudity, suggestive poses, bikini or swimsuit art, cleavage, mild sensual content, ecchi-style artwork. MATURE is ACCEPTED — do not reject it.
+ADULT: explicit sexual acts, visible genitals in a sexual context, hardcore pornography, fetish-only content.
 
-SAFE: no nudity, no sexual content, suitable for all users.
-MATURE: artistic nudity, suggestive poses, bikini or swimsuit art, cleavage, mild sensual content, ecchi-style artwork.
-ADULT: explicit sexual acts, visible genitals, hardcore pornography, fetish-only content, extreme sexual content.
-
-Always reject regardless of anything else:
-child sexual content, bestiality, extreme gore, terrorist or extremist content, malware/phishing images, illegal content.
+Always reject regardless of anything else: child sexual content, bestiality, extreme gore, terrorist or extremist content, malware/phishing images, illegal content.
 
 Step 3: Quality Check
 
-Set quality to BAD only if the image is blank, corrupted, extremely blurry, unusably low resolution, or broken. Artistic style choices (minimalism, rough sketching, low-poly, pixel art) are NOT quality failures.
+Set quality to BAD only if the image is blank, corrupted, or completely unreadable. Rough sketching, minimalism, low-poly, pixel art, grain, small size, and low resolution are NOT quality failures.
 
 Step 4: Category Code
 
-Choose exactly ONE category code:
-- ARTWORK_OK when the image is approved artwork
-- The specific rejection code matching what you see (SELFIE, PET_PHOTO, GAME_SCREENSHOT, ID_CARD, RECEIPT, QR_CODE, and so on)
-- BLANK_IMAGE, LOW_QUALITY, or TEXT_ONLY for quality failures
-- ADULT_CONTENT when rejected for explicit sexual content
-- PROHIBITED_CONTENT for the always-reject cases
-- NOT_ARTWORK when it is clearly not artwork but no specific code fits
-- UNCLEAR when you cannot confidently classify the image
+- ARTWORK_OK whenever the image is artwork — this is the expected answer for the large majority of uploads
+- otherwise the specific code matching the non-art thing you actually see (SELFIE, PET_PHOTO, GAME_SCREENSHOT, ID_CARD, RECEIPT, QR_CODE, and so on)
+- BLANK_IMAGE only for a genuinely empty image
+- ADULT_CONTENT for explicit sexual content, PROHIBITED_CONTENT for the always-reject cases
+- NOT_ARTWORK only when it is definitely not art and no specific code fits
+- UNCLEAR when you cannot tell
 
-Decision Rules
-
-- allow = true when the image is artwork per the rules above, the rating is SAFE or MATURE, and quality is acceptable
-- allow = false when the image is a photograph, screenshot, or document, when the rating is ADULT, or when an always-reject rule applies
+Confidence: report how sure you are of the verdict you gave. A rejection you are not sure about will be overridden and let through, so give an honest low number rather than inflating it.
 
 Return your verdict as JSON with fields: allow, artwork, rating, quality, category (one code from the list), reason (short internal note), confidence (0 to 1).`;
 
@@ -250,29 +273,15 @@ export async function onRequestPost(context) {
 
     for (let i = 0; i < verdicts.length; i++) {
       const v = verdicts[i];
-      const pass = isResource
-        ? ( v.ok && v.allow === true && v.resource === true &&
-            v.ai_generated !== true && v.quality === 'GOOD' &&
-            (v.rating === 'SAFE' || v.rating === 'MATURE') &&
-            v.confidence >= MIN_CONFIDENCE )
-        : ( v.ok && v.allow === true && v.artwork === true &&
-            v.quality === 'GOOD' &&
-            (v.rating === 'SAFE' || v.rating === 'MATURE') &&
-            v.confidence >= MIN_CONFIDENCE );
+      const call = decide(v, isResource);
 
-      if (!pass && allowed) {
+      if (!call.pass && allowed) {
         allowed = false;
         failIndex = i;
-        const okCode = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
-        code = (v.ok && v.category && v.category !== okCode) ? v.category : 'UNCLEAR';
-        if (isResource) {
-          if (v.ok && v.ai_generated === true && code === 'RESOURCE_OK') code = 'AI_GENERATED';
-          if (v.ok && v.rating === 'ADULT' && code === 'RESOURCE_OK') code = 'NSFW_CONTENT';
-        } else if (v.ok && v.rating === 'ADULT' && code === 'ARTWORK_OK') {
-          code = 'ADULT_CONTENT';
-        }
-        reason = (files.length > 1 ? `Image ${i + 1}: ` : '') +
-                 (MSG[code] || MSG.UNCLEAR);
+        code = call.code;
+        reason = call.service
+          ? (v.reason || MSG.UNCLEAR)
+          : (files.length > 1 ? `Image ${i + 1}: ` : '') + (MSG[code] || MSG.UNCLEAR);
       }
       if (v.rating === 'MATURE' && rating === 'SAFE') rating = 'MATURE';
 
@@ -286,7 +295,8 @@ export async function onRequestPost(context) {
         quality: v.quality || null,
         category: v.category || null,
         reason: v.reason || null,
-        confidence: v.confidence ?? null
+        confidence: v.confidence ?? null,
+        decision: call.pass ? 'pass' : call.code
       });
     }
 
@@ -329,6 +339,39 @@ export async function onRequestPost(context) {
   } catch (err) {
     return json({ error: 'Moderation check failed — try again.' }, 500);
   }
+}
+
+// Turns one Gemini verdict into a pass/fail. The gate is deliberately lopsided:
+// only a confident, specific rejection stops an upload. A hedge, a vague code, or
+// a low-confidence "no" lets the artwork through.
+function decide(v, isResource) {
+  const okCode = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
+
+  // The call never reached the model, or came back unreadable. That is a retry,
+  // not a verdict on the artwork.
+  if (!v.ok) return { pass: false, code: 'UNCLEAR', service: true };
+
+  let code = (v.category && v.category !== okCode) ? v.category : null;
+  if (v.rating === 'ADULT') code = isResource ? 'NSFW_CONTENT' : 'ADULT_CONTENT';
+
+  // Explicit and prohibited content stops here whatever else the verdict says.
+  if (code && HARD_REJECT.includes(code)) return { pass: false, code };
+
+  // Resource previews may not be AI art, but only on clear evidence.
+  if (isResource && v.ai_generated === true && v.confidence >= REJECT_CONFIDENCE) {
+    return { pass: false, code: 'AI_GENERATED' };
+  }
+
+  if (v.allow === true) return { pass: true, code: okCode };
+
+  // A rejection with no code, or one of the codes the model reaches for when it
+  // is guessing, is not enough to turn an artist away.
+  if (!code || SOFT_CODES.includes(code)) return { pass: true, code: okCode };
+
+  // Neither is one it is not sure about.
+  if (!(v.confidence >= REJECT_CONFIDENCE)) return { pass: true, code: okCode };
+
+  return { pass: false, code };
 }
 
 async function moderateWithGemini(env, b64, mimeType, cfg) {

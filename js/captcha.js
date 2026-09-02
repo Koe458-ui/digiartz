@@ -6,10 +6,10 @@
   function cfg() {
     return (window.KOE_CONFIG && window.KOE_CONFIG.TURNSTILE_SITE_KEY) || '';
   }
-  function sb() { return window.sb || null; }
+  function db() { return (typeof sb !== 'undefined' && sb) ? sb : null; }
 
   function note(event, email, ok) {
-    var c = sb();
+    var c = db();
     if (!c || typeof c.rpc !== 'function') return;
     try {
       c.rpc('dz_note_auth', {
@@ -21,7 +21,7 @@
   }
 
   function required() {
-    var c = sb();
+    var c = db();
     if (!c || typeof c.rpc !== 'function') return Promise.resolve(false);
     return c.rpc('dz_captcha_required').then(
       function (r) { return !!(r && r.data === true); },
@@ -39,13 +39,21 @@
       s.async = true;
       s.defer = true;
       s.onload = function () { res(!!window.turnstile); };
-      s.onerror = function () { res(false); };
+      s.onerror = function () {
+        why('the Turnstile script did not load \u2014 a blocker, an extension or the network stopped it');
+        res(false);
+      };
       document.head.appendChild(s);
     });
     return loading;
   }
 
   var widgetId = null;
+
+  function why(reason) {
+    console.warn('[DigiArtz] No captcha token: ' + reason + '. Sign-in will be refused ' +
+                 'with \u201CCouldn\u2019t verify you\u2019re human\u201D.');
+  }
 
   function host() {
     var el = document.getElementById('dzCaptcha');
@@ -61,42 +69,55 @@
     return el;
   }
 
+  function drop() {
+    if (widgetId === null) return;
+    try { window.turnstile.remove(widgetId); } catch (e) {   }
+    widgetId = null;
+  }
+
   function token(force) {
     var key = cfg();
     if (!key) return Promise.resolve(null);
 
     return load().then(function (ok) {
-      if (!ok || !window.turnstile) return null;
+      if (!ok || !window.turnstile) { why('window.turnstile is not there'); return null; }
       var el = host();
-      if (!el) return null;
+      if (!el) { why('there is nowhere to put the widget \u2014 no #dzCaptcha and no #authBtn'); return null; }
 
       return new Promise(function (resolve) {
         var settled = false;
         function done(v) { if (!settled) { settled = true; resolve(v); } }
 
-        var timer = setTimeout(function () { done(null); }, 20000);
+        var timer = setTimeout(function () {
+          why('the widget did not answer within 20 seconds');
+          done(null);
+        }, 20000);
 
         function finish(v) { clearTimeout(timer); done(v); }
 
+        drop();
+        el.innerHTML = '';
+
         try {
-          if (widgetId !== null) {
-            window.turnstile.reset(widgetId);
-          } else {
-            widgetId = window.turnstile.render(el, {
-              sitekey: key,
-              appearance: force ? 'always' : 'interaction-only',
-              size: 'normal',
-              callback: function (t) { finish(t || null); },
-              'error-callback': function () { finish(null); },
-              'expired-callback': function () { finish(null); },
-              'timeout-callback': function () { finish(null); }
-            });
-          }
+          widgetId = window.turnstile.render(el, {
+            sitekey: key,
+            appearance: force ? 'always' : 'interaction-only',
+            size: 'normal',
+            callback: function (t) { finish(t || null); },
+            'error-callback': function () {
+              why('Turnstile refused \u2014 check the site key is this widget\u2019s and lists this domain');
+              finish(null);
+            },
+            'expired-callback': function () { why('the challenge expired before it was used'); finish(null); },
+            'timeout-callback': function () { why('the challenge timed out'); finish(null); }
+          });
+          if (widgetId === undefined) widgetId = null;
         } catch (e) {
+          why('turnstile.render threw: ' + ((e && e.message) || e));
           finish(null);
         }
       });
-    }, function () { return null; });
+    }, function () { why('the Turnstile script could not be loaded'); return null; });
   }
 
   function forAuth() {
@@ -105,9 +126,7 @@
   }
 
   function reset() {
-    try {
-      if (widgetId !== null && window.turnstile) window.turnstile.reset(widgetId);
-    } catch (e) {   }
+    drop();
   }
 
   window.dzCaptcha = {

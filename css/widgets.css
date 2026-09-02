@@ -362,11 +362,11 @@ html.thmFade #themePage{
 @media(min-width:700px){ .bmGrid{grid-template-columns:repeat(3,1fr);} }
 @media(min-width:1280px){ .bmGrid{grid-template-columns:repeat(4,1fr);} }
 .bmCard{
-  position:relative;background:var(--sur);border:1px solid var(--bdr);
+  position:relative;background:var(--sur);border:0;
   border-radius:12px;overflow:hidden;
-  transition:transform .25s cubic-bezier(.22,1,.36,1),border-color .2s;
+  transition:transform .25s cubic-bezier(.22,1,.36,1);
 }
-@media(hover:hover){.bmCard:hover{transform:translateY(-3px);border-color:var(--bdrh);}}
+@media(hover:hover){.bmCard:hover{transform:translateY(-3px);}}
 .bmThumb{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:var(--sur2);}
 .bmMeta{padding:.6rem .7rem .7rem;}
 .bmName{
@@ -408,16 +408,15 @@ html.thmFade #themePage{
 .albCard{
   position:relative;display:block;width:100%;aspect-ratio:1;
   padding:0;text-align:left;
-  background:var(--sur);border:1px solid transparent;border-radius:4px;
+  background:var(--sur);border:0;border-radius:4px;
   overflow:hidden;cursor:pointer;color:inherit;font:inherit;
-  transition:transform .2s,border-color .2s;
+  transition:transform .2s;
 }
 @supports not (aspect-ratio:1){
   .albCard{height:0;padding-top:100%;}
 }
 
 @media(hover:hover){
-  .albCard:hover{border-color:var(--bdrh);}
   .albCard:hover .albCell img{transform:scale(1.03);}
 }
 .albCard:active{transform:scale(.99);}
@@ -453,8 +452,6 @@ html.thmFade #themePage{
   font-family:var(--fm);font-size:.54rem;letter-spacing:.14em;
   color:rgba(255,255,255,.74);
 }
-.albCard--virt{border-color:color-mix(in srgb,var(--pg) 26%,var(--bdr));}
-.albCard--priv{border-style:dashed;border-color:color-mix(in srgb,var(--tc) 22%,var(--bdr));}
 .albCardWrap{position:relative;display:block;}
 .albDots{
   position:absolute;top:.3rem;right:.3rem;z-index:2;
@@ -482,8 +479,9 @@ html.thmFade #themePage{
 @media(hover:hover){ .albMenuDanger:hover{background:var(--danger-bg);} }
 .albCardNew{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;
-  background:transparent;border-style:dashed;
-  border-color:color-mix(in srgb,var(--tc) 26%,transparent);
+  background:transparent;
+  border:1px dashed color-mix(in srgb,var(--tc) 26%,transparent);
+  transition:border-color .2s,background .2s;
 }
 @media(hover:hover){
   .albCardNew:hover{border-color:var(--pg);background:color-mix(in srgb,var(--pg) 7%,transparent);}

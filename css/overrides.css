@@ -453,7 +453,7 @@ input[type=range].cropZoom::-moz-range-thumb{width:22px;height:22px;}
   .ftTab.on,.fgCatChip.on,.hpTab[aria-selected="true"],.pfSrchChip.on{
     background:Highlight;color:HighlightText;border-color:Highlight;
   }
-  .awCard,.gItem,.dzCard{border:1px solid CanvasText;}
+  .awCard,.gItem,.dzCard,.bmCard,.albCard,.spItem,.admCard{border:1px solid CanvasText;}
   .gOv{background:Canvas;}
   :focus-visible{outline:2px solid Highlight;outline-offset:2px;}
 }

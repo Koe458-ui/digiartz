@@ -619,11 +619,11 @@
 .spItem{
   cursor:pointer;
   border-radius:10px;overflow:hidden;
-  border:1px solid var(--bdr);
+  border:0;
   background:color-mix(in srgb,var(--tc) 6%,transparent);
-  transition:border-color .2s,transform .2s;
+  transition:transform .2s;
 }
-.spItem:hover{border-color:var(--pg);transform:translateY(-2px);}
+.spItem:hover{transform:translateY(-2px);}
 .spItem img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;}
 .spItem span{display:block;padding:.5rem .6rem;font-family:var(--fb);font-size:.74rem;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .spEmpty{

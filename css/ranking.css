@@ -422,18 +422,13 @@ a.awCard{color:inherit;text-decoration:none;}
 .awCard{
   position:relative;
   background:var(--sur);
-  border:1px solid var(--bdr);
+  border:0;
   border-radius:4px;
   overflow:hidden;
   display:flex;
   flex-direction:column;
   cursor:pointer;
-  transition:border-color .28s,transform .2s;
-}
-@media(hover:hover){
-  .awCard:hover{
-    border-color:var(--bdrh);
-  }
+  transition:transform .2s;
 }
 .awCard:active{transform:scale(.99);}
 .awImgWrap{

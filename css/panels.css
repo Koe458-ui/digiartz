@@ -6,9 +6,10 @@
 .cpBar::before{background:color-mix(in srgb,var(--bg) 96%,transparent)!important;}
 .cpBar{border-top:1px solid var(--bdr);}
 
-.gItem,.modal,.legalModal,#fgFltPanel,.awCard{
+.modal,.legalModal,#fgFltPanel{
   background:var(--sur);border-color:var(--bdr);
 }
+.gItem,.awCard{background:var(--sur);}
 #artworks .awCard{background:var(--sur);}
 
 #fgFltPanel{background:linear-gradient(160deg,var(--sur) 0%,var(--sur2) 100%)!important;border-color:var(--bdr)!important;}

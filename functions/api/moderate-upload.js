@@ -29,7 +29,7 @@ const CATEGORIES = [
   'OFFICE_DOCUMENT','LEGAL_DOCUMENT','RECEIPT','BILL','INVOICE','SALARY_SLIP',
   'TAX_DOCUMENT','LOAN_DOCUMENT','INSURANCE_PAPER','QR_CODE','BARCODE','ADVERTISEMENT',
   'FLYER','SPAM_IMAGE','BLANK_IMAGE','LOW_QUALITY','TEXT_ONLY','NOT_ARTWORK',
-  'ADULT_CONTENT','PROHIBITED_CONTENT','UNCLEAR'
+  'ADULT_CONTENT','PROHIBITED_CONTENT','AI_GENERATED','UNCLEAR'
 ];
 
 const MESSAGES = {
@@ -81,6 +81,7 @@ const MESSAGES = {
   BLANK_IMAGE:       'The uploaded image appears to be blank.',
   LOW_QUALITY:       'The image is too low quality or could not be processed.',
   TEXT_ONLY:         'Images containing primarily text are not accepted as artwork.',
+  AI_GENERATED:      'The image looks AI-generated. DigiArtz does not accept AI art — please upload artwork you made yourself.',
   NOT_ARTWORK:       'The uploaded image does not appear to be artwork. DigiArtz accepts original artistic creations only.',
   ADULT_CONTENT:     'The image contains adult content, which is not permitted on DigiArtz.',
   PROHIBITED_CONTENT:'The image contains prohibited content and cannot be uploaded.',
@@ -172,14 +173,14 @@ Step 1: Artwork Check
 Start from allow = true. Only move away from it if you can point at a concrete non-art thing in the image.
 
 DigiArtz accepts artwork of every kind, including:
-characters, anime, manga, comic and manhwa pages, fan art, chibi, sketches, doodles, line art, illustrations, concept art, AI-generated art, digital art, traditional art (pencil, ink, watercolor, oil, acrylic, marker), abstract art, typography and lettering art, calligraphy, poster art, logo and icon design, wallpaper art, tattoo flash, emotes and avatars, cars, bikes, trucks, buses, aircraft, ships, robots, mecha, weapon designs, fantasy, dragons, monsters, mythology, sci-fi, space art, nature and animal and bird and marine art, landscape and scenery painting, cityscape and architecture art, interior art, food art, flower and tree art, patterns, 3D art and renders of every style, pixel art, aesthetic art, sculptures and handcrafted work, photographs of a physical artwork the artist made (a scanned drawing, a photographed canvas or sculpture).
+characters, anime, manga, comic and manhwa pages, fan art, chibi, sketches, doodles, line art, illustrations, concept art, digital art, traditional art (pencil, ink, watercolor, oil, acrylic, marker), abstract art, typography and lettering art, calligraphy, poster art, logo and icon design, wallpaper art, tattoo flash, emotes and avatars, cars, bikes, trucks, buses, aircraft, ships, robots, mecha, weapon designs, fantasy, dragons, monsters, mythology, sci-fi, space art, nature and animal and bird and marine art, landscape and scenery painting, cityscape and architecture art, interior art, food art, flower and tree art, patterns, 3D art and renders of every style, pixel art, aesthetic art, sculptures and handcrafted work, photographs of a physical artwork the artist made (a scanned drawing, a photographed canvas or sculpture).
 
 CRITICAL clarifications — these are ACCEPTED, never reject them:
 - GAME ART IS ALLOWED, and this is the mistake to avoid most. Game characters, game fan art, game-style illustrations, game concept art, character sheets, sprite and pixel-art sheets, UI and HUD art, item and weapon and skin designs, map and level art, splash art, key art, box art, 3D game models and renders, and art posted in a games or gaming category are all artwork. GAME_SCREENSHOT is ONLY for an unmodified capture of a game as it ran on a screen — visible live HUD, health bars, minimap, subtitle bars, menus, chat overlays, FPS counters, or platform/console UI. If those are absent, it is game ART: accept it.
 - MANGA, MANHWA, MANHUA, WEBTOON, AND COMIC WORK IS ALLOWED in every form: finished pages, single panels, multi-panel spreads, page layouts with speech bubbles and sound effects, black-and-white screentoned pages, inked or pencilled roughs, storyboards and thumbnails, covers, character sheets, and strips read left-to-right or right-to-left. Speech bubbles and dialogue do NOT make a page TEXT_ONLY or a DOCUMENT, and a photographed or scanned page of the artist's own comic is artwork, not a photo. Reject only an unmodified scan of an officially published book.
 - 3D MODELS AND RENDERS ARE ALLOWED in every form: finished renders, clay and matcap renders, wireframes, retopology and topology shots, UV layouts, turntable sheets, sculpts, high-poly and low-poly models, texture and material previews, rigs and pose sheets, and multi-angle model sheets. A capture of a Blender, Maya, ZBrush, Cinema4D, Substance, or Unreal/Unity viewport showing the artist's own model is ARTWORK, not APP_SCREENSHOT — the software chrome around a model the artist made does not turn it into a screenshot. A 3D render is never AI-generated art.
 - FAN ART IS ALLOWED. Drawn, painted, or rendered artwork of existing anime, manga, movie, game, or cartoon characters is accepted. Only reject an unmodified repost of OFFICIAL media: an anime screencap, an official poster or key visual, a movie still, a scanned published manga page.
-- AI-GENERATED ART IS ALLOWED. DigiArtz has an AI Art category. Never reject an image for looking AI-made, too polished, too clean, or too perfect.
+- AI ART IS PROHIBITED. DigiArtz accepts artwork the artist made themselves, so an AI-generated or generative-diffusion image (Midjourney, Stable Diffusion, DALL·E, NovelAI, Firefly, and the like) is rejected as AI_GENERATED. Judge this on evidence, not on polish: hand-drawn, digitally painted, vector, pixel, and 3D work must still be ACCEPTED, and "it looks too polished", "it is too clean", "the anatomy is off", or "it feels AI-ish" is NOT evidence. Flag AI_GENERATED only for clear signs of generative output — a visible generator watermark or the unmistakable artefacts of diffusion.
 - REPOSTS AND DUPLICATES ARE NOT YOUR CONCERN. Whether the image already exists on DigiArtz, resembles another upload, or is one of several near-identical pieces from the same series is irrelevant. An artist may post two or three versions of the same drawing. Never reject an image as a duplicate, a repost, a copy, unoriginal, or "already seen".
 - TYPOGRAPHY, LETTERING, AND CALLIGRAPHY ART IS ALLOWED. TEXT_ONLY is only for a plain unstyled wall of writing with no design intent.
 - LOGO AND ICON DESIGN IS ALLOWED as original design work. Reject only a reposted logo of a real existing brand.
@@ -194,6 +195,7 @@ REJECT only when the image is plainly one of these and you can say so with confi
 - a QR code or barcode as the main subject
 - a real-world advertisement or spam image
 - a genuinely blank image
+- an AI-generated image, on the evidence described above
 
 If you are weighing "artwork" against "photo/screenshot/document" and it is not obvious, answer ARTWORK_OK with allow = true. Use UNCLEAR only when the image is truly unreadable, and know that UNCLEAR is treated as an acceptance.
 
@@ -214,13 +216,14 @@ Step 4: Category Code
 - ARTWORK_OK whenever the image is artwork — this is the expected answer for the large majority of uploads
 - otherwise the specific code matching the non-art thing you actually see (SELFIE, PET_PHOTO, GAME_SCREENSHOT, ID_CARD, RECEIPT, QR_CODE, and so on)
 - BLANK_IMAGE only for a genuinely empty image
+- AI_GENERATED for generative AI art
 - ADULT_CONTENT for explicit sexual content, PROHIBITED_CONTENT for the always-reject cases
 - NOT_ARTWORK only when it is definitely not art and no specific code fits
 - UNCLEAR when you cannot tell
 
 Confidence: report how sure you are of the verdict you gave. A rejection you are not sure about will be overridden and let through, so give an honest low number rather than inflating it.
 
-Return your verdict as JSON with fields: allow, artwork, rating, quality, category (one code from the list), reason (short internal note), confidence (0 to 1).`;
+Return your verdict as JSON with fields: allow, artwork, ai_generated (bool), rating, quality, category (one code from the list), reason (short internal note), confidence (0 to 1).`;
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -357,8 +360,10 @@ function decide(v, isResource) {
   // Explicit and prohibited content stops here whatever else the verdict says.
   if (code && HARD_REJECT.includes(code)) return { pass: false, code };
 
-  // Resource previews may not be AI art, but only on clear evidence.
-  if (isResource && v.ai_generated === true && v.confidence >= REJECT_CONFIDENCE) {
+  // AI art is not accepted anywhere on DigiArtz — not as an artwork, not as a
+  // resource preview. Only on a confident call, so that polished human work and
+  // 3D renders are not swept up with it.
+  if (v.ai_generated === true && v.confidence >= REJECT_CONFIDENCE) {
     return { pass: false, code: 'AI_GENERATED' };
   }
 
@@ -393,6 +398,7 @@ async function moderateWithGemini(env, b64, mimeType, cfg) {
     : {
         allow: { type: 'BOOLEAN' },
         artwork: { type: 'BOOLEAN' },
+        ai_generated: { type: 'BOOLEAN' },
         rating: { type: 'STRING', enum: ['SAFE', 'MATURE', 'ADULT'] },
         quality: { type: 'STRING', enum: ['GOOD', 'BAD'] },
         category: { type: 'STRING', enum: cfg.categories },
@@ -401,7 +407,7 @@ async function moderateWithGemini(env, b64, mimeType, cfg) {
       };
   const required = cfg.resource
     ? ['allow', 'resource', 'rating', 'ai_generated', 'quality', 'category', 'reason', 'confidence']
-    : ['allow', 'artwork', 'rating', 'quality', 'category', 'reason', 'confidence'];
+    : ['allow', 'artwork', 'ai_generated', 'rating', 'quality', 'category', 'reason', 'confidence'];
 
   const body = {
     contents: [{

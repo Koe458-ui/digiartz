@@ -2694,15 +2694,15 @@
       if(moderated){
         dzV.open(val(sec,'title') || SEC[sec].noun, modRecv);
 
-        // AI markers only matter for resource previews. DigiArtz has an AI Art
-        // category, so an artwork cover is never turned away for them.
-        if(modMode !== 'artwork' && window.UploadVerifier && typeof UploadVerifier.scanAIMeta === 'function'){
+        if(window.UploadVerifier && typeof UploadVerifier.scanAIMeta === 'function'){
           var aiHits = [];
           try{ aiHits = (await UploadVerifier.scanAIMeta(modImg)) || []; }catch(e){ aiHits = []; }
           if(aiHits.length){
             dzV.step('safety','fail','AI markers: ' + aiHits.slice(0,2).join(', '));
             throw new Error('The image looks AI-generated (' + aiHits.slice(0,2).join(', ') + ').' +
-              ' DigiArtz resources need a real preview of the asset — a 3D render is fine, AI-generated art is not.');
+              (modMode === 'artwork'
+                ? ' DigiArtz does not accept AI art — please upload artwork you made yourself.'
+                : ' DigiArtz resources need a real preview of the asset — a 3D render is fine, AI-generated art is not.'));
           }
         }
 

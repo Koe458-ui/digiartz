@@ -8,9 +8,9 @@
     aiApiEnabled:  false,
     // Duplicates are informational only — see dupCheck.
     reportDuplicates: true,
-    // DigiArtz has an AI Art category, so AI markers in file metadata are a note
-    // on the upload, not a reason to stop it.
-    blockAiMetadata: false
+    // AI art is not accepted on DigiArtz, so a generator's own marker left in the
+    // file metadata stops the upload.
+    blockAiMetadata: true
   };
 
   function fileToBitmap(file) {
@@ -280,9 +280,11 @@
 
     var blocking = [];
     if (dup.flag) blocking.push(dup.detail);
-    if (ai.flag && CONFIG.blockAiMetadata) blocking.push(ai.detail);
+    if (ai.flag && CONFIG.blockAiMetadata) {
+      blocking.push('DigiArtz does not accept AI art. ' + ai.detail + '.');
+    }
     if (blocking.length) {
-      return { verdict: 'review', reason: blocking.join(' · '), phash: phash, checks: checks };
+      return { verdict: 'review', reason: blocking.join(' \u00b7 '), phash: phash, checks: checks };
     }
     return { verdict: 'approve', reason: 'All checks passed', phash: phash, checks: checks };
   }

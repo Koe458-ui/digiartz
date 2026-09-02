@@ -1,4 +1,4 @@
-import { sbUrl, sbAnon, sbSvc, sbUser, sbRpc, sbService as sbRead, underLimit } from '../lib/sb.js';
+import { sbUrl, sbAnon, sbUser, sbRpc, sbService as sbRead, underLimit } from '../lib/sb.js';
 import { UUID_RE } from '../lib/http.js';
 
 const json = (b, s = 200) =>
@@ -175,15 +175,31 @@ const ACTIONS = {
     const title = str(body.title, 80);
     const message = str(body.message, 500);
     if (!title || !message) throw new Refused('A title and a message, please', 400);
-    if (!sbSvc(env)) throw new Refused('Not configured', 503);
 
-    await rpc(env, request, 'dz_admin_telemetry');
+    // an in-app path only, so a notification cannot be a link off the site
+    const url = str(body.url, 300);
+    if (url && !/^\/[\w\-./]*$/.test(url))
+      throw new Refused('A target has to be a path on DigiArtz, like /explore', 400);
 
-    await sbService(env, '/notifications', {
-      method: 'POST',
-      body: JSON.stringify({ user_id: null, type: 'admin', title, message }),
+    // names in, ids out — the client never names an id, and never sees one
+    let users = null;
+    const names = String(body.to || '').split(/[\s,]+/)
+      .map((n) => n.replace(/^@/, '').replace(/[^A-Za-z0-9_.-]/g, ''))
+      .filter(Boolean).slice(0, 50);
+    if (names.length) {
+      const rows = await sbService(env,
+        '/profiles?select=id,username&username=in.(' +
+        names.map((n) => '"' + n + '"').join(',') + ')');
+      users = (rows || []).map((r) => r.id);
+      if (!users.length) throw new Refused('No one by that name', 400);
+    }
+
+    // dz_admin_notify raises unless the caller is staff, so the check is the
+    // database's, on the caller's own token
+    const made = await rpc(env, request, 'dz_admin_notify', {
+      p_title: title, p_message: message, p_url: url || null, p_users: users,
     });
-    return { ok: true };
+    return { ok: true, sent: made };
   },
 };
 

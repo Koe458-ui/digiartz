@@ -570,7 +570,7 @@
         dzScopeBump();
         pfRowCache = {}; cmMineRows = []; cpMsgCache = {}; cmMineCache = {};
         try{ albResetMine(); }catch(e){}
-        notifList = []; notifReadIds = {};
+        notifList = [];
         try{ if(window.dzCache) window.dzCache.dropPrivate(); }catch(e){}
         try{
           pf.albums = []; pf.albumsLoaded = false;
@@ -624,16 +624,24 @@
   }
 
   var notifList = [];
-  var notifReadIds = {};
+  var NOTIF_WINDOW = 40;
+  var notifBusy = false;
 
   function openNotifications(){ if(dzPanelOpen('notifPage')) notifLoad(); }
   function closeNotifPage(){ dzPanelShut('notifPage'); }
 
-  function notifIcon(type){
-    if(type==='artwork_approved' || type==='comic_approved') return '✓';
-    if(type==='artwork_rejected' || type==='comic_rejected') return '✕';
-    return '🔔';
-  }
+  var NOTIF_ICON = {
+    like:'♥', comment:'“', comment_reply:'↩', mention:'@',
+    friend_request:'✦', friend_accepted:'✦',
+    community_join:'◉', community_post:'◉', community_comment:'@',
+    message:'✉', artwork_featured:'★',
+    artwork_approved:'✓', artwork_rejected:'✕',
+    comic_approved:'✓', comic_rejected:'✕',
+    post_published:'✓', post_rejected:'✕',
+    marketplace_sale:'▲', marketplace_purchase:'▼',
+    payment:'▲', subscription:'★'
+  };
+  function notifIcon(type){ return NOTIF_ICON[type] || '🔔'; }
 
   function notifRelTime(iso){
     var d = new Date(iso), diff = Math.max(0, (Date.now()-d.getTime())/1000);
@@ -644,82 +652,194 @@
     return d.toLocaleDateString();
   }
 
-  var NOTIF_WINDOW = 60;
+  function notifCache(){ return window.dzCached ? window.dzCached() : null; }
+  function notifDrop(){
+    var c = notifCache();
+    if(c){ try{ c.deleteByPrefix(c.ukey('notifications')); }catch(e){} }
+  }
 
+  // One RPC for the window: rows, actor name and avatar, and this reader's
+  // read state, so a page of notifications is a single round trip.
   async function notifLoad(){
-    if(!sb){ notifList=[]; notifRender(); return; }
-    try{
-      const{data,error} = await sb.from('notifications').select('*').order('created_at',{ascending:false}).limit(NOTIF_WINDOW);
+    if(!sb || !currentUser){ notifList=[]; notifRender(); return; }
+    var c = notifCache();
+    var load = async function(){
+      const{data,error} = await sb.rpc('dz_notifications', { p_limit: NOTIF_WINDOW });
       if(error) throw error;
-      notifList = data||[];
-      if(currentUser){
-        const{data:reads,error:re} = await sb.from('notification_reads').select('notification_id').eq('user_id',currentUser.id);
-        if(re) throw re;
-        notifReadIds = {};
-        (reads||[]).forEach(function(r){ notifReadIds[r.notification_id]=true; });
-      } else {
-        notifReadIds = {};
-      }
+      return data||[];
+    };
+    try{
+      notifList = c ? await c.getOrSet(c.ukey('notifications'), load, 'user:notifications')
+                    : await load();
     }catch(e){
       console.error('Error loading notifications: '+e.message);
-      notifList=[]; notifReadIds={};
+      notifList = (c ? await c.recall(c.ukey('notifications'), 'user:notifications') : null) || [];
     }
     notifRender();
-    notifMarkAllVisibleRead();
+    notifPaintBadges(notifUnreadCount());
+  }
+
+  function notifUnreadCount(){
+    return notifList.filter(function(n){ return !n.is_read; }).length;
+  }
+
+  // an actor's face when a person did it, the site mark when DigiArtz did
+  function notifAvatar(n){
+    if(!n.actor_id){
+      // the site's own mark, on the URL the page already precaches
+      return '<img class="notifAv notifAv--site" src="/favicon.svg?v=4" alt="DigiArtz" loading="lazy" decoding="async">';
+    }
+    var letter = esc((n.actor_name||'?').charAt(0).toUpperCase());
+    if(!n.actor_avatar) return '<span class="notifAv notifAv--txt">'+letter+'</span>';
+    return '<img class="notifAv" src="'+esc(getThumbnailUrl(n.actor_avatar))+'" alt="" '+
+           'loading="lazy" decoding="async" '+
+           'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">'+
+           '<span class="notifAv notifAv--txt" style="display:none;">'+letter+'</span>';
   }
 
   function notifRender(){
     var wrap = document.getElementById('notifList'), empty = document.getElementById('notifEmpty');
+    var allBtn = document.getElementById('notifReadAll');
     if(!wrap) return;
+    if(allBtn) allBtn.hidden = !notifUnreadCount();
     if(!notifList.length){ wrap.innerHTML=''; if(empty) empty.style.display='block'; return; }
     if(empty) empty.style.display='none';
     wrap.innerHTML = notifList.map(function(n){
-      var unread = !!currentUser && !notifReadIds[n.id];
-      return '<div class="notifItem'+(unread?' unread':'')+'">'+
-        '<div class="notifIcoWrap ico-'+esc(n.type||'admin')+'">'+notifIcon(n.type)+'</div>'+
+      var unread = !n.is_read;
+      var req = n.type === 'friend_request' && n.conversation_id;
+      return '<div class="notifItem'+(unread?' unread':'')+'" data-id="'+esc(String(n.id))+'" '+
+          'role="button" tabindex="0" onclick="notifGo('+n.id+')" '+
+          'onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();notifGo('+n.id+');}">'+
+        '<div class="notifAvWrap">'+notifAvatar(n)+
+          '<span class="notifIcoWrap ico-'+esc(n.type||'admin')+'">'+notifIcon(n.type)+'</span>'+
+        '</div>'+
         '<div class="notifBody">'+
           '<div class="notifTitle">'+esc(n.title)+'</div>'+
           '<div class="notifMsg">'+esc(n.message)+'</div>'+
           '<div class="notifTime">'+(n.created_at?notifRelTime(n.created_at):'')+'</div>'+
+          (req ? '<div class="notifActs">'+
+              '<button class="notifAct" onclick="notifFriend(event,\''+esc(String(n.conversation_id))+'\',1)">ACCEPT</button>'+
+              '<button class="notifAct notifAct--ghost" onclick="notifFriend(event,\''+esc(String(n.conversation_id))+'\',0)">DECLINE</button>'+
+            '</div>' : '')+
         '</div>'+
         (unread?'<span class="notifDot" aria-hidden="true"></span>':'')+
       '</div>';
     }).join('');
   }
 
-  async function notifMarkAllVisibleRead(){
-    if(!sb || !currentUser){ notifRefreshBadge(); return; }
-    var unread = notifList.filter(function(n){ return !notifReadIds[n.id]; });
-    if(!unread.length){ notifRefreshBadge(); return; }
-    try{
-      var rows = unread.map(function(n){ return {user_id:currentUser.id, notification_id:n.id}; });
-      const{error} = await sb.from('notification_reads')
-        .upsert(rows, {onConflict:'user_id,notification_id', ignoreDuplicates:true});
-      if(error) throw error;
-      unread.forEach(function(n){ notifReadIds[n.id]=true; });
-      notifRender();
-    }catch(e){   }
-    notifRefreshBadge();
+  function notifById(id){
+    for(var i=0;i<notifList.length;i++) if(String(notifList[i].id)===String(id)) return notifList[i];
+    return null;
   }
 
-  function notifPaintBadges(on){
+  async function notifMarkRead(id){
+    var n = notifById(id);
+    if(!n || n.is_read || !sb || !currentUser) return;
+    n.is_read = true;
+    notifRender();
+    notifPaintBadges(notifUnreadCount());
+    try{
+      const{error} = await sb.from('notification_reads')
+        .upsert([{user_id:currentUser.id, notification_id:n.id}],
+                {onConflict:'user_id,notification_id', ignoreDuplicates:true});
+      if(error) throw error;
+      notifDrop();
+    }catch(e){ n.is_read = false; notifRender(); notifRefreshBadge(); }
+  }
+
+  async function notifReadAll(){
+    if(!sb || !currentUser || notifBusy) return;
+    notifBusy = true;
+    var before = notifList.map(function(n){ return n.is_read; });
+    notifList.forEach(function(n){ n.is_read = true; });
+    notifRender(); notifPaintBadges(0);
+    try{
+      const{error} = await sb.rpc('dz_notif_read_all');
+      if(error) throw error;
+      notifDrop();
+    }catch(e){
+      notifList.forEach(function(n,i){ n.is_read = before[i]; });
+      notifRender(); notifRefreshBadge();
+      showToast('Could not mark those read');
+    }
+    notifBusy = false;
+  }
+
+  // read first, then take the reader where the notification points
+  async function notifGo(id){
+    var n = notifById(id);
+    if(!n) return;
+    notifMarkRead(id);
+    if(n.type === 'friend_request') return;             // the buttons are the action
+    if(n.conversation_id && typeof window.dmOpenWith === 'function'){
+      closeNotifPage(); window.dmOpenWith(n.conversation_id); return;
+    }
+    if(n.community_id && typeof window.cmOpenCommunity === 'function'){
+      closeNotifPage(); cmOpenCommunity('c:' + n.community_id); return;
+    }
+    var url = n.target_url || (n.artwork_id ? '/artwork/' + n.artwork_id : null);
+    if(!url) return;
+    closeNotifPage();
+    var art = url.match(/^\/artwork\/([^/]+)\/?$/);
+    if(art && typeof openArtworkById === 'function'){ openArtworkById(art[1], true); return; }
+    var pro = url.match(/^\/profile\/([^/]+)\/?$/);
+    if(pro && typeof openProfileByUsername === 'function'){ openProfileByUsername(pro[1], true); return; }
+    var item = url.match(/^\/(resource|blog|listing|job)\/([^/]+)\/?$/);
+    if(item && typeof window.dzOpenById === 'function'){ window.dzOpenById(item[1], item[2]); return; }
+    if(typeof window.dzRouteGo === 'function' && window.dzRouteGo(url)) return;
+    try{ window.location.href = url; }catch(e){}
+  }
+
+  // accept or decline straight from the notification
+  async function notifFriend(ev, pid, accept){
+    if(ev){ ev.stopPropagation(); }
+    var fr = window.pfFriendBridge;
+    if(!fr){ showToast('Try again in a moment'); return; }
+    try{
+      await fr.load();
+      if(accept) await fr.accept(pid);
+      else if(fr.decline) await fr.decline(pid);
+      else await fr.cancel(pid);
+    }catch(e){ showToast('Could not do that — try again'); }
+    notifDrop();
+    notifLoad();
+  }
+
+  // a friend action anywhere drops the cached window and repaints the bell
+  function notifAfterFriendChange(){
+    notifDrop();
+    if(document.getElementById('notifPage') &&
+       document.getElementById('notifPage').classList.contains('open')) notifLoad();
+    else notifRefreshBadge();
+  }
+
+  function notifPaintBadges(count){
+    var n = Number(count) || 0;
     ['hNotifBtn','pfTopNotifBtn'].forEach(function(id){
       var el = document.getElementById(id);
-      if(el) el.classList.toggle('hasUnread', !!on);
+      if(!el) return;
+      el.classList.toggle('hasUnread', n > 0);
+      var dot = el.querySelector('.hNotifDot, .pfTopDot');
+      if(dot) dot.textContent = n > 9 ? '9+' : (n ? String(n) : '');
     });
   }
+  var notifBadgeAt = 0;
   async function notifRefreshBadge(){
-    var btn = document.getElementById('hNotifBtn');
-    if(!btn) return;
-    if(!sb || !currentUser){ notifPaintBadges(false); return; }
+    if(!document.getElementById('hNotifBtn')) return;
+    if(!sb || !currentUser){ notifPaintBadges(0); return; }
+    notifBadgeAt = Date.now();
     try{
-      const{data:all,error:e1} = await sb.from('notifications').select('id')
-        .order('created_at',{ascending:false}).limit(NOTIF_WINDOW);
-      if(e1) throw e1;
-      const{data:reads,error:e2} = await sb.from('notification_reads').select('notification_id').eq('user_id',currentUser.id);
-      if(e2) throw e2;
-      var readSet = {}; (reads||[]).forEach(function(r){ readSet[r.notification_id]=true; });
-      var hasUnread = (all||[]).some(function(n){ return !readSet[n.id]; });
-      notifPaintBadges(hasUnread);
+      const{data,error} = await sb.rpc('dz_notif_unread');
+      if(error) throw error;
+      notifPaintBadges(data);
     }catch(e){   }
   }
+
+  // no polling: the count catches up when the tab comes back, at most once a minute
+  document.addEventListener('visibilitychange', function(){
+    if(document.visibilityState !== 'visible') return;
+    if(Date.now() - notifBadgeAt < 60000) return;
+    notifDrop();
+    notifRefreshBadge();
+  });
+

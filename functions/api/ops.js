@@ -713,13 +713,15 @@ const PANEL_LOG = `
 const PANEL_NOTI = `
   PANELS.noti = {
     html: function(){
-      return '<div class="admNotiLbl">SEND NOTIFICATION TO ALL USERS</div>' +
+      return '<div class="admNotiLbl">SEND A NOTIFICATION</div>' +
         '<div class="admNotiCompose">' +
           '<input type="text" data-n="title" class="admNotiInput" placeholder="Title" maxlength="80">' +
           '<textarea data-n="msg" class="admNotiTextarea" placeholder="Message" maxlength="500" rows="3"></textarea>' +
-          '<button class="admNotiSendBtn" data-n="send">Send to All Users</button>' +
+          '<input type="text" data-n="url" class="admNotiInput" placeholder="Where it opens \u2014 optional, e.g. /explore" maxlength="300">' +
+          '<input type="text" data-n="to" class="admNotiInput" placeholder="Usernames \u2014 optional, blank sends to everyone" maxlength="400">' +
+          '<button class="admNotiSendBtn" data-n="send">Send</button>' +
         '</div>' +
-        '<div class="admNotiSentLbl">RECENTLY SENT</div>' +
+        '<div class="admNotiSentLbl">RECENTLY SENT TO EVERYONE</div>' +
         '<div class="pfEmpty" data-n="empty" hidden>' +
           '<span class="admEmptyIcon">\\ud83d\\udd14</span>No notifications sent yet.</div>' +
         '<div data-n="list" class="admNotiSentList"></div>';
@@ -745,6 +747,7 @@ const PANEL_NOTI = `
               '<div class="admNotiSentMsg">' + esc(x.message) + '</div>' +
               '<div class="admNotiSentTime">' +
                 esc(x.created_at ? new Date(x.created_at).toLocaleString() : '') +
+                esc(x.target_url ? ' \u00b7 ' + x.target_url : '') +
               '</div></div>';
           }).join('');
           empty.hidden = !!rows.length;
@@ -755,19 +758,24 @@ const PANEL_NOTI = `
   function send(host){
     var t = host.querySelector('[data-n="title"]');
     var m = host.querySelector('[data-n="msg"]');
+    var u = host.querySelector('[data-n="url"]');
+    var w = host.querySelector('[data-n="to"]');
     var b = host.querySelector('[data-n="send"]');
     var title = (t.value || '').trim(), message = (m.value || '').trim();
+    var to = (w.value || '').trim();
     if(!title || !message){ toast('Enter a title and message'); return; }
     b.disabled = true;
-    api('broadcast', {title:title, message:message}).then(function(){
-      t.value = ''; m.value = '';
-      toast('Notification sent to all users');
-      b.disabled = false;
-      PANELS.noti.load();
-    }, function(e){
-      b.disabled = false;
-      toast(e.message || 'Could not send that');
-    });
+    api('broadcast', {title:title, message:message, url:(u.value || '').trim(), to:to})
+      .then(function(r){
+        t.value = ''; m.value = ''; u.value = ''; w.value = '';
+        toast(to ? ('Sent to ' + ((r && r.sent) || 0) + ' member' + (((r && r.sent) === 1) ? '' : 's'))
+                 : 'Notification sent to all users');
+        b.disabled = false;
+        PANELS.noti.load();
+      }, function(e){
+        b.disabled = false;
+        toast(e.message || 'Could not send that');
+      });
   }
 `;
 

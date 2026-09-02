@@ -72,6 +72,7 @@
     return f.requester_id === (me() && me().id) ? 'sent' : 'incoming';
   }
   async function refreshAfterFrChange () {
+    if (typeof window.notifAfterFriendChange === 'function') window.notifAfterFriendChange();
     var c = dmc();
     if (c && c.invalidateFriends) { try { await c.invalidateFriends(); } catch (e) {} }
     await loadFriendships();
@@ -529,32 +530,29 @@
   async function loadFriendsPage () {
     var list = $('frdList'), empty = $('frdEmptyState'),
         head = $('frdListHead'), cnt = $('frdCount'),
-        reqHead = $('frdReqHead'), reqList = $('frdReqList'), reqCnt = $('frdReqCount'),
         sentHead = $('frdSentHead'), sentList = $('frdSentList'), sentCnt = $('frdSentCount'),
         blkHead = $('frdBlockHead'), blkList = $('frdBlockList'), blkCnt = $('frdBlockCount');
     if (!list) return;
     list.innerHTML = '<div class="dmSearchNote">LOADING…</div>';
-    if (reqList) reqList.innerHTML = '';
     if (sentList) sentList.innerHTML = '';
     if (blkList) blkList.innerHTML = '';
     empty.style.display = 'none'; head.style.display = 'none';
-    if (reqHead) reqHead.style.display = 'none';
     if (sentHead) sentHead.style.display = 'none';
     if (blkHead) blkHead.style.display = 'none';
     try {
       await loadFriendships();
-      var uid = me().id, reqs = [], sent = [], friends = [], blocked = [];
+      // an incoming request is a notification now, not a row here
+      var uid = me().id, sent = [], friends = [], blocked = [];
       Object.keys(frMap).forEach(function (pid) {
         var f = frMap[pid];
         if (f.status === 'accepted') friends.push(pid);
-        else if (f.status === 'pending' && f.addressee_id === uid) reqs.push(pid);
         else if (f.status === 'pending' && f.requester_id === uid) sent.push(pid);
         else if (f.status === 'blocked' && f.blocked_by === uid) blocked.push(pid);
       });
       list.innerHTML = '';
       if (cnt) cnt.textContent = friends.length + ' / ' + FR_MAX_FRIENDS;
       frPaintBadge();
-      var allIds = reqs.concat(sent, friends, blocked);
+      var allIds = sent.concat(friends, blocked);
       if (!allIds.length) { empty.style.display = ''; return; }
       var byId = {};
       var c = dmc();
@@ -575,18 +573,6 @@
       }
       function prof (pid) { return byId[pid] || { id: pid, username: 'Artist' }; }
 
-      if (reqs.length && reqHead && reqList) {
-        reqHead.style.display = '';
-        if (reqCnt) reqCnt.textContent = reqs.length;
-        reqs.forEach(function (pid) {
-          var row = userRow(prof(pid), false, 'Wants to be friends', null, frdStartChat);
-          var acts = document.createElement('span'); acts.className = 'frRowBtns';
-          acts.appendChild(frBtnEl('ACCEPT', '', function () { frAccept(pid); }));
-          acts.appendChild(frBtnEl('✕', 'frBtn--ghost', function () { frRemove(pid, 'Request declined'); }));
-          row.appendChild(acts);
-          reqList.appendChild(row);
-        });
-      }
       if (sent.length && sentHead && sentList) {
         sentHead.style.display = '';
         if (sentCnt) sentCnt.textContent = sent.length;
@@ -655,6 +641,15 @@
     closeFriendsPage();
   });
   window.openFriendsPage  = openFriendsPage;
+  window.dmOpenWith = async function (pid) {
+    if (!db() || !me()) { if (typeof openAuthMod === 'function') openAuthMod(); return; }
+    var p = { id: pid, username: 'Artist' };
+    try {
+      var r = await db().from('profiles').select('id,username,avatar_url').eq('id', pid).maybeSingle();
+      if (r && r.data) p = r.data;
+    } catch (e) {}
+    frdStartChat(p);
+  };
   window.dmCloseThread = function () {
     if (!dmPartner) return;
     dmPartner = null;
@@ -668,6 +663,7 @@
     send:   frSendReq,
     accept: frAccept,
     cancel: function (pid) { return frRemove(pid, 'Request cancelled'); },
+    decline: function (pid) { return frRemove(pid, 'Request declined'); },
     block:  frBlock,
     chat:   frdStartChat
   };

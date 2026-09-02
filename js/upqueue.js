@@ -343,7 +343,9 @@
     var held = !!j.deferred;
     title.textContent = failed ? 'VERIFICATION FAILED' : 'VERIFICATION STATUS';
     var order = ['checking','uploading','finalizing','live'];
-    var si = order.indexOf(j.stage);
+    // A held upload has finished transferring — it is only the review that has
+    // not run — so it reads as past the transfer, and short of publish.
+    var si = order.indexOf(j.stage==='queued' ? 'live' : j.stage);
     var transferState = j.stage==='uploading' ? 'run' : (si>1 ? 'pass' : '');
     var publishState  = j.stage==='finalizing' ? 'run' : (j.stage==='live' ? 'pass' : '');
     var transferSub = j.stage==='uploading'

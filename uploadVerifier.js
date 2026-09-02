@@ -4,10 +4,13 @@
   var CONFIG = {
     rate10min:     10,
     rateDay:       40,
-    nearThreshold: 6,
     scanBytes:     524288,
-    recentPull:    800,
-    aiApiEnabled:  false
+    aiApiEnabled:  false,
+    // Duplicates are informational only — see dupCheck.
+    reportDuplicates: true,
+    // AI art is not accepted on DigiArtz, so a generator's own marker left in the
+    // file metadata stops the upload.
+    blockAiMetadata: true
   };
 
   function fileToBitmap(file) {
@@ -59,6 +62,14 @@
     return d;
   }
 
+  // The IPTC code Photoshop writes when a generative edit was applied to work a
+  // person made, as opposed to a wholly generated image. It contains the plain
+  // AI code as a substring, so it has to be masked before the blocking pass or
+  // every generative-fill touch-up reads as a fully generated image.
+  var COMPOSITE_AI = 'compositewithtrainedalgorithmicmedia';
+
+  // Blocking signatures. Each one is a generator writing its own name or its own
+  // parameters into the file — evidence a person does not produce by accident.
   var STRONG_SIGS = [
     { k: 'negative prompt',        label: 'SD prompt params' },
     { k: 'denoising strength',     label: 'SD params' },
@@ -76,11 +87,24 @@
     { k: 'dall-e',                 label: 'DALL\u00b7E' },
     { k: 'dall\u00b7e',            label: 'DALL\u00b7E' },
     { k: 'openai.com',             label: 'OpenAI' },
-    { k: 'adobe firefly',          label: 'Adobe Firefly' },
-    { k: 'firefly generative',     label: 'Adobe Firefly' },
     { k: 'leonardo.ai',            label: 'Leonardo.Ai' },
     { k: 'stability.ai',           label: 'Stability AI' },
-    { k: 'trainedalgorithmicmedia',label: 'C2PA AI credential' },
+    // The one C2PA assertion that actually means "made by a model" outright. The
+    // composite form, which means a generative edit on someone's own work, is
+    // masked out before this runs — see scanMeta.
+    { k: 'trainedalgorithmicmedia',label: 'C2PA AI credential' }
+  ];
+
+  // Noted in the audit trail, never blocking — Gemini decides these on the image.
+  // They read as AI markers but fire on innocent files just as readily:
+  // Photoshop and Lightroom write a C2PA manifest for ordinary human edits, and
+  // the loose phrases match an artist's own "not AI generated" tag.
+  var SOFT_SIGS = [
+    // Photoshop stamps these on a hand-painted file that had one generative-fill
+    // cleanup, so the marker does not say how much of the piece is a person's.
+    { k: 'adobe firefly',          label: 'Adobe Firefly' },
+    { k: 'firefly generative',     label: 'Adobe Firefly' },
+    { k: COMPOSITE_AI,             label: 'C2PA partial-AI credential' },
     { k: 'c2pa.assertions',        label: 'C2PA credential' },
     { k: 'contentauthenticity',    label: 'Content Authenticity' },
     { k: 'ai generated',           label: 'AI-generated tag' },
@@ -154,7 +178,7 @@
 
   var META_TAIL_BYTES = 65536;
 
-  async function scanAIMeta(file) {
+  async function scanMeta(file) {
     try {
       var headEnd = Math.min(file.size, CONFIG.scanBytes);
       var head = new Uint8Array(await file.slice(0, headEnd).arrayBuffer());
@@ -170,14 +194,24 @@
 
       var s = (raw + '\n' + raw.replace(/\u0000/g, '')).toLowerCase();
 
-      var found = [];
-      for (var i = 0; i < STRONG_SIGS.length; i++) {
-        if (s.indexOf(STRONG_SIGS[i].k) !== -1 && found.indexOf(STRONG_SIGS[i].label) === -1) {
-          found.push(STRONG_SIGS[i].label);
-        }
-      }
-      return found;
-    } catch (e) { return []; }
+      return {
+        strong: match(s.split(COMPOSITE_AI).join('\u0000composite-ai-edit\u0000'), STRONG_SIGS),
+        soft: match(s, SOFT_SIGS)
+      };
+    } catch (e) { return { strong: [], soft: [] }; }
+  }
+
+  function match(s, sigs) {
+    var found = [];
+    for (var i = 0; i < sigs.length; i++) {
+      if (s.indexOf(sigs[i].k) !== -1 && found.indexOf(sigs[i].label) === -1) found.push(sigs[i].label);
+    }
+    return found;
+  }
+
+  // Public surface: the blocking hits only, so callers keep the array they expect.
+  async function scanAIMeta(file) {
+    return (await scanMeta(file)).strong;
   }
 
   async function rateCheck(sb, userId) {
@@ -198,38 +232,25 @@
     return { block: false, detail: n10 + '/' + CONFIG.rate10min + ' in 10 min' };
   }
 
+  // Duplicates do not stop an upload. An artist may post the same drawing two or
+  // three times — a variant, a redraw, a re-export — and that is allowed here.
+  // We still compute the hash so it can be stored, and still report what we saw,
+  // but the verdict never turns on it.
   async function dupCheck(sb, phash) {
     if (!phash) return { block: false, flag: false, detail: 'skipped' };
-    var ex = await Promise.all([
-      sb.from('artworks').select('id', { count: 'exact', head: true }).eq('phash', phash),
-      sb.from('comics').select('id', { count: 'exact', head: true }).eq('phash', phash)
-    ]);
-    if (((ex[0].count || 0) + (ex[1].count || 0)) > 0)
-      return { block: true, flag: false, detail: 'This exact image is already on DigiArtz.' };
-
-    var rc = await Promise.all([
-      sb.from('artworks').select('phash').not('phash', 'is', null)
-        .order('created_at', { ascending: false }).limit(CONFIG.recentPull),
-      sb.from('comics').select('phash').not('phash', 'is', null)
-        .order('created_at', { ascending: false }).limit(CONFIG.recentPull)
-    ]);
-    var pool = [];
-    (rc[0].data || []).forEach(function (r) { if (r.phash) pool.push(r.phash); });
-    (rc[1].data || []).forEach(function (r) { if (r.phash) pool.push(r.phash); });
-    var partial = ((rc[0].data || []).length >= CONFIG.recentPull) ||
-                  ((rc[1].data || []).length >= CONFIG.recentPull);
-    var scope = pool.length + ' recent' + (partial ? ' (window, not the whole catalogue)' : '');
-
-    var best = 64;
-    for (var i = 0; i < pool.length; i++) {
-      var dd = hamming(phash, pool[i]);
-      if (dd < best) best = dd;
-      if (best === 0) break;
+    if (!CONFIG.reportDuplicates) return { block: false, flag: false, detail: 'duplicates allowed' };
+    try {
+      var ex = await Promise.all([
+        sb.from('artworks').select('id', { count: 'exact', head: true }).eq('phash', phash),
+        sb.from('comics').select('id', { count: 'exact', head: true }).eq('phash', phash)
+      ]);
+      var n = (ex[0].count || 0) + (ex[1].count || 0);
+      return { block: false, flag: false,
+               detail: n > 0 ? n + ' matching upload' + (n === 1 ? '' : 's') + ' already on DigiArtz (allowed)'
+                             : 'no duplicates' };
+    } catch (e) {
+      return { block: false, flag: false, detail: 'duplicates allowed' };
     }
-    if (best >= 1 && best <= CONFIG.nearThreshold)
-      return { block: false, flag: true,
-               detail: 'Very similar to an existing upload (possible repost).' };
-    return { block: false, flag: false, detail: 'no duplicates in ' + scope };
   }
 
   var _aiApiHook = null;
@@ -239,23 +260,36 @@
   }
   function setAiHook(fn) { _aiApiHook = typeof fn === 'function' ? fn : null; }
 
+  function addAll(into, from) {
+    for (var i = 0; i < from.length; i++) if (into.indexOf(from[i]) === -1) into.push(from[i]);
+  }
+
+  function list(hits) {
+    return hits.slice(0, 3).join(', ') + (hits.length > 3 ? '\u2026' : '');
+  }
+
   async function aiCheck(file, pages) {
     var files = [file].concat(pages || []);
-    var hits = [];
+    var hits = [], soft = [];
     for (var i = 0; i < files.length; i++) {
-      var m = await scanAIMeta(files[i]);
-      for (var j = 0; j < m.length; j++) if (hits.indexOf(m[j]) === -1) hits.push(m[j]);
+      var m = await scanMeta(files[i]);
+      addAll(hits, m.strong);
+      addAll(soft, m.soft);
     }
     var hook = aiHook();
     if (CONFIG.aiApiEnabled && hook) {
       try {
         var api = await hook(file);
-        if (api && api.flag && hits.indexOf(api.detail || 'AI model') === -1) hits.push(api.detail || 'AI model');
+        if (api && api.flag) addAll(hits, [api.detail || 'AI model']);
       } catch (e) {   }
     }
     if (hits.length)
-      return { flag: true, detail: 'AI markers in file metadata: ' + hits.slice(0, 3).join(', ') + (hits.length > 3 ? '…' : '') };
-    return { flag: false, detail: 'no AI metadata' };
+      return { flag: true, detail: 'AI markers in file metadata: ' + list(hits), soft: soft };
+    // Soft markers alone are not enough — they fire on ordinary edited files, so
+    // they are recorded and the image goes on to the moderator to be judged.
+    if (soft.length)
+      return { flag: false, detail: 'Inconclusive markers, left to the moderator: ' + list(soft), soft: soft };
+    return { flag: false, detail: 'no AI metadata', soft: soft };
   }
 
   function fire(onStep, id, state, detail) {
@@ -286,11 +320,15 @@
     fire(onStep, 'ai', 'run');
     var ai = await aiCheck(file, meta.pages);
     checks.push({ name: 'ai', result: ai });
-    fire(onStep, 'ai', ai.flag ? 'flag' : 'pass', ai.detail);
+    fire(onStep, 'ai', (ai.flag && CONFIG.blockAiMetadata) ? 'flag' : 'pass', ai.detail);
 
-    if (dup.flag || ai.flag) {
-      var reason = [dup.flag ? dup.detail : null, ai.flag ? ai.detail : null].filter(Boolean).join(' · ');
-      return { verdict: 'review', reason: reason, phash: phash, checks: checks };
+    var blocking = [];
+    if (dup.flag) blocking.push(dup.detail);
+    if (ai.flag && CONFIG.blockAiMetadata) {
+      blocking.push('DigiArtz does not accept AI art. ' + ai.detail + '.');
+    }
+    if (blocking.length) {
+      return { verdict: 'review', reason: blocking.join(' \u00b7 '), phash: phash, checks: checks };
     }
     return { verdict: 'approve', reason: 'All checks passed', phash: phash, checks: checks };
   }

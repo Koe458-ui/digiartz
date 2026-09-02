@@ -2701,7 +2701,7 @@
             dzV.step('safety','fail','AI markers: ' + aiHits.slice(0,2).join(', '));
             throw new Error('The image looks AI-generated (' + aiHits.slice(0,2).join(', ') + ').' +
               (modMode === 'artwork'
-                ? ' DigiArtz accepts original artwork only.'
+                ? ' DigiArtz does not accept AI art — please upload artwork you made yourself.'
                 : ' DigiArtz resources need a real preview of the asset — a 3D render is fine, AI-generated art is not.'));
           }
         }

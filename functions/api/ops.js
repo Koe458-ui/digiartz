@@ -233,7 +233,7 @@ const HEAD = `
   }
 
   var RPT_LABELS = {
-    copyright:'Copyright infringement', ai_undisclosed:'AI-generated without disclosure',
+    copyright:'Copyright infringement', ai_undisclosed:'AI-generated artwork',
     nudity:'Nudity / Sexual content', violence:'Violence / Gore',
     hate:'Hate speech / Harassment', spam:'Spam / Advertising',
     misinformation:'Misinformation', impersonation:'Impersonation',

@@ -366,10 +366,11 @@ Pick the message you saw from this topic and I'll explain it.`
         answer:
 `This one depends on where you're posting:
 
-• In Artworks, AI art is welcome — there's a dedicated AI Art category, so AI-generated or AI-assisted pieces are accepted.
-• In Resources and the Marketplace, the preview has to be a real preview of the actual asset. A 3D render from Blender, Maya, Cinema4D or ZBrush counts as real — an AI-generated image does not.
+• DigiArtz does not accept AI art anywhere. Artworks have to be made by you, and generator markers left in a file's metadata (Stable Diffusion, ComfyUI, Midjourney, NovelAI, Firefly and the like) will stop an upload on their own.
+• In Resources and the Marketplace, the preview also has to be a real preview of the actual asset. A 3D render from Blender, Maya, Cinema4D or ZBrush counts as real — an AI-generated image does not.
+• Hand-drawn, painted, vector, pixel and 3D work is never AI art, however polished it looks. If your own piece was flagged by mistake, re-export it (some editors leave stray markers behind) and try again.
 
-So if a resource or product preview was turned away as AI-generated, swap in a genuine photo or render of the asset and upload again.`
+So if an upload was turned away as AI-generated, replace it with work you made yourself — or, for a resource, a genuine photo or render of the asset — and upload again.`
       },
       {
         question: "It says photo, selfie, screenshot or document",

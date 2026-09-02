@@ -2596,11 +2596,13 @@
   }
 
   var dzV = {
-    title:'', safety:'', safetySub:'', transfer:'', publish:'', failReason:null,
+    title:'', safety:'', safetySub:'', transfer:'', publish:'', failReason:null, held:false,
     recvLabel:'File & preview received',
+    noun:'upload',
     reset:function(t){
       this.title=t||'Upload'; this.safety='run'; this.safetySub='';
       this.transfer=''; this.publish=''; this.publishSub=''; this.failReason=null;
+      this.held=false;
     },
     open:function(t, recv){
       this.reset(t);
@@ -2623,7 +2625,7 @@
       if(!t||!b) return;
       var trk=(typeof upqTrackRow==='function') ? upqTrackRow
               : function(st,n,sub){ return '<div>'+esc(n)+'</div>'; };
-      var failed=!!this.failReason, html='';
+      var failed=!!this.failReason, held=!!this.held, html='';
       t.textContent = failed ? 'VERIFICATION FAILED' : 'VERIFICATION STATUS';
       if(failed){
         html+='<div class="upqFailBox"><div class="upqFailIco">!</div>'+
@@ -2632,7 +2634,7 @@
       }
       html+=trk('pass','Upload received','',false);
       html+=trk('pass', this.recvLabel || 'File & preview received', '', false);
-      html+=trk(this.safety,'Content safety check',this.safetySub,false);
+      html+=trk(this.safety,'Content safety check', held ? 'Waiting for the review to run' : this.safetySub, false);
       html+=trk(this.transfer,'Secure transfer','',false);
       var pubSub = (this.publish==='pass') ? (this.publishSub || 'It\u2019s live') : '';
       var sched  = /^Scheduled/.test(this.publishSub || '');
@@ -2640,6 +2642,9 @@
       if(failed){
         html+='<div class="upqFin fail">Verification stopped \u2014 nothing was published</div>';
         html+='<div class="upqFailNote">Any transferred file has been removed. Fix the issue above and publish again whenever you\u2019re ready.</div>';
+      } else if(held){
+        html+='<div class="upqFin busy">Review is currently unavailable \u2014 your '+esc(this.noun)+' is waiting in the queue</div>';
+        html+='<div class="upqFailNote">Moderation is temporarily down. \u201C'+esc(this.title||'Untitled')+'\u201D has been saved and will go through the review automatically as soon as it is back, in the order it was uploaded. You do not need to upload it again \u2014 it will appear once it passes.</div>';
       } else if(this.publish==='pass'){
         html+='<div class="upqFin ok">'+(sched ? 'All checks passed \u2014 '+esc(this.publishSub) : 'All checks passed \u2014 it\u2019s live')+'</div>';
       } else {
@@ -2670,6 +2675,9 @@
 
     var btn = document.getElementById('dzSubmit-'+sec);
     var s = st(sec), row = {user_id: currentUser.id, tags: s.tags, status:'approved'};
+    // Reassigned below once the content check has run: an upload the moderator
+    // could not see is written as pending and waits its turn in the queue.
+    function dzHoldRow(){ if(held) row.status = 'pending'; }
 
     var miss = FORMS[sec].fields.filter(function(fd){
       if(!fd.req || !dzCondShow(sec, fd)) return false;
@@ -2690,6 +2698,7 @@
     else if(sec === 'marketplace'){ modImg = st(sec).files.preview; modMode = 'marketplace'; }
     else if(sec === 'blog'){   modImg = st(sec).files.cover;   modMode = 'artwork'; modRecv = 'Cover image received'; }
     var moderated = !!modImg;
+    var held = false;
     try{
       if(moderated){
         dzV.open(val(sec,'title') || SEC[sec].noun, modRecv);
@@ -2720,12 +2729,20 @@
           dzV.step('safety','fail','Review service unavailable');
           throw new Error((mod && mod.error) || 'Content check failed — please try again.');
         }
-        if(!mod.allowed){
+        if(mod.deferred){
+          // The moderator could not be reached. The upload is kept and written
+          // as pending, and the queue picks it up when moderation is back.
+          held = true;
+          dzV.noun = SEC[sec].noun || 'upload';
+          dzV.held = true;
+          dzV.step('safety','', '');
+        } else if(!mod.allowed){
           var devNote = (typeof isDev !== 'undefined' && isDev && mod.code) ? ('Code: ' + mod.code) : '';
           dzV.step('safety','fail', devNote);
           throw new Error(mod.reason || 'This upload did not pass the content check.');
+        } else {
+          dzV.step('safety','pass', mod.rating === 'MATURE' ? 'Approved · 18+' : 'Safe for all audiences');
         }
-        dzV.step('safety','pass', mod.rating === 'MATURE' ? 'Approved · 18+' : 'Safe for all audiences');
         dzV.step('transfer','run');
       }
 
@@ -2943,6 +2960,9 @@
       }
 
       var when = dzSchPicked();
+      // Same reason as the artwork queue: publish_due_scheduled_sections writes
+      // the row in as approved, so an unreviewed upload must not take that path.
+      if(when && held) throw new Error('Moderation is temporarily unavailable, so this cannot be scheduled right now. Publish it now and it will be reviewed automatically as soon as moderation is back, or try scheduling again shortly.');
       if(when){
         if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
         var payload = {}; for(var pk in row){ if(pk!=='status') payload[pk]=row[pk]; }
@@ -2966,8 +2986,10 @@
       }
 
       if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
+      dzHoldRow();
       var res = await sb.from(SEC[sec].table).insert(row).select('id').single();
       if(res.error) throw res.error;
+      if(held && typeof window.dzModQueueKick === 'function') window.dzModQueueKick();
 
       if(pendingSell.length && res.data && res.data.id){
         var sellRows = pendingSell.map(function(x, i){
@@ -2993,7 +3015,8 @@
         }
       }
 
-      if(moderated){ dzV.step('publish','pass'); setTimeout(function(){ dzV.close(); }, 1400); }
+      if(moderated && !held){ dzV.step('publish','pass'); setTimeout(function(){ dzV.close(); }, 1400); }
+      else if(held){ dzV.step('publish',''); dzV.render(); }
       showToast('Published');
       if(sec === 'jobs') dzJobQuotaForget();
       dzResetForm(sec);

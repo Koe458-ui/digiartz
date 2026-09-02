@@ -1,13 +1,16 @@
 import { json } from '../../lib/http.js';
 import { sbUser, sbSvc, sbService, underLimit } from '../../lib/sb.js';
 import {
-  MODERATION_PROMPT, CATEGORIES, MESSAGES, decide, moderateWithGemini, toBase64
+  MODERATION_PROMPT, CATEGORIES, MESSAGES,
+  RESOURCE_PROMPT, RESOURCE_CATEGORIES, RESOURCE_MESSAGES,
+  decide, moderateWithGemini, toBase64
 } from '../moderate-upload.js';
 
-// One artwork per call, oldest first. When the moderator is unreachable an
-// upload is kept as pending instead of being turned away, and this drains the
-// queue that leaves behind — in the order the artworks were uploaded, one at a
-// time, so the moderator is never handed a batch it has to judge at once.
+// One upload per call, oldest first, across everything that goes through
+// moderation. When the moderator is unreachable an upload is kept as pending
+// instead of being turned away, and this drains the queue that leaves behind —
+// in the order people uploaded, one at a time, so the moderator is never handed
+// a batch it has to judge at once.
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -16,47 +19,83 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 // only start once every few seconds however many people have the site open.
 const TICK_SECONDS = 6;
 
-const SELECT = 'id,user_id,name,image_url,created_at';
+// How many heads to look at before giving up for this tick. Bounds the work when
+// several queued rows in a row have an image that cannot be read.
+const MAX_ATTEMPTS = 4;
+
+// Everything moderation gates. A listing and a resource are judged as previews;
+// an artwork and a blog cover are judged as artwork. Only artworks carry a
+// rating and an audit trail — the section tables have status and nothing else.
+const QUEUES = [
+  { table: 'artworks',          image: 'image_url',   resource: false, records: true  },
+  { table: 'blog_posts',        image: 'cover_url',   resource: false, records: false },
+  { table: 'resources',         image: 'preview_url', resource: true,  records: false },
+  { table: 'marketplace_items', image: 'preview_url', resource: true,  records: false }
+];
 
 export async function onRequestPost(context) {
   const { request, env } = context;
 
   const user = await sbUser(env, request);
   if (!user) return json({ error: 'Not signed in.' }, 401);
-  if (!sbSvc(env)) return json({ waiting: 0, down: true, more: false }, 200);
+  if (!sbSvc(env)) return json({ processed: 0, down: true, more: false }, 200);
 
   if (!(await underLimit(env, 'modq:drain', 1, TICK_SECONDS))) {
     return json({ processed: null, busy: true, more: true }, 200);
   }
 
-  let queue;
+  let waiting;
   try {
-    queue = await sbService(env,
-      `/artworks?status=eq.pending&select=${SELECT}&order=created_at.asc&limit=2`,
-      { method: 'GET' });
+    waiting = await pending(env);
   } catch {
     return json({ error: 'Queue unavailable.' }, 503);
   }
-  if (!Array.isArray(queue) || queue.length === 0) {
-    return json({ processed: 0, more: false, down: false }, 200);
+  if (waiting.length === 0) return json({ processed: 0, more: false, down: false }, 200);
+
+  for (let n = 0; n < Math.min(MAX_ATTEMPTS, waiting.length); n++) {
+    const { queue, row } = waiting[n];
+    const more = waiting.length > n + 1;
+
+    const image = await loadImage(row[queue.image]);
+    if (!image.ok) continue;  // unreadable head; try the next one rather than stall
+
+    const cfg = queue.resource
+      ? { resource: true,  prompt: RESOURCE_PROMPT,   categories: RESOURCE_CATEGORIES }
+      : { resource: false, prompt: MODERATION_PROMPT, categories: CATEGORIES };
+
+    const verdict = await moderateWithGemini(env, image.b64, image.type, cfg);
+    const call = decide(verdict, queue.resource);
+
+    // Still down. Nothing changes, and everything keeps its place in the queue.
+    if (call.deferred) return json({ processed: 0, down: true, more: true }, 200);
+
+    await apply(env, context, queue, row, verdict, call);
+
+    // Deliberately opaque: the caller is whoever had the site open, not the
+    // person who uploaded, so the response says a tick happened and no more.
+    return json({ processed: 1, more, down: false }, 200);
   }
 
-  const row = queue[0];
-  const more = queue.length > 1;
+  return json({ processed: 0, skipped: true, more: waiting.length > MAX_ATTEMPTS }, 200);
+}
 
-  const image = await loadImage(row.image_url);
-  if (!image.ok) {
-    // The file is gone or unreadable, so no moderator will ever clear it. Leave
-    // it pending rather than rejecting art over a storage fault, and move on.
-    return json({ processed: 0, skipped: true, more }, 200);
-  }
+// The oldest pending rows from every queue, merged into one upload order.
+async function pending(env) {
+  const heads = await Promise.all(QUEUES.map(async (queue) => {
+    const cols = ['id', 'user_id', 'created_at', queue.image].join(',');
+    const rows = await sbService(env,
+      `/${queue.table}?status=eq.pending&select=${cols}` +
+      `&order=created_at.asc&limit=${MAX_ATTEMPTS + 1}`, { method: 'GET' });
+    return (Array.isArray(rows) ? rows : []).map(row => ({ queue, row }));
+  }));
 
-  const cfg = { resource: false, prompt: MODERATION_PROMPT, categories: CATEGORIES };
-  const verdict = await moderateWithGemini(env, image.b64, image.type, cfg);
-  const call = decide(verdict, false);
+  return heads.flat().sort((a, b) =>
+    String(a.row.created_at).localeCompare(String(b.row.created_at)));
+}
 
-  // Still down. Nothing changes, and the artwork keeps its place in the queue.
-  if (call.deferred) return json({ processed: 0, down: true, more: true }, 200);
+async function apply(env, context, queue, row, verdict, call) {
+  const rating = (verdict.rating === 'MATURE') ? 'MATURE' : 'SAFE';
+  const MSG = queue.resource ? RESOURCE_MESSAGES : MESSAGES;
 
   const audit = {
     model: env.GEMINI_MODEL || 'gemini-flash-latest',
@@ -66,6 +105,7 @@ export async function onRequestPost(context) {
       i: 0,
       allow: !!verdict.allow,
       artwork: !!verdict.artwork,
+      resource: !!verdict.resource,
       ai_generated: !!verdict.ai_generated,
       rating: verdict.rating || null,
       quality: verdict.quality || null,
@@ -75,28 +115,35 @@ export async function onRequestPost(context) {
       decision: call.pass ? 'pass' : call.code
     }]
   };
-  const rating = (verdict.rating === 'MATURE') ? 'MATURE' : 'SAFE';
 
-  const patch = call.pass
-    ? { status: 'approved', content_rating: rating, is_mature: rating === 'MATURE',
-        ai_moderation: audit }
-    : { status: 'rejected', ai_moderation: { ...audit, code: call.code,
-        reason: MESSAGES[call.code] || MESSAGES.UNCLEAR } };
-
-  try {
-    // Filtered on the status it still has, so two ticks racing the same artwork
-    // cannot both apply a verdict.
-    await sbService(env, `/artworks?id=eq.${encodeURIComponent(row.id)}&status=eq.pending`,
-      { method: 'PATCH', body: JSON.stringify(patch) });
-  } catch {
-    return json({ error: 'Could not record the verdict.' }, 503);
+  const patch = { status: call.pass ? 'approved' : 'rejected' };
+  if (queue.records) {
+    patch.ai_moderation = call.pass ? audit
+      : { ...audit, code: call.code, reason: MSG[call.code] || MSG.UNCLEAR };
+    if (call.pass) {
+      patch.content_rating = rating;
+      patch.is_mature = rating === 'MATURE';
+    }
   }
 
-  context.waitUntil(logVerdict(env, row, call, rating, verdict).catch(() => {}));
+  // Filtered on the status it still has, so two ticks racing the same row cannot
+  // both apply a verdict.
+  await sbService(env,
+    `/${queue.table}?id=eq.${encodeURIComponent(row.id)}&status=eq.pending`,
+    { method: 'PATCH', body: JSON.stringify(patch) });
 
-  // Deliberately opaque: the caller is whoever had the site open, not the artist,
-  // so the response says a tick happened and nothing about whose work it was.
-  return json({ processed: 1, more, down: false }, 200);
+  context.waitUntil(sbService(env, '/moderation_logs', {
+    method: 'POST',
+    headers: { prefer: 'return=minimal' },
+    body: JSON.stringify({
+      user_id: row.user_id,
+      allowed: call.pass,
+      code: call.pass ? (queue.resource ? 'RESOURCE_OK' : 'ARTWORK_OK') : call.code,
+      rating,
+      confidence: verdict.confidence ?? null,
+      audit: { queued: true, table: queue.table, row_id: row.id, images: audit.images }
+    })
+  }).catch(() => {}));
 }
 
 async function loadImage(url) {
@@ -113,19 +160,4 @@ async function loadImage(url) {
   if (buf.byteLength > MAX_BYTES) return { ok: false, reason: 'too large' };
 
   return { ok: true, b64: toBase64(buf), type };
-}
-
-function logVerdict(env, row, call, rating, verdict) {
-  return sbService(env, '/moderation_logs', {
-    method: 'POST',
-    headers: { prefer: 'return=minimal' },
-    body: JSON.stringify({
-      user_id: row.user_id,
-      allowed: call.pass,
-      code: call.pass ? 'ARTWORK_OK' : call.code,
-      rating,
-      confidence: verdict.confidence ?? null,
-      audit: { queued: true, artwork_id: row.id, images: [{ i: 0, ...verdict }] }
-    })
-  });
 }

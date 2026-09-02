@@ -188,6 +188,14 @@
         : null;
       var _mature = (mod.rating === 'MATURE') || !!x.declared_mature;
 
+      // A scheduled artwork is published later by publish_due_scheduled_uploads,
+      // which writes it straight in as approved — so an unreviewed one would go
+      // live unreviewed. Nothing is queued down that path; the artist is asked
+      // to publish now, which does queue, or to schedule once review is back.
+      if(job.publishAt && job.deferred){
+        var sf = new Error('Moderation is temporarily unavailable, so this cannot be scheduled right now. Publish it now and it will be reviewed automatically as soon as moderation is back, or try scheduling again shortly.');
+        sf.upqCheckFail = true; throw sf;
+      }
       if(job.publishAt){
         const{error:se}=await sb.from('scheduled_uploads').insert({
           user_id:currentUser.id, publish_at:job.publishAt,

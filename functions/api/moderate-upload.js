@@ -22,7 +22,7 @@ export const SOFT_CODES = [
 // Shown when the moderator could not be reached at all. The artwork is kept and
 // queued, so this is not a rejection and must never read like one.
 export const DEFERRED_MESSAGE =
-  'Moderation is temporarily unavailable. Your artwork is saved and will be ' +
+  'Moderation is temporarily unavailable. Your upload is saved and will be ' +
   'checked automatically as soon as it is back — you do not need to upload it again.';
 
 export const CATEGORIES = [
@@ -94,13 +94,13 @@ export const MESSAGES = {
   UNCLEAR:           'We could not confirm this image as original artwork. Please upload a clearer artwork image.'
 };
 
-const RESOURCE_CATEGORIES = [
+export const RESOURCE_CATEGORIES = [
   'RESOURCE_OK','AI_GENERATED','PERSON_PHOTO','NSFW_CONTENT','GORE_CONTENT',
   'TEXT_ONLY','SCREENSHOT','DOCUMENT','SPAM_IMAGE','BLANK_IMAGE','LOW_QUALITY',
   'NOT_RESOURCE','PROHIBITED_CONTENT','UNCLEAR'
 ];
 
-const RESOURCE_MESSAGES = {
+export const RESOURCE_MESSAGES = {
   AI_GENERATED:      'The preview looks AI-generated. DigiArtz resources need a real preview of the asset (a 3D render or hand-made artwork is fine — AI-generated art is not).',
   PERSON_PHOTO:      'A real photograph of a person was detected. Please use a preview that shows the file you are offering.',
   NSFW_CONTENT:      'The preview contains adult or NSFW content, which is not permitted on DigiArtz.',
@@ -116,7 +116,7 @@ const RESOURCE_MESSAGES = {
   UNCLEAR:           'We could not confirm this as a valid preview. Please upload a clearer preview image.'
 };
 
-const RESOURCE_PROMPT = `You are the preview moderator for DigiArtz, a digital creator community.
+export const RESOURCE_PROMPT = `You are the preview moderator for DigiArtz, a digital creator community.
 
 The user is offering a downloadable FILE — either a creative resource (a brush, texture, font, template, code pack, 3D model, etc.) or a piece of ARTWORK sold or shared as a file (an illustration, print, digital painting, clipart or sticker pack, etc.). You are shown its PREVIEW IMAGE only — judge whether that preview is acceptable.
 
@@ -307,15 +307,10 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Nothing was refused, but the moderator could not see every image. Artwork
-    // is kept and queued for a re-check; a resource preview is a retry, since
-    // there is no queue behind it to pick one up.
+    // Nothing was refused, but the moderator could not see every image. The
+    // upload is kept and queued for a re-check rather than turned away — the
+    // same for an artwork, a resource, a listing or a post.
     if (allowed && calls.some(c => c.deferred)) {
-      if (isResource) {
-        return json({
-          error: 'Moderation is temporarily unavailable — please try again in a few minutes.'
-        }, 503);
-      }
       allowed = false;
       deferred = true;
       code = 'MODERATION_DEFERRED';

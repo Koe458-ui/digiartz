@@ -812,25 +812,61 @@
   }
 
   var PF_SOCIAL_PLATFORMS = [
-    {key:'instagram', label:'Instagram', domains:['instagram.com','instagr.am']},
-    {key:'facebook',  label:'Facebook',  domains:['facebook.com','fb.com','fb.me']},
-    {key:'youtube',   label:'YouTube',   domains:['youtube.com','youtu.be']},
-    {key:'x',         label:'X',         domains:['x.com','twitter.com']},
-    {key:'tiktok',    label:'TikTok',    domains:['tiktok.com']},
-    {key:'linkedin',  label:'LinkedIn',  domains:['linkedin.com']},
-    {key:'discord',   label:'Discord',   domains:['discord.gg','discord.com']},
-    {key:'reddit',    label:'Reddit',    domains:['reddit.com','redd.it']},
-    {key:'pinterest', label:'Pinterest', domains:['pinterest.com','pin.it']}
+    {key:'instagram', label:'Instagram', domains:['instagram.com','instagr.am'],
+     icon:'<rect x="3" y="3" width="18" height="18" rx="5.2"/><circle cx="12" cy="12" r="4.1"/>'+
+          '<circle cx="17.1" cy="6.9" r="1.15" fill="currentColor" stroke="none"/>'},
+    {key:'facebook',  label:'Facebook',  domains:['facebook.com','fb.com','fb.me'],
+     icon:'<rect x="3" y="3" width="18" height="18" rx="5.2"/>'+
+          '<path d="M15.4 7.8h-1.7a2.4 2.4 0 0 0-2.4 2.4V21"/><path d="M9.2 13.4h5"/>'},
+    {key:'youtube',   label:'YouTube',   domains:['youtube.com','youtu.be'],
+     icon:'<rect x="2.2" y="5.6" width="19.6" height="12.8" rx="4.2"/>'+
+          '<path d="M10.3 9.4 15.5 12l-5.2 2.6z" fill="currentColor"/>'},
+    {key:'x',         label:'X',         domains:['x.com','twitter.com'],
+     icon:'<path fill="currentColor" stroke="none" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17'+
+          'l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833'+
+          'L7.084 4.126H5.117z"/>'},
+    {key:'tiktok',    label:'TikTok',    domains:['tiktok.com'],
+     icon:'<path d="M14.3 3.2c.45 2.65 2 4.3 4.7 4.6"/>'+
+          '<path d="M14.3 3.2v11.4a4 4 0 1 1-3.2-3.92"/>'},
+    {key:'linkedin',  label:'LinkedIn',  domains:['linkedin.com'],
+     icon:'<rect x="3" y="3" width="18" height="18" rx="5.2"/><path d="M7.5 10.6V17"/>'+
+          '<circle cx="7.5" cy="7.4" r="1.15" fill="currentColor" stroke="none"/>'+
+          '<path d="M11.4 17v-6.4"/><path d="M11.4 13.4a2.8 2.8 0 0 1 5.6 0V17"/>'},
+    {key:'discord',   label:'Discord',   domains:['discord.gg','discord.com'],
+     icon:'<path d="M8.8 4.2c-1.6.3-3.2.8-4.6 1.6-1.9 3.2-2.4 6.8-1.8 10.4 1.3 1.1 2.9 1.9 4.6 2.3'+
+          'l1-1.7q4 2 8 0l1 1.7c1.7-.4 3.3-1.2 4.6-2.3.6-3.6.1-7.2-1.8-10.4-1.4-.8-3-1.3-4.6-1.6'+
+          'l-.7 1.4q-2.45-.5-4.9 0z"/>'+
+          '<ellipse cx="9.3" cy="12.5" rx="1.45" ry="1.85"/>'+
+          '<ellipse cx="14.7" cy="12.5" rx="1.45" ry="1.85"/>'},
+    {key:'reddit',    label:'Reddit',    domains:['reddit.com','redd.it'],
+     icon:'<circle cx="12" cy="14" r="7.2"/><path d="M12 6.8V4.6c0-.8.6-1.4 1.4-1.4"/>'+
+          '<circle cx="14.8" cy="3.2" r="1.3" fill="currentColor" stroke="none"/>'+
+          '<circle cx="9.2" cy="13.2" r="1.15" fill="currentColor" stroke="none"/>'+
+          '<circle cx="14.8" cy="13.2" r="1.15" fill="currentColor" stroke="none"/>'+
+          '<path d="M8.9 16.9q3.1 2.1 6.2 0"/>'},
+    {key:'pinterest', label:'Pinterest', domains:['pinterest.com','pin.it'],
+     icon:'<circle cx="12" cy="12" r="9"/><path d="M10.3 19.8 12.9 8.4"/>'+
+          '<path d="M9.5 13.7c-.5-2.6 1-4.9 3.6-5.4 2.4-.5 4.4.9 4.8 3.1.5 2.5-.9 4.7-3.2 5.1'+
+          '-1.3.2-2.4-.3-2.9-1.2"/>'}
   ];
+  function pfSocialIcoHtml(p){
+    return '<span class="pfConnectIco" aria-hidden="true">'+
+             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" '+
+             'stroke-linecap="round" stroke-linejoin="round">'+p.icon+'</svg>'+
+           '</span>';
+  }
   function pfRenderConnect(){
     var wrap = document.getElementById('pfConnectList');
+    if(!wrap) return;
     var links = (pf.profile && pf.profile.social_links) || {};
     wrap.innerHTML = PF_SOCIAL_PLATFORMS.map(function(p){
       var url = links[p.key];
       var safe = (typeof url === 'string' && /^https?:\/\//i.test(url.trim())) ? url.trim() : null;
+      var body = pfSocialIcoHtml(p)+'<span class="pfConnectTxt">'+p.label+'</span>';
       return safe
-        ? '<a class="pfConnectItem pfConnectItem--on" href="'+esc(safe)+'" target="_blank" rel="noopener noreferrer">'+p.label+'</a>'
-        : '<span class="pfConnectItem pfConnectItem--off">'+p.label+'</span>';
+        ? '<a class="pfConnectItem pfConnectItem--on pfBrand--'+p.key+'" href="'+esc(safe)+'" '+
+            'target="_blank" rel="noopener noreferrer">'+body+'</a>'
+        : '<span class="pfConnectItem pfConnectItem--off" title="'+p.label+' not added">'+body+'</span>';
     }).join('');
   }
   function pfValidateSocialLink(platform, raw){

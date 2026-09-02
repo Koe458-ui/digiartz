@@ -257,11 +257,37 @@
   color:var(--tc);margin-top:.6rem;
 }
 
-.pfConnectList{display:flex;flex-direction:column;align-items:flex-start;gap:.7rem;}
-.pfConnectItem{font-family:var(--fb);font-size:.88rem;font-weight:600;text-decoration:none;}
-.pfConnectItem--on{color:var(--pb);}
-.pfConnectItem--on:hover{text-decoration:underline;}
-.pfConnectItem--off{color:var(--tc);cursor:default;}
+.pfConnectList{display:flex;flex-direction:column;align-items:flex-start;gap:.55rem;}
+.pfConnectItem{
+  display:inline-flex;align-items:center;gap:.6rem;line-height:1.25;
+  font-family:var(--fb);font-size:.88rem;font-weight:600;text-decoration:none;
+}
+.pfConnectIco{
+  display:inline-flex;align-items:center;justify-content:center;
+  flex:0 0 auto;width:1.3rem;height:1.3rem;
+}
+.pfConnectIco svg{display:block;width:100%;height:100%;}
+.pfConnectItem--on{color:var(--brand,var(--pb));}
+.pfConnectItem--on:hover .pfConnectTxt{text-decoration:underline;}
+.pfConnectItem--off{color:var(--tc);cursor:default;opacity:.6;}
+
+/* Brand colours. Only applied once a link is actually saved, so a filled-in
+   platform reads at a glance against the greyed-out ones that are still empty. */
+.pfBrand--instagram{--brand:#E1306C;}
+.pfBrand--facebook {--brand:#1877F2;}
+.pfBrand--youtube  {--brand:#FF0000;}
+.pfBrand--x        {--brand:#FFFFFF;}
+.pfBrand--tiktok   {--brand:#FE2C55;}
+.pfBrand--linkedin {--brand:#4DA3F0;}
+.pfBrand--discord  {--brand:#5865F2;}
+.pfBrand--reddit   {--brand:#FF4500;}
+.pfBrand--pinterest{--brand:#E60023;}
+html[data-theme="light"] .pfBrand--x,
+html[data-theme="offwhite"] .pfBrand--x{--brand:#0F1419;}
+html[data-theme="light"] .pfBrand--linkedin,
+html[data-theme="offwhite"] .pfBrand--linkedin{--brand:#0A66C2;}
+html[data-theme="light"] .pfBrand--youtube,
+html[data-theme="offwhite"] .pfBrand--youtube{--brand:#D40000;}
 
 #pfSearchPage,#fgSearchPage{
   position:fixed;inset:0;z-index:530;background:var(--bg);color:var(--tx);
@@ -552,5 +578,6 @@ a.pfMenuItem{text-decoration:none;}
 
 .pfConnectRow{margin-bottom:.9rem;}
 .pfConnectRow:last-child{margin-bottom:0;}
-.pfConnectRowLbl{display:block;font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;color:rgba(var(--vtx2-rgb),.55);margin-bottom:.35rem;}
+.pfConnectRowLbl{display:flex;align-items:center;gap:.45rem;font-family:var(--fm);font-size:.66rem;letter-spacing:.08em;color:rgba(var(--vtx2-rgb),.55);margin-bottom:.35rem;}
+.pfConnectRowLbl .pfConnectIco{width:1.1rem;height:1.1rem;color:var(--brand,currentColor);}
 .pfEditInput.err{border-color:#ef4444;}

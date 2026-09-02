@@ -35,6 +35,11 @@
     PF_SOCIAL_PLATFORMS.forEach(function(p){
       var input = document.getElementById('pfConnect_'+p.key);
       if(input) input.addEventListener('input', function(){ input.classList.remove('err'); });
+      var lbl = document.querySelector('label[for="pfConnect_'+p.key+'"]');
+      if(lbl && !lbl.querySelector('.pfConnectIco')){
+        lbl.classList.add('pfBrand--'+p.key);
+        lbl.insertAdjacentHTML('afterbegin', pfSocialIcoHtml(p));
+      }
     });
   });
 

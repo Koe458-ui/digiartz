@@ -36,7 +36,6 @@
   function fgSearchClear(){ window.dzSearchUI.clear(FG_SRCH_UI); }
   function fgSearchInput(v){ window.dzSearchUI.input(FG_SRCH_UI, v); }
   function fgSearchScope(scope){ window.dzSearchUI.scope(FG_SRCH_UI, scope); }
-  function fgSearchPaintScopes(){ window.dzSearchUI.paintScopes(FG_SRCH_UI); }
 
   function fgSearchArtworks(q){
     var all = (typeof window.galleryImages === 'function') ? window.galleryImages() : null;

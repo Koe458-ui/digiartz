@@ -1,6 +1,6 @@
   var upq = { jobs: [], seq: 0, modalJob: null, modalSnap: null };
 
-  var UPQ_STAGE_LABEL = { checking:'VERIFYING', uploading:'UPLOADING', finalizing:'ALMOST DONE', live:'LIVE', failed:'FAILED' };
+  var UPQ_STAGE_LABEL = { checking:'VERIFYING', uploading:'UPLOADING', finalizing:'ALMOST DONE', live:'LIVE', queued:'IN REVIEW', failed:'FAILED' };
 
   function upqStart(snap){
     var job = {
@@ -16,7 +16,8 @@
       steps: { ratelimit:{state:'',detail:''}, duplicate:{state:'',detail:''}, ai:{state:'',detail:''}, moderation:{state:'',detail:''} },
       mod: { artwork:'', artworkSub:'', safety:'', safetySub:'', quality:'', qualitySub:'' },
       uploadedPaths: [],
-      failReason: null
+      failReason: null,
+      deferred: false
     };
     upq.jobs.unshift(job);
     upqSync();
@@ -49,6 +50,7 @@
       if(j.stage==='checking')        hint = j.checkHint || 'Verifying artwork';
       else if(j.stage==='uploading')  hint = j.upTotal>1 ? ('Transferring '+Math.min(j.upDone+1,j.upTotal)+' of '+j.upTotal+' images') : 'Transferring image';
       else if(j.stage==='finalizing') hint = 'Publishing';
+      else if(j.stage==='queued')     hint = 'Waiting for review';
       return '<div class="upqCard'+(j.stage==='live'?' upqLive':'')+'" onclick="upqOpenModal(\''+j.id+'\')" role="status" title="Tap for status">'+
         '<div class="upqImgWrap">'+
           (j.preview ? '<img class="upqImg" src="'+j.preview+'" alt="" style="'+thumbStyle(j.thumbFocus.x, j.thumbFocus.y, j.thumbFocus.z)+'">' : '')+
@@ -112,7 +114,17 @@
         var me = new Error((mod&&mod.error)||'Moderation check failed \u2014 try again');
         me.upqCheckFail = true; throw me;
       }
-      if(!mod.allowed){
+      if(mod.deferred){
+        // The moderator could not be reached. The artwork is kept and uploaded,
+        // and the database holds it as pending because no approval token came
+        // back with it. Nothing here reads as a failure.
+        job.deferred = true;
+        job.steps.moderation.state='';  job.steps.moderation.detail='';
+        job.mod.artwork=''; job.mod.artworkSub='';
+        job.mod.safety='';  job.mod.safetySub='';
+        job.mod.quality=''; job.mod.qualitySub='';
+        upqRenderModal();
+      } else if(!mod.allowed){
         job.steps.moderation.state='fail';
         var devCode = (typeof isDev!=='undefined' && isDev && mod.code)
           ? ('Code: '+mod.code + (mod.failIndex>0 ? ' \u00b7 image '+(mod.failIndex+1) : '')) : '';
@@ -129,13 +141,14 @@
         }
         var mf = new Error(mod.reason||'The uploaded image does not meet DigiArtz artwork submission requirements.');
         mf.upqCheckFail = true; throw mf;
+      } else {
+        job.steps.moderation.state='pass';
+        job.steps.moderation.detail = mod.rating==='MATURE' ? 'Approved \u00b7 18+' : 'Approved';
+        job.mod.artwork='pass'; job.mod.artworkSub='Original artwork confirmed';
+        job.mod.safety='pass';  job.mod.safetySub = mod.rating==='MATURE' ? 'Approved \u00b7 18+ content' : 'Safe for all audiences';
+        job.mod.quality='pass'; job.mod.qualitySub='Quality acceptable';
+        if(upq.modalJob===job.id){ upqCloseModal(); } else { upqRenderModal(); }
       }
-      job.steps.moderation.state='pass';
-      job.steps.moderation.detail = mod.rating==='MATURE' ? 'Approved \u00b7 18+' : 'Approved';
-      job.mod.artwork='pass'; job.mod.artworkSub='Original artwork confirmed';
-      job.mod.safety='pass';  job.mod.safetySub = mod.rating==='MATURE' ? 'Approved \u00b7 18+ content' : 'Safe for all audiences';
-      job.mod.quality='pass'; job.mod.qualitySub='Quality acceptable';
-      if(upq.modalJob===job.id){ upqCloseModal(); } else { upqRenderModal(); }
 
       job.stage='uploading'; job.upDone=0; upqSync();
       var uniq = Date.now()+'_'+job.id.split('_')[1];
@@ -199,7 +212,8 @@
         image_url:publicUrl, storage_path:path,
         thumb_x:job.thumbFocus.x, thumb_y:job.thumbFocus.y, thumb_zoom:job.thumbFocus.z||1,
         pages:artPageUrls.length?artPageUrls:null, kind:ART_KIND_ART,
-        user_id:currentUser.id, software:job.software||null, phash:phash, status:'approved',
+        user_id:currentUser.id, software:job.software||null, phash:phash,
+        status: job.deferred ? 'pending' : 'approved',
         content_rating:mod.rating, is_mature:_mature, ai_moderation:mod.audit,
         mod_token:mod.token||null
       };
@@ -229,9 +243,17 @@
         }
       }
 
-      job.stage='live';
+      job.stage = job.deferred ? 'queued' : 'live';
       upqSync();
       var row = rows && rows[0];
+
+      if(job.deferred){
+        // It is not on the site yet, so it does not join the galleries, and the
+        // card stays put — tapping it is how the artist finds out why.
+        if(typeof window.dzModQueueKick === 'function') window.dzModQueueKick();
+        showToast('\u201C'+(job.name||'Artwork')+'\u201D is in review');
+        return;
+      }
 
       if(row && typeof window.dzArtworkChanged === 'function'){
         window.dzArtworkChanged(row.id, { userId: row.user_id || (currentUser && currentUser.id) });
@@ -275,7 +297,7 @@
   function upqOpenModal(id){
     var j = upqFind(id);
     if(!j) return;
-    if(j.stage==='failed'){
+    if(j.stage==='failed' && !j.deferred){
       upq.modalSnap = j; upq.modalJob = null;
       var i = upq.jobs.indexOf(j); if(i!==-1) upq.jobs.splice(i,1);
       upqSync();
@@ -310,6 +332,7 @@
     var body  = document.getElementById('upqMBody');
     if(!title || !body) return;
     var failed = j.stage==='failed';
+    var held = !!j.deferred;
     title.textContent = failed ? 'VERIFICATION FAILED' : 'VERIFICATION STATUS';
     var order = ['checking','uploading','finalizing','live'];
     var si = order.indexOf(j.stage);
@@ -333,7 +356,7 @@
       [j.steps.ratelimit.state, 'Spam & rate check', j.steps.ratelimit.detail],
       [j.steps.duplicate.state, 'Duplicate detection', j.steps.duplicate.detail],
       [j.steps.ai.state, 'Metadata inspection', j.steps.ai.detail],
-      [m.artwork, 'Artwork review', m.artworkSub],
+      [m.artwork, 'Artwork review', held ? 'Waiting for the review to run' : m.artworkSub],
       [m.safety, 'Content safety check', m.safetySub],
       [m.quality, 'Quality & watermark check', m.qualitySub],
       [transferState, 'Secure transfer', transferSub],
@@ -345,6 +368,9 @@
     if(failed){
       html += '<div class="upqFin fail">Verification stopped \u2014 nothing was published</div>';
       html += '<div class="upqFailNote">Any transferred file has been removed from storage. Fix the issue above and upload again whenever you\u2019re ready.</div>';
+    } else if(held){
+      html += '<div class="upqFin busy">Review is currently unavailable \u2014 your artwork is waiting in the queue</div>';
+      html += '<div class="upqFailNote">Moderation is temporarily down. \u201C'+esc(j.name||'Untitled')+'\u201D has been saved and will go through the review automatically as soon as it is back, in the order it was uploaded. You do not need to upload it again \u2014 it will appear on your profile once it passes.</div>';
     } else if(j.stage==='live'){
       html += '<div class="upqFin ok">All checks passed \u2014 your artwork is live</div>';
     } else {
@@ -352,6 +378,51 @@
     }
     body.innerHTML = html;
   }
+
+  // Drains the queue that an outage leaves behind. Each tick asks the server for
+  // ONE artwork — the one uploaded earliest — so the moderator is never handed a
+  // batch, and the order artists uploaded in is the order they are reviewed in.
+  // Any signed-in visitor turns the handle, which is what makes it automatic.
+  var modq = { timer: null, busy: false, idleTries: 0 };
+
+  function modqSoon(ms){
+    if(modq.timer) clearTimeout(modq.timer);
+    modq.timer = setTimeout(modqTick, ms);
+  }
+
+  async function modqTick(){
+    modq.timer = null;
+    if(modq.busy) return;
+    if(typeof currentUser === 'undefined' || !currentUser){
+      // Signed out, or auth has not settled yet. Look again a couple of times,
+      // then leave it to the next upload or page load.
+      if(++modq.idleTries <= 3) modqSoon(30000);
+      return;
+    }
+    modq.busy = true;
+    try{
+      var sess = (await sb.auth.getSession()).data.session;
+      if(!sess) return;
+      var res = await fetch('/api/moderation/recheck', {
+        method: 'POST',
+        headers: { 'authorization': 'Bearer ' + sess.access_token }
+      });
+      var out = await res.json().catch(function(){ return null; });
+      if(!res.ok || !out)      modqSoon(120000);
+      else if(out.busy)        modqSoon(9000);      // another visitor holds the tick
+      else if(out.down)        modqSoon(60000);     // still down; the queue keeps its order
+      else if(out.more)        modqSoon(7000);      // more waiting — next one along
+      else if(out.processed)   modqSoon(15000);     // that was the last one; confirm
+      // Nothing pending: stop until the next upload or page load.
+    }catch(e){
+      modqSoon(120000);
+    }finally{
+      modq.busy = false;
+    }
+  }
+
+  window.dzModQueueKick = function(){ modq.idleTries = 0; modqSoon(2000); };
+  window.addEventListener('load', function(){ modqSoon(8000); });
 
   function upqBusy(){
     for(var i = 0; i < upq.jobs.length; i++){

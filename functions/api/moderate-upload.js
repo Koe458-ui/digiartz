@@ -6,20 +6,26 @@ const MAX_FILES = 6;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 // A rejection has to be confident. Anything below this is treated as the model
 // hedging, and a hedge must never cost an artist their upload.
-const REJECT_CONFIDENCE = 0.75;
+export const REJECT_CONFIDENCE = 0.75;
 
 // These stop an upload however the rest of the verdict reads.
-const HARD_REJECT = [
+export const HARD_REJECT = [
   'ADULT_CONTENT', 'PROHIBITED_CONTENT', 'NSFW_CONTENT', 'GORE_CONTENT'
 ];
 
 // The codes the model reaches for when it is unsure rather than when it has
 // actually seen a photo, a screenshot, or a document. We accept on all of them.
-const SOFT_CODES = [
+export const SOFT_CODES = [
   'UNCLEAR', 'LOW_QUALITY', 'TEXT_ONLY', 'NOT_ARTWORK', 'NOT_RESOURCE'
 ];
 
-const CATEGORIES = [
+// Shown when the moderator could not be reached at all. The artwork is kept and
+// queued, so this is not a rejection and must never read like one.
+export const DEFERRED_MESSAGE =
+  'Moderation is temporarily unavailable. Your artwork is saved and will be ' +
+  'checked automatically as soon as it is back — you do not need to upload it again.';
+
+export const CATEGORIES = [
   'ARTWORK_OK','SELFIE','MIRROR_SELFIE','FAMILY_PHOTO','GROUP_PHOTO','COUPLE_PHOTO',
   'BABY_PHOTO','PET_PHOTO','CASUAL_PHOTO','TRAVEL_PHOTO','FOOD_PHOTO','DRINK_PHOTO',
   'PRODUCT_PHOTO','VEHICLE_PHOTO','HOUSE_PHOTO','INTERIOR_PHOTO','LANDSCAPE_PHOTO',
@@ -32,7 +38,7 @@ const CATEGORIES = [
   'ADULT_CONTENT','PROHIBITED_CONTENT','AI_GENERATED','UNCLEAR'
 ];
 
-const MESSAGES = {
+export const MESSAGES = {
   SELFIE:            'A selfie or personal photograph was detected. DigiArtz accepts original artwork only.',
   MIRROR_SELFIE:     'A mirror selfie was detected. Please upload an original artwork instead.',
   FAMILY_PHOTO:      'A family photograph was detected. DigiArtz accepts artwork only.',
@@ -164,7 +170,7 @@ Confidence: report how sure you are of the verdict you gave. A rejection you are
 
 Return JSON: allow (true when the preview shows an acceptable artwork or resource file, the rating is SAFE or MATURE, quality is GOOD, and it is not AI-generated), resource (bool — true for artwork previews too), rating, ai_generated (bool), quality, category (one code from the allowed list), reason (short internal note), confidence (0 to 1).`;
 
-const MODERATION_PROMPT = `You are the artwork upload moderator for DigiArtz, a digital art community.
+export const MODERATION_PROMPT = `You are the artwork upload moderator for DigiArtz, a digital art community.
 
 Your job is to keep out photographs, screenshots, documents, and explicit content. It is NOT to judge whether the artwork is good, original, popular, or new. Artists lose real work every time you reject something wrongly, so ACCEPT is the default and a rejection has to be earned.
 
@@ -230,10 +236,6 @@ export async function onRequestPost(context) {
   const SB_URL = env.SUPABASE_URL || SB_URL_FALLBACK;
   const SB_ANON = env.SUPABASE_ANON_KEY || SB_ANON_FALLBACK;
   try {
-    if (!env.GEMINI_API_KEY) {
-      return json({ error: 'Server not configured: GEMINI_API_KEY missing in Cloudflare environment variables.' }, 500);
-    }
-
     const token = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
     if (!token) return json({ error: 'Not signed in.' }, 401);
 
@@ -268,23 +270,25 @@ export async function onRequestPost(context) {
     }));
 
     let allowed = true;
+    let deferred = false;
     let code = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
     let reason = 'Approved.';
     let rating = 'SAFE';
     let failIndex = -1;
     const audit = [];
+    const calls = verdicts.map(v => decide(v, isResource));
 
     for (let i = 0; i < verdicts.length; i++) {
       const v = verdicts[i];
-      const call = decide(v, isResource);
+      const call = calls[i];
 
-      if (!call.pass && allowed) {
+      // A real verdict outranks an outage on another image: if one image was
+      // actually refused, the upload is refused and nothing is queued.
+      if (!call.pass && !call.deferred && allowed) {
         allowed = false;
         failIndex = i;
         code = call.code;
-        reason = call.service
-          ? (v.reason || MSG.UNCLEAR)
-          : (files.length > 1 ? `Image ${i + 1}: ` : '') + (MSG[code] || MSG.UNCLEAR);
+        reason = (files.length > 1 ? `Image ${i + 1}: ` : '') + (MSG[code] || MSG.UNCLEAR);
       }
       if (v.rating === 'MATURE' && rating === 'SAFE') rating = 'MATURE';
 
@@ -299,8 +303,24 @@ export async function onRequestPost(context) {
         category: v.category || null,
         reason: v.reason || null,
         confidence: v.confidence ?? null,
-        decision: call.pass ? 'pass' : call.code
+        decision: call.deferred ? 'deferred' : (call.pass ? 'pass' : call.code)
       });
+    }
+
+    // Nothing was refused, but the moderator could not see every image. Artwork
+    // is kept and queued for a re-check; a resource preview is a retry, since
+    // there is no queue behind it to pick one up.
+    if (allowed && calls.some(c => c.deferred)) {
+      if (isResource) {
+        return json({
+          error: 'Moderation is temporarily unavailable — please try again in a few minutes.'
+        }, 503);
+      }
+      allowed = false;
+      deferred = true;
+      code = 'MODERATION_DEFERRED';
+      reason = DEFERRED_MESSAGE;
+      rating = 'SAFE';
     }
 
     context.waitUntil(fetch(`${SB_URL}/rest/v1/moderation_logs`, {
@@ -328,6 +348,7 @@ export async function onRequestPost(context) {
 
     return json({
       allowed,
+      deferred,
       rating,
       code,
       failIndex,
@@ -347,12 +368,12 @@ export async function onRequestPost(context) {
 // Turns one Gemini verdict into a pass/fail. The gate is deliberately lopsided:
 // only a confident, specific rejection stops an upload. A hedge, a vague code, or
 // a low-confidence "no" lets the artwork through.
-function decide(v, isResource) {
+export function decide(v, isResource) {
   const okCode = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
 
-  // The call never reached the model, or came back unreadable. That is a retry,
-  // not a verdict on the artwork.
-  if (!v.ok) return { pass: false, code: 'UNCLEAR', service: true };
+  // The call never reached the moderator, or came back unreadable. That is not a
+  // verdict on the artwork, so the upload is held rather than turned away.
+  if (!v.ok) return { pass: false, deferred: true, code: 'MODERATION_DEFERRED' };
 
   let code = (v.category && v.category !== okCode) ? v.category : null;
   if (v.rating === 'ADULT') code = isResource ? 'NSFW_CONTENT' : 'ADULT_CONTENT';
@@ -379,7 +400,7 @@ function decide(v, isResource) {
   return { pass: false, code };
 }
 
-async function moderateWithGemini(env, b64, mimeType, cfg) {
+export async function moderateWithGemini(env, b64, mimeType, cfg) {
   cfg = cfg || { resource: false, prompt: MODERATION_PROMPT, categories: CATEGORIES };
   const model = env.GEMINI_MODEL || 'gemini-flash-latest';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
@@ -481,7 +502,7 @@ async function signApproval(secret, uid) {
   return `${exp}.${jti}.${sig}`;
 }
 
-function toBase64(buf) {
+export function toBase64(buf) {
   const bytes = new Uint8Array(buf);
   let bin = '';
   const CHUNK = 0x8000;

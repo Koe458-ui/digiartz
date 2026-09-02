@@ -586,7 +586,6 @@
             try{ renderFG(); }catch(e){}
           }, function(){   });
         }catch(e){ console.error('loadHiddenArtworks: '+(e.message||e)); }
-        try{ if(typeof tgLoad === 'function') tgLoad(true); }catch(e){}
       }
 
       if (event === 'SIGNED_IN') {

@@ -523,7 +523,6 @@
     { id:'upqBackdrop',     close:['upqCloseModal'] },
     { id:'fgFltPanel',      close:['closeFilterPanel'] },
     { id:'fgFltOvr',        close:['closeFilterPanel'] },
-    { id:'tgMod',           close:['tgModClose'],           lock:1 },
     { id:'legalBackdrop',   close:['closeLegal'],           lock:1 },
     { id:'legalPage',       close:['closeLegalPage'],       lock:1 },
     { id:'showcasePicker',  close:['closeShowcasePicker'] },
@@ -1392,17 +1391,6 @@
         var asc = iA<iB ? -1 : 1;
         return filterSrt==='new' ? -asc : asc;
       });
-    }
-
-    var picked = (typeof tgPickedTags === 'function') ? tgPickedTags() : null;
-    if(picked && picked.size){
-      var lifted=[], rest=[];
-      for(var pi=0; pi<imgs.length; pi++){
-        var cats=catList(imgs[pi].category), hit=false;
-        for(var ci=0; ci<cats.length; ci++){ if(picked.has(cats[ci])){ hit=true; break; } }
-        (hit?lifted:rest).push(imgs[pi]);
-      }
-      imgs = lifted.concat(rest);
     }
 
     if(fgSent){ fgSent.destroy(); fgSent = null; }

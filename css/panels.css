@@ -1,7 +1,7 @@
 .modal,.legalModal,#fgFltPanel{
   box-shadow:var(--sh-card)!important;
 }
-.fltDone:hover,.sCard:hover,.cpBarSend:hover,.fgFltBtn:hover,.fgFltBtn.active{box-shadow:none!important;}
+.fltDone:hover,.sCard:hover,.cpBarSend:hover,.fgHeadFlt:hover,.fgHeadFlt.active{box-shadow:none!important;}
 
 .cpBar::before{background:color-mix(in srgb,var(--bg) 96%,transparent)!important;}
 .cpBar{border-top:1px solid var(--bdr);}

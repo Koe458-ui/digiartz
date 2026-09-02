@@ -27,17 +27,23 @@
     if(id!=='artworks' && typeof dzSecEnter==='function') dzSecEnter(id);
   }
 
-  function fgOpenFilter(){
-    if(fgSection==='artworks'){ openFilterPanel(); return; }
-    openSecFilter(fgSection);
+  function fgOpenFilter(sec){
+    var id = (sec && FG_TITLE[sec]) ? sec : fgSection;
+    if(id==='artworks'){ openFilterPanel(); return; }
+    openSecFilter(id);
+  }
+  function fgFltOn(sec){
+    return sec==='artworks'
+      ? !!(typeof window.fgArtFiltered==='function' && window.fgArtFiltered())
+      : ((fgSecFilter[sec]||'all') !== 'all');
   }
   function fgSyncFilterBtn(){
-    var btn=document.getElementById('fgFltBtn');
-    if(!btn) return;
-    var on = fgSection==='artworks'
-      ? (typeof window.fgArtFiltered==='function' && window.fgArtFiltered())
-      : ((fgSecFilter[fgSection]||'all') !== 'all');
-    btn.classList.toggle('active', !!on);
+    var btns=document.querySelectorAll('#fg .fgHeadFlt');
+    for(var i=0;i<btns.length;i++){
+      var sec=btns[i].id.replace('fgFltBtn-','');
+      if(!FG_TITLE[sec]) continue;
+      btns[i].classList.toggle('active', fgFltOn(sec));
+    }
   }
   window.fgOpenFilter=fgOpenFilter;
   window.fgSyncFilterBtn=fgSyncFilterBtn;

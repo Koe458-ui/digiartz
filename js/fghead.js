@@ -109,6 +109,14 @@
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" ' +
             'stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
           '</button>' +
+          '<button type="button" class="fgHeadFlt" id="fgFltBtn-' + sec + '" ' +
+            'onclick="fgOpenFilter(\'' + sec + '\')" aria-label="Filters" ' +
+            'aria-controls="fgFltPanel">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+            'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/>' +
+            '<line x1="11" y1="18" x2="13" y2="18"/></svg>' +
+          '</button>' +
         '</div>' +
         '<div class="fgCatWrap">' +
           '<button type="button" class="fgCatNav fgCatPrev" data-fgnav="-1" ' +
@@ -139,6 +147,7 @@
     if (!panel || el('fgHead-' + sec)) return;
     panel.insertAdjacentHTML('afterbegin', build(sec));
     railWatch(el('fgCatRail-' + sec));
+    if (typeof window.fgSyncFilterBtn === 'function') window.fgSyncFilterBtn();
   }
 
   var timer = {};

@@ -297,6 +297,30 @@
 .dzCoPromoIn:focus-visible,
 .dzClMakeIn:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
 
+.fgHeadFlt{
+  position:relative;flex:0 0 auto;
+  width:34px;height:34px;padding:0;margin-left:.1rem;
+  display:flex;align-items:center;justify-content:center;
+  border:0;border-radius:50%;background:none;color:var(--txd);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  transition:background .16s ease,color .16s ease,transform .15s ease;
+}
+.fgHeadFlt::before{
+  content:'';position:absolute;left:-.28rem;top:50%;transform:translateY(-50%);
+  width:1px;height:18px;background:var(--bdr);
+}
+.fgHeadFlt svg{width:18px;height:18px;display:block;}
+.fgHeadFlt:active{transform:scale(.92);}
+@media(hover:hover){ .fgHeadFlt:hover{background:var(--sur2);color:var(--tx);} }
+.fgHeadFlt:focus-visible{outline:2px solid var(--pg);outline-offset:1px;}
+.fgHeadFlt.active{color:var(--ps);}
+.fgHeadFlt.active::after{
+  content:'';position:absolute;top:5px;right:4px;
+  width:6px;height:6px;border-radius:50%;
+  background:var(--pg);box-shadow:0 0 6px var(--pg);
+}
+@media(prefers-reduced-motion:reduce){ .fgHeadFlt{transition:none;} }
+
 .fgCatWrap{
   position:relative;
   margin-top:clamp(1rem,2.6vw,1.4rem);

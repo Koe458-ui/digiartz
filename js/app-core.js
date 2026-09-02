@@ -1106,8 +1106,6 @@
     const altText=esc(img.name||'Untitled artwork');
     let pgs=img.pages;
     if(typeof pgs==='string'){ try{ pgs=JSON.parse(pgs); }catch(e){ pgs=null; } }
-    const extraCount=Array.isArray(pgs)?pgs.length:0;
-    const multiBadge=extraCount?`<span class="gMulti" aria-label="${extraCount+1} images">⧉ ${extraCount+1}</span>`:'';
     const artistChip=img.user_id?`<div class="gArtist" data-uid="${esc(String(img.user_id))}" aria-hidden="true">
           <div class="gArtistAv"><span class="gArtistLtr"></span></div>
           <div class="gArtistName"></div>
@@ -1115,7 +1113,7 @@
         </div>`:'';
     return`<div class="gItem" data-id="${idStr}" data-fullsrc="${fullSrc}" data-name="${altText}" data-cat="${esc(cats[0]||'')}" data-desc="${esc(img.description||'')}">
       <a class="gItemLink" href="/artwork/${idStr}" onclick="return handleArtClick(event,'${idStr}')" aria-label="View ${altText}">
-        <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>${multiBadge}
+        <div class="cBadgeWrap"><span class="cBadge">${esc(cats[0]||'others')}</span>${moreBadge}</div>
         <img ${thumbAttrs} alt="${altText}" loading="${eager?'eager':'lazy'}"${eager?' fetchpriority="high"':''} decoding="async" itemprop="contentUrl" style="${thumbPos}" onload="this.classList.add('imgDone')" onerror="this.classList.add('imgDone')">
         <div class="gOv"></div>
         ${artistChip}
@@ -1396,7 +1394,14 @@
     if(fgSent){ fgSent.destroy(); fgSent = null; }
     fgList = imgs;
 
-    if(!imgs.length){c.innerHTML='<div class="fgEmp">NO ARTWORK FOUND</div>';_fgSyncFilterBtn();return;}
+    if(!imgs.length){
+      c.innerHTML = '<div class="fgEmp">'+
+        '<p class="fgEmpTitle">No results found</p>'+
+        '<p class="fgEmpText">It seems we can\u2019t find any results based on your search.</p>'+
+        '</div>';
+      _fgSyncFilterBtn();
+      return;
+    }
 
     fgVisible = Math.min(Math.max(gridInitialBatch(), fgVisible||0), imgs.length);
     c.innerHTML = `<div class="fgGrid" id="fgGridEl">${imgs.slice(0, fgVisible).map(itemHTML).join('')}</div>`;

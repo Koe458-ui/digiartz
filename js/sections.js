@@ -260,8 +260,12 @@
     });
 
     if(!rows.length){
-      host.innerHTML = '<div class="dzEmpty">' +
-        (q || cat !== 'all' ? 'NOTHING MATCHES THAT' : 'NOTHING HERE YET') + '</div>';
+      host.innerHTML = (q || cat !== 'all')
+        ? '<div class="fgEmp">'+
+          '<p class="fgEmpTitle">No results found</p>'+
+          '<p class="fgEmpText">It seems we can\u2019t find any results based on your search.</p>'+
+          '</div>'
+        : '<div class="dzEmpty">NOTHING HERE YET</div>';
       return;
     }
     var wrap = SEC[sec].kind === 'grid' ? 'dzGrid' : 'dzList';

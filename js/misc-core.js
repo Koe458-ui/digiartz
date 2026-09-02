@@ -68,7 +68,7 @@
     var t = window.DZ_MS && window.DZ_MS.tierFor(level);
     return t ? t.name : 'Newcomer';
   }
-  var el = window.dzEl;
+  function el (tag, cls, text) { return window.dzEl(tag, cls, text); }
   function svgIcon (d) {
     var w = document.createElement('span');
     w.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';

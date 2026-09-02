@@ -117,7 +117,7 @@
     return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
-  var el = window.dzEl;
+  function el (tag, cls, text) { return window.dzEl(tag, cls, text); }
   function svgEl(tag, attrs) {
     var n = document.createElementNS('http://www.w3.org/2000/svg', tag);
     for (var k in attrs) if (attrs[k] != null) n.setAttribute(k, attrs[k]);

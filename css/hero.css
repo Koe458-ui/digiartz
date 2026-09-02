@@ -153,18 +153,6 @@
 .cBadgeWrap{display:none;}
 .cBadge{background:var(--sur2);border:1px solid var(--bdr);font-family:var(--fm);font-size:.6rem;letter-spacing:.1em;color:var(--tx);padding:.2rem .4rem;text-transform:uppercase;pointer-events:none;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);}
 .cBadgeMore{background:color-mix(in srgb,var(--tc) 85%,var(--bg));border:1px solid var(--bdrh);font-family:var(--fm);font-size:.6rem;letter-spacing:.05em;color:#ffffff;padding:.2rem .4rem;border-radius:6px;box-shadow:0 2px 8px rgba(5,3,8,.35);pointer-events:auto;cursor:default;}
-.gMulti{
-  position:absolute;top:.4rem;right:.4rem;z-index:2;
-  display:inline-flex;align-items:center;gap:.2rem;
-  background:rgba(20,20,30,.72);
-  border:1px solid rgba(var(--pg-rgb),.18);
-  border-radius:6px;
-  padding:.18rem .38rem;
-  font-family:var(--fm);font-size:.58rem;letter-spacing:.04em;
-  color:#fff;
-  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-  pointer-events:none;
-}
 
 #fg{
   position:fixed;inset:0;z-index:500;overflow-y:auto;
@@ -683,7 +671,6 @@
 
 .fgBdy{padding:var(--fgGap) var(--fgPad) 1.5rem;}
 .fgBdy--art{padding:var(--fgGap) 0 1.5rem;}
-.fgEmp{text-align:center;padding:4rem 2rem;color:var(--txd);font-family:var(--fm);font-size:.8rem;letter-spacing:.2em;}
 .fgGrid{
   display:grid;
   grid-template-columns:repeat(2,1fr);
@@ -737,7 +724,7 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 }
 .hsMode:focus-visible{outline:2px solid var(--pg);outline-offset:3px;border-radius:50%;}
 
-.hsEmpty{
+.hsEmpty,.fgEmp,.dzEmpty{
   max-width:1300px;
   margin:3rem auto;
   padding:4rem 2rem;
@@ -747,13 +734,13 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   text-align:center;
 }
 .hsEmpty[hidden]{display:none;}
-.hsEmptyTitle{
+.hsEmptyTitle,.fgEmpTitle{
   margin:0;
   font-family:var(--fd);font-weight:800;
   font-size:clamp(1.4rem,4.4vw,2rem);
   line-height:1.2;letter-spacing:-.02em;color:var(--tx);
 }
-.hsEmptyText{
+.hsEmptyText,.fgEmpText{
   margin:.6rem 0 0;
   font-family:var(--fb);font-size:clamp(.88rem,2.3vw,1rem);
   line-height:1.5;color:var(--txd);
@@ -768,11 +755,11 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 
 @media(min-width:1280px){
   .awTop{
-    display:flex;align-items:center;gap:.55rem;
+    display:flex;align-items:center;justify-content:center;gap:.55rem;
     margin:1.25rem 0 0;padding:0 var(--shellPad);
   }
   .hsWrap{
-    flex:1 1 auto;min-width:240px;max-width:520px;
+    flex:0 1 520px;min-width:240px;max-width:520px;
     margin:0;padding:0;
   }
   .tgSearch.hsBar{max-width:none;}

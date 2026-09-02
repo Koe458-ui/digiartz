@@ -18,7 +18,7 @@
 
     function db () { return (typeof sb !== 'undefined' && sb) ? sb : null; }
     function me () { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; }
-    var el = window.dzEl;
+    function el (tag, cls, text) { return window.dzEl(tag, cls, text); }
     function num (n) { return (Number(n) || 0).toLocaleString(); }
     function thumb (u) {
       if (!u) return null;

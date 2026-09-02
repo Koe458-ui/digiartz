@@ -302,19 +302,20 @@
     var source = (navSource && navSource.length) ? navSource : images;
     if(!id || !source || !source.length){
       avNavList=[]; avNavIndex=-1;
-      if(prevBtn) prevBtn.style.display='none';
-      if(nextBtn) nextBtn.style.display='none';
+      if(prevBtn) prevBtn.style.visibility='hidden';
+      if(nextBtn) nextBtn.style.visibility='hidden';
       return;
     }
     avNavList = source;
     avNavIndex = avNavList.findIndex(function(a){ return String(a.id)===String(id); });
     var show = avNavIndex!==-1 && avNavList.length>1;
-    if(prevBtn) prevBtn.style.display = show ? '' : 'none';
-    if(nextBtn) nextBtn.style.display = show ? '' : 'none';
+    if(prevBtn) prevBtn.style.visibility = (show && avNavIndex>0) ? 'visible' : 'hidden';
+    if(nextBtn) nextBtn.style.visibility = (show && avNavIndex<avNavList.length-1) ? 'visible' : 'hidden';
   }
   function avNav(dir){
     if(avNavIndex===-1 || !avNavList.length) return;
-    var next=(avNavIndex+dir+avNavList.length)%avNavList.length;
+    var next=avNavIndex+dir;
+    if(next<0 || next>=avNavList.length) return;
     var art=avNavList[next];
     if(!art) return;
     var cats=catList(art.category).length?catList(art.category):['others'];

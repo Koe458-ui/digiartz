@@ -1382,12 +1382,10 @@
       imgs.sort(function(a,b){
         var tA=a.created_at?new Date(a.created_at).getTime():0;
         var tB=b.created_at?new Date(b.created_at).getTime():0;
-        var diff=filterSrt==='new'?(tB-tA):(tA-tB);
-        if(diff!==0)return diff;
+        if(tB!==tA)return tB-tA;
         var iA=String(a.id||''), iB=String(b.id||'');
         if(iA===iB) return 0;
-        var asc = iA<iB ? -1 : 1;
-        return filterSrt==='new' ? -asc : asc;
+        return iA<iB ? 1 : -1;
       });
     }
 

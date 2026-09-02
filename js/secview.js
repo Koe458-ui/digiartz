@@ -949,10 +949,11 @@
     if(typeof window.dzExtras === 'function') window.dzExtras();
     if(typeof window.dzAdMount === 'function') window.dzAdMount(host);
 
-    var multi = !curExt && rows().length > 1;
+    var total = rows().length;
+    var multi = !curExt && total > 1;
     var pb=document.getElementById('dzvPrev'), nb=document.getElementById('dzvNext');
-    if(pb) pb.style.visibility = multi ? 'visible' : 'hidden';
-    if(nb) nb.style.visibility = multi ? 'visible' : 'hidden';
+    if(pb) pb.style.visibility = (multi && cur.idx > 0) ? 'visible' : 'hidden';
+    if(nb) nb.style.visibility = (multi && cur.idx < total - 1) ? 'visible' : 'hidden';
 
     vwFill('dzvCard', r.user_id);
     if(sec !== 'jobs') vwEngPaint(kind, String(r.id));
@@ -1014,7 +1015,9 @@
     if(curExt) return;
     var n = rows().length;
     if(!n) return;
-    cur.idx = (cur.idx + dir + n) % n;
+    var next = cur.idx + dir;
+    if(next < 0 || next >= n) return;
+    cur.idx = next;
     render();
     var r = rows()[cur.idx];
     if(r) vwMark(cur.sec, r.id);

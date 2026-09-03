@@ -267,7 +267,7 @@
     inp.disabled = !!opts.lockName;
     var hint = document.getElementById('albModHint');
     if(hint) hint.textContent = opts.lockName
-      ? 'Built in, so the name stays as it is.'
+      ? 'This name can’t be changed.'
       : 'Up to 40 characters. “Likes” and “Bookmarks” are reserved.';
 
     var del = document.getElementById('albModDelete');

@@ -448,7 +448,7 @@ html.thmFade #themePage{
 }
 .albMeta{
   position:absolute;left:0;right:0;bottom:0;z-index:1;
-  padding:1.9rem .65rem .6rem;pointer-events:none;
+  padding:1.9rem 2.75rem .6rem .65rem;pointer-events:none;
   background:linear-gradient(to top,
     rgba(0,0,0,.92) 0%, rgba(0,0,0,.86) 26%, rgba(0,0,0,.62) 58%, rgba(0,0,0,0) 100%);
 }
@@ -465,15 +465,22 @@ html.thmFade #themePage{
   color:rgba(255,255,255,.74);
 }
 .albCardWrap{position:relative;display:block;}
+/* The dots sit in the dim band at the foot of the card, so they need no plate
+   of their own to be seen. No background, then -- just the glyph, and a 44px
+   box around it so it is a comfortable target on a phone. */
 .albDots{
-  position:absolute;top:.3rem;right:.3rem;z-index:2;
-  width:26px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;
-  border:none;border-radius:50%;cursor:pointer;
-  font-size:.86rem;line-height:1;color:#fff;
-  background:rgba(0,0,0,.46);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
-  opacity:.9;transition:background .18s,opacity .18s;
+  position:absolute;right:.1rem;bottom:.05rem;z-index:2;
+  width:44px;height:44px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  border:none;border-radius:12px;cursor:pointer;background:none;
+  font-size:1.25rem;line-height:1;
+  color:rgba(255,255,255,.88);
+  text-shadow:0 1px 4px rgba(0,0,0,.75);
+  transition:color .18s,transform .15s;
+  -webkit-tap-highlight-color:transparent;
 }
-@media(hover:hover){ .albDots:hover{background:rgba(0,0,0,.66);opacity:1;} }
+@media(hover:hover){ .albDots:hover{color:#fff;} }
+.albDots:active{transform:scale(.92);}
 .albCardNew{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem;
   background:transparent;

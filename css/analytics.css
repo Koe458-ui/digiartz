@@ -4,7 +4,7 @@
   --an-bookmarks:#00D9B8;
   --an-downloads:#FFB300;
   --an-comments:#FF3DE0;
-  --an-cred:#16D95F;
+  --an-green:#16D95F;
   --an-up:#16D95F;
   --an-down:#FF3D3D;
   --an-grid:rgba(var(--tx2-rgb),.10);
@@ -71,7 +71,7 @@
   text-transform:uppercase;white-space:nowrap;
 }
 .anLiveDot{
-  width:8px;height:8px;border-radius:50%;background:var(--an-cred);
+  width:8px;height:8px;border-radius:50%;background:var(--an-green);
   box-shadow:0 0 0 0 rgba(22,217,95,.5);animation:anPulse 2.4s ease-out infinite;
 }
 .anLive[data-state="off"] .anLiveDot{background:var(--tc);animation:none;box-shadow:none;}

@@ -267,36 +267,118 @@ revoke all on function public.sync_follow_counts()  from public, anon, authentic
 grant execute on function public.dz_notify_follow(), public.sync_follow_counts(),
   public.guard_profile_update(), public.dz_profiles_guard_insert() to service_role;
 
--- ------------------------------------------------------------- the feed ---
+-- ------------------------------------------------- the last of the cred ---
 
--- The gallery already holds every approved artwork client side, so the feed
--- itself is a filter there. This is for the case the client cannot answer on
--- its own: the ids, newest edge first, capped.
-CREATE OR REPLACE FUNCTION public.dz_following_ids(p_limit integer DEFAULT 500)
-RETURNS setof uuid LANGUAGE sql STABLE SECURITY INVOKER SET search_path TO 'public', 'pg_temp' AS $function$
-  select f.following_id from public.follows f
-   where f.follower_id = auth.uid()
-   order by f.created_at desc
-   limit greatest(1, least(coalesce(p_limit, 500), 2000))
-$function$;
+-- Nothing writes a 'cred' analytics event any more. The old rows say the same
+-- thing a follow says, so they are renamed rather than dropped -- except where
+-- a follow for that reader, artist and day is already recorded, which the
+-- once-per-day unique index would refuse.
+delete from public.analytics_events a
+ where a.event = 'cred'
+   and exists (
+     select 1 from public.analytics_events b
+      where b.event = 'follow'
+        and b.owner_id = a.owner_id
+        and coalesce(b.subject_id, '00000000-0000-0000-0000-000000000000'::uuid)
+          = coalesce(a.subject_id, '00000000-0000-0000-0000-000000000000'::uuid)
+        and b.viewer_key = a.viewer_key
+        and coalesce(b.term, '') = coalesce(a.term, '')
+        and b.day = a.day);
 
-revoke all on function public.dz_following_ids(integer) from public, anon;
-grant execute on function public.dz_following_ids(integer) to authenticated, service_role;
+update public.analytics_events set event = 'follow' where event = 'cred';
 
--- Counts for any profile, without opening one artist's follower list to the
--- next. The numbers are public; the names behind them are not.
-CREATE OR REPLACE FUNCTION public.dz_follow_counts(p_user uuid)
-RETURNS TABLE(followers bigint, following bigint, i_follow boolean)
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
-  select coalesce(p.follower_count, 0)::bigint,
-         coalesce(p.following_count, 0)::bigint,
-         exists (select 1 from public.follows f
-                  where f.follower_id = auth.uid() and f.following_id = p_user)
-    from public.profiles p where p.id = p_user
-$function$;
+alter table public.analytics_events drop constraint if exists an_ev_event;
+alter table public.analytics_events add constraint an_ev_event CHECK ((event = ANY (ARRAY[
+  'view'::text, 'like'::text, 'unlike'::text, 'bookmark'::text, 'unbookmark'::text,
+  'download'::text, 'comment'::text, 'share'::text, 'profile_view'::text,
+  'search_impression'::text, 'search_click'::text, 'follow'::text, 'unfollow'::text])));
 
-revoke all on function public.dz_follow_counts(uuid) from public;
-grant execute on function public.dz_follow_counts(uuid) to anon, authenticated, service_role;
+-- and the tracker stops accepting the word. The branch that went with it
+-- anonymised the actor and hashed the viewer key, so that a cred could not be
+-- traced back to who gave it; a follow is not anonymous and has no successor
+-- to that branch.
+CREATE OR REPLACE FUNCTION public.dz_analytics_track(p_event text, p_subject uuid DEFAULT NULL::uuid, p_scope text DEFAULT 'artwork'::text, p_owner uuid DEFAULT NULL::uuid, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text, p_term text DEFAULT NULL::text, p_anon_key text DEFAULT NULL::text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
+declare
+  v_key    text;
+  v_owner  uuid;
+  v_source text;
+  v_device text;
+  v_term   text;
+  v_ref    text;
+  v_scope  text;
+  v_actor  uuid;
+begin
+  if p_event is null then return; end if;
+
+  if p_event not in ('like','unlike','bookmark','unbookmark','comment','share',
+                     'profile_view','search_impression','search_click',
+                     'follow','unfollow') then
+    return;
+  end if;
+
+  v_key := public.dz_an_viewer_key(p_anon_key);
+  if v_key is null then return; end if;
+
+  if not public.dz_rate_ok('an:' || v_key, 240, 60) then return; end if;
+
+  v_scope := lower(coalesce(p_scope, 'artwork'));
+  if v_scope = 'resources' then v_scope := 'resource'; end if;
+
+  if p_subject is not null and v_scope = 'artwork' then
+    select a.user_id into v_owner from public.artworks a
+     where a.id = p_subject and a.status = 'approved';
+  elsif p_subject is not null and v_scope = 'marketplace' then
+    select m.user_id into v_owner from public.marketplace_items m
+     where m.id = p_subject and m.status = 'approved' and m.visibility = 'published';
+  elsif p_subject is not null and v_scope = 'blog' then
+    select b.user_id into v_owner from public.blog_posts b
+     where b.id = p_subject and b.status = 'approved' and b.visibility = 'published';
+  elsif p_subject is not null and v_scope = 'resource' then
+    select r.user_id into v_owner from public.resources r
+     where r.id = p_subject and r.status = 'approved' and r.visibility = 'published';
+  elsif p_event in ('profile_view','follow','unfollow') and p_owner is not null then
+    select p.id into v_owner from public.profiles p where p.id = p_owner;
+  end if;
+  if v_owner is null then return; end if;
+
+  if auth.uid() is not null and auth.uid() = v_owner then return; end if;
+
+  v_source := lower(coalesce(p_source, 'direct'));
+  if v_source not in ('direct','social','search','referral','internal') then
+    v_source := 'direct';
+  end if;
+
+  v_device := lower(coalesce(p_device, 'unknown'));
+  if v_device not in ('mobile','tablet','desktop') then
+    v_device := 'unknown';
+  end if;
+
+  v_term := nullif(btrim(lower(coalesce(p_term, ''))), '');
+  if v_term is not null then v_term := left(v_term, 80); end if;
+  if p_event not in ('search_impression','search_click') then v_term := null; end if;
+
+  v_ref := nullif(btrim(lower(coalesce(p_ref, ''))), '');
+  if v_ref is not null then
+    v_ref := nullif(left(regexp_replace(v_ref, '[^a-z0-9.:-]', '', 'g'), 120), '');
+  end if;
+
+  if p_event in ('profile_view','follow','unfollow') then
+    v_scope := 'profile';
+  end if;
+  if v_scope not in ('artwork','marketplace','blog','resource','profile') then
+    v_scope := 'artwork';
+  end if;
+
+  v_actor := auth.uid();
+
+  insert into public.analytics_events
+    (owner_id, actor_id, viewer_key, scope, subject_id, event,
+     source, referrer_host, country, device, term)
+  values
+    (v_owner, v_actor, v_key, v_scope, p_subject, p_event,
+     v_source, v_ref, public.dz_an_country(p_country), v_device, v_term)
+  on conflict do nothing;
+end $function$;
 
 -- ------------------------------------------------------------- rankings ---
 

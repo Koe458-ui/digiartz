@@ -46,7 +46,7 @@ const SHELL_URLS = [
   '/css/widgets.css?v=25',
   '/css/overrides.css?v=52',
   '/css/select.css?v=5',
-  '/css/analytics.css?v=14',
+  '/css/analytics.css?v=15',
 
   '/js/vendor/supabase-js-2.112.2.min.js',
 
@@ -70,7 +70,7 @@ const SHELL_URLS = [
   '/js/gallery.js?v=111',
   '/js/fghead.js?v=6',
   '/js/auth.js?v=30',
-  '/js/follow.js?v=1',
+  '/js/follow.js?v=2',
   '/js/profile.js?v=24',
   '/js/albums.js?v=24',
   '/js/drafts.js?v=14',
@@ -80,7 +80,7 @@ const SHELL_URLS = [
   '/js/mywork.js?v=30',
   '/js/startup.js?v=12',
   '/js/search.js?v=26',
-  '/js/feed.js?v=12',
+  '/js/feed.js?v=13',
   '/js/herosearch.js?v=8',
   '/js/effects.js?v=14',
   '/js/legal-content.js?v=4',
@@ -88,7 +88,7 @@ const SHELL_URLS = [
   '/js/antrack.js?v=2',
   '/js/lazy.js?v=9',
 
-  '/js/analytics.js?v=20',
+  '/js/analytics.js?v=21',
   '/js/hubs.js?v=5',
   '/js/secview.js?v=6',
   '/js/engagement.js?v=10',

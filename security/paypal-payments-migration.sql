@@ -25,7 +25,7 @@ grant select (
   id, role, created_at, subscription_tier, subscription_expires_at,
   username, bio, avatar_url, avatar_storage_path, avatar_updated_at,
   banner_url, banner_storage_path, banner_updated_at, social_links,
-  display_name, username_changed_at, cred_received_count,
+  display_name, username_changed_at, follower_count, following_count,
   merit, merit_updated_at, likes_public, bookmarks_public
 ) on public.profiles to anon, authenticated;
 

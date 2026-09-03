@@ -3,13 +3,13 @@
 
   var CHUNKS = {
     analytics: {
-      src: ['/js/analytics.js?v=20'],
-      css: ['/css/analytics.css?v=14'],
+      src: ['/js/analytics.js?v=21'],
+      css: ['/css/analytics.css?v=15'],
       api: ['openAnalyticsPage']
     },
     hubs: {
       src: ['/js/hubs.js?v=5'],
-      css: ['/css/analytics.css?v=14'],
+      css: ['/css/analytics.css?v=15'],
       api: ['anHubOpen', 'payHubOpen']
     },
     share: {

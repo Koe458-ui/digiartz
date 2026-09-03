@@ -285,4 +285,3 @@
   document.addEventListener('dz:follow', feedFollowRepaint);
 
   window.ftSelect = ftSelect;
-  window.dzFeedTab = function(){ return feedTab; };

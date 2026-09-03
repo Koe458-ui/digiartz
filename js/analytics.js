@@ -34,7 +34,7 @@
     { key: 'bookmarks', label: 'Saves',     ico: '🔖', color: 'var(--an-bookmarks)', hex: '#00D9B8' },
     { key: 'downloads', label: 'Downloads', ico: '⬇️', color: 'var(--an-downloads)', hex: '#FFB300' },
     { key: 'comments',  label: 'Comments',  ico: '💬', color: 'var(--an-comments)',  hex: '#FF3DE0' },
-    { key: 'shares',    label: 'Shares',    ico: '↗',  color: 'var(--an-cred)',      hex: '#16D95F' }
+    { key: 'shares',    label: 'Shares',    ico: '↗',  color: 'var(--an-green)',      hex: '#16D95F' }
   ];
   function metric(key) {
     for (var i = 0; i < METRICS.length; i++) if (METRICS[i].key === key) return METRICS[i];

@@ -436,14 +436,21 @@ html.thmFade #themePage{
 .albCard:active{transform:scale(.99);}
 .albCover{
   position:absolute;inset:0;display:block;overflow:hidden;
+  background:var(--sur2);
+}
+/* the hatch marks an album with nothing in it yet, so it belongs only where
+   there is no cover to show */
+.albCover--empty{
   background:
     repeating-linear-gradient(45deg,
       color-mix(in srgb,var(--tc) 5%,transparent) 0 6px,
       transparent 6px 12px),
     var(--sur2);
 }
+/* the whole picture, not a crop of it: a cover is shown in full inside the
+   square and keeps its own proportions */
 .albCover img{
-  width:100%;height:100%;object-fit:cover;display:block;
+  width:100%;height:100%;object-fit:contain;display:block;
   transition:transform .4s cubic-bezier(.22,1,.36,1);
 }
 .albMeta{

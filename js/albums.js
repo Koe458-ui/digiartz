@@ -11,9 +11,10 @@
 
   // one picture stands for the album: the first thing put in it
   function albCoverHTML(cover){
-    return '<span class="albCover">'+(cover
-      ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(cover))+'" alt="">'
-      : '')+'</span>';
+    return cover
+      ? '<span class="albCover"><img loading="lazy" decoding="async" src="'+
+          esc(getThumbnailUrl(cover))+'" alt=""></span>'
+      : '<span class="albCover albCover--empty"></span>';
   }
   function albCanManage(src, a){
     if(!currentUser) return false;

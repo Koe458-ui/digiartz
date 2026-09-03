@@ -25,18 +25,6 @@
 
 .pfTopR[hidden]{display:none;}
 .pfTopBtn[hidden]{display:none;}
-.pfTopDot{
-  position:absolute;top:5px;right:5px;
-  min-width:16px;height:16px;padding:0 4px;
-  box-sizing:border-box;border-radius:999px;
-  display:none;align-items:center;justify-content:center;
-  background:var(--brand-red);color:#fff;
-  box-shadow:0 0 0 2px var(--bg);
-  font-family:var(--fm);font-size:.58rem;font-weight:700;
-  line-height:1;letter-spacing:0;
-  pointer-events:none;
-}
-.pfTopBtn.hasUnread .pfTopDot{display:flex;}
 
 .pfBdy{width:100%;padding:0 0 2rem;background:var(--bg);}
 

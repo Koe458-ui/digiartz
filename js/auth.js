@@ -815,13 +815,11 @@
 
   function notifPaintBadges(count){
     var n = Number(count) || 0;
-    ['hNotifBtn','pfTopNotifBtn'].forEach(function(id){
-      var el = document.getElementById(id);
-      if(!el) return;
-      el.classList.toggle('hasUnread', n > 0);
-      var dot = el.querySelector('.hNotifDot, .pfTopDot');
-      if(dot) dot.textContent = n > 9 ? '9+' : (n ? String(n) : '');
-    });
+    var el = document.getElementById('hNotifBtn');
+    if(!el) return;
+    el.classList.toggle('hasUnread', n > 0);
+    var dot = el.querySelector('.hNotifDot');
+    if(dot) dot.textContent = n > 9 ? '9+' : (n ? String(n) : '');
   }
   var notifBadgeAt = 0;
   async function notifRefreshBadge(){

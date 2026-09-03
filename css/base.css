@@ -31,14 +31,18 @@
   --role-srmod:#60a5fa;  --role-srmod-bd:rgba(96,165,250,.45);
   --role-jrmod:#34d399;  --role-jrmod-bd:rgba(52,211,153,.45);
 
-  --ms1:#BFC5D2;  --ms1-name:#BFC5D2;
-  --ms2:#22C55E;  --ms2-name:#22C55E;
-  --ms3:#3B82F6;  --ms3-name:#3B82F6;
-  --ms4:#8B5CF6;  --ms4-name:#8B5CF6;
-  --ms5:#F59E0B;  --ms5-name:#F59E0B;
-  --ms6:#EF4444;  --ms6-name:#EF4444;
-  --ms7:#06B6D4;  --ms7-name:#06B6D4;
-  --ms8:#FACC15;  --ms8-name:#FACC15;
+  /* Milestone tiers. The badge is near-black ink on a solid fill, so every fill
+     has to be bright enough to carry it — the old violet and red sat at 4.6 and
+     5.2 against the ink and looked muddy for it. These run 7.2 and up, and the
+     ramp climbs silver, green, sky, violet, amber, rose, cyan, gold. */
+  --ms1:#D6DEEB;  --ms1-name:#D6DEEB;
+  --ms2:#4ADE80;  --ms2-name:#4ADE80;
+  --ms3:#60A5FA;  --ms3-name:#60A5FA;
+  --ms4:#A78BFA;  --ms4-name:#A78BFA;
+  --ms5:#FBBF24;  --ms5-name:#FBBF24;
+  --ms6:#FB7185;  --ms6-name:#FB7185;
+  --ms7:#22D3EE;  --ms7-name:#22D3EE;
+  --ms8:#FDE047;  --ms8-name:#FDE047;
   --ms-ink:#0B0B12;
 }
 
@@ -73,14 +77,16 @@ html[data-theme="offwhite"]{
   --role-srmod:#1D4ED8;  --role-srmod-bd:rgba(29,78,216,.38);
   --role-jrmod:#046B4E;  --role-jrmod-bd:rgba(4,107,78,.38);
 
-  --ms1-name:#687695;
-  --ms2-name:#178841;
-  --ms3-name:#1E6FF5;
-  --ms4-name:#8655F6;
-  --ms5-name:#A56A07;
-  --ms6-name:#EB1515;
-  --ms7-name:#048196;
-  --ms8-name:#8F7303;
+  /* the name is read on a pale background here, so it takes the deep end of the
+     same hue; the old set all landed near 4.1 against it, just under readable */
+  --ms1-name:#54627D;
+  --ms2-name:#15803D;
+  --ms3-name:#1D4ED8;
+  --ms4-name:#6D28D9;
+  --ms5-name:#92400E;
+  --ms6-name:#BE123C;
+  --ms7-name:#0E7490;
+  --ms8-name:#854D0E;
 }
 
 html[data-theme="offwhite"]{

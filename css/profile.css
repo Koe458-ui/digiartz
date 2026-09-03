@@ -50,11 +50,6 @@
   overflow:hidden;
 }
 .pfBanner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:0;}
-.pfBanner::after{
-  content:'';position:absolute;left:0;right:0;bottom:0;height:45%;
-  background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--bg) 82%,transparent));
-  pointer-events:none;
-}
 
 .pfId{padding:0 var(--pfPad) .9rem;}
 .pfIdTop{display:flex;flex-wrap:wrap;align-items:flex-end;gap:.85rem 1.1rem;}

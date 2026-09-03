@@ -528,7 +528,10 @@ html.thmFade #themePage{
 @media(hover:none){.albItemX{opacity:1;}}
 .albItemX:hover{border-color:#e0564f;color:#e0564f;}
 
-#albMod .albModBox{max-width:420px;padding:1.4rem 1.3rem 1.2rem;gap:.2rem;}
+/* both album dialogs keep their width on a desktop rather than stretching to
+   the .upPopBox default */
+#albMod .albModBox,
+#albCfm .albModBox{max-width:420px;padding:1.4rem 1.3rem 1.2rem;gap:.2rem;}
 .albModTitle{
   font-family:var(--fm);font-size:.72rem;letter-spacing:.18em;
   color:var(--tx);margin:0 0 1rem;text-align:center;
@@ -564,6 +567,16 @@ html.thmFade #themePage{
   font-family:var(--fb);font-size:.72rem;color:var(--txd);margin-top:.45rem;
 }
 .albModDel{margin-right:auto;color:var(--danger);}
+/* the confirmation is asked on top of the editor that raised it, and both are
+   .upPop, so it needs to win the stack */
+#albCfm{z-index:20010;}
+.albCfmTxt{
+  font-family:var(--fb);font-size:.92rem;line-height:1.5;color:var(--tx);
+  margin:.9rem 0 .3rem;
+}
+.albCfmNote{font-family:var(--fb);font-size:.78rem;color:var(--txd);}
+.albCfmNote:empty{display:none;}
+.albCfmGo{background:var(--danger);border-color:var(--danger);}
 .albModDel[hidden]{display:none;}
 .albModIn::placeholder{color:var(--txd);opacity:.6;}
 .albModHint{

@@ -138,7 +138,7 @@
   <link rel="stylesheet" href="/css/auth.css?v=7">
   <link rel="stylesheet" href="/css/panels.css?v=31">
   <link rel="stylesheet" href="/css/upload.css?v=24">
-  <link rel="stylesheet" href="/css/widgets.css?v=27">
+  <link rel="stylesheet" href="/css/widgets.css?v=30">
   <link rel="stylesheet" href="/css/overrides.css?v=53">
   <link rel="stylesheet" href="/css/select.css?v=5">
  </head>
@@ -2091,8 +2091,8 @@
   <script defer src="/js/fghead.js?v=6"></script>
   <script defer src="/js/auth.js?v=31"></script>
   <script defer src="/js/follow.js?v=2"></script>
-  <script defer src="/js/profile.js?v=26"></script>
-  <script defer src="/js/albums.js?v=27"></script>
+  <script defer src="/js/profile.js?v=27"></script>
+  <script defer src="/js/albums.js?v=29"></script>
   <script defer src="/js/drafts.js?v=14"></script>
   <script defer src="/js/upqueue.js?v=9"></script>
   <script defer src="/js/avatar.js?v=6"></script>
@@ -2223,12 +2223,24 @@
   </div>
 </div>
 
-<div class="upPop" id="albMod" role="dialog" aria-modal="true" aria-label="Album name">
+<div class="upPop" id="albCfm" role="dialog" aria-modal="true" aria-labelledby="albCfmTitle">
+  <div class="upPopBox albModBox">
+    <h3 class="albModTitle" id="albCfmTitle">DELETE ALBUM</h3>
+    <p class="albCfmTxt" id="albCfmTxt">Are you sure you want to delete this album?</p>
+    <div class="albCfmNote" id="albCfmNote"></div>
+    <div class="albModActs">
+      <button class="upBtnSec" onclick="albCfmClose()">No, keep it</button>
+      <button class="upBtnPri albCfmGo" onclick="albCfmYes()">Yes, delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="upPop" id="albMod" role="dialog" aria-modal="true" aria-label="Album settings">
   <div class="upPopBox albModBox">
     <h3 class="albModTitle" id="albModTitle">NEW ALBUM</h3>
     <input class="albModIn" id="albModIn" maxlength="40" placeholder="Album name…" autocomplete="off"
            onkeydown="if(event.key==='Enter'){event.preventDefault();albModSave();}">
-    <div class="albModHint" id="albModHint">Up to 40 characters. “Likes” and “Bookmarks” are reserved.</div>
+    <div class="albModHint" id="albModHint">Up to 40 characters.</div>
     <div class="albModVisLbl">Who can see it</div>
     <div class="albModVis" role="group" aria-label="Who can see this album">
       <button type="button" class="albModVisBtn on" id="albModPub" aria-pressed="true" onclick="albModSetVis(true)">

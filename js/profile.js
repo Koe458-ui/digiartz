@@ -408,9 +408,14 @@
 
     var res = await Promise.all([
       count(art),
+      // a portfolio is the public face of an artist, so a private album is not
+      // part of it: with nothing public there is nothing to show and no tab.
+      // The owner still reaches every album, private ones included, from the menu.
       sb.rpc('get_user_albums', { target: forId })
-        .then(function(r){ return (r && !r.error && Array.isArray(r.data)) ? r.data.length : 0; },
-              function(){ return 0; }),
+        .then(function(r){
+          return (r && !r.error && Array.isArray(r.data))
+            ? r.data.filter(function(a){ return a.is_public !== false; }).length : 0;
+        }, function(){ return 0; }),
       count(sb.from('resources').select('id', { count:'exact', head:true })
               .eq('user_id', forId).eq('status', 'approved')),
       count(sb.from('blog_posts').select('id', { count:'exact', head:true })

@@ -268,7 +268,7 @@
     var hint = document.getElementById('albModHint');
     if(hint) hint.textContent = opts.lockName
       ? 'This name can’t be changed.'
-      : 'Up to 40 characters. “Likes” and “Bookmarks” are reserved.';
+      : 'Up to 40 characters.';
 
     var del = document.getElementById('albModDelete');
     if(del) del.hidden = !opts.canDelete;
@@ -386,12 +386,34 @@
     }finally{ btn.disabled = false; }
   }
 
-  async function albModDelete(){
+  var albCfmGo = null;
+  function albCfmAsk(name, body, onYes){
+    albCfmGo = onYes;
+    document.getElementById('albCfmTxt').textContent =
+      'Are you sure you want to delete \u201C' + name + '\u201D?';
+    document.getElementById('albCfmNote').textContent = body || '';
+    document.getElementById('albCfm').classList.add('open');
+  }
+  function albCfmClose(){
+    document.getElementById('albCfm').classList.remove('open');
+    albCfmGo = null;
+  }
+  function albCfmYes(){
+    var go = albCfmGo;
+    albCfmClose();
+    if(typeof go === 'function') go();
+  }
+
+  function albModDelete(){
     if(albModMode !== 'edit' || albModVirt || !albModId) return;
     var a = albFind(albModSrc, albModId);
     var nm = (a && a.name) || 'this album';
-    if(!confirm('Delete the album \u201C' + nm + '\u201D?\n\nThe artworks inside are NOT deleted \u2014 only the album.')) return;
     var id = albModId;
+    albCfmAsk(nm, 'The artworks inside are not deleted \u2014 only the album.',
+              function(){ albDoDelete(id); });
+  }
+
+  async function albDoDelete(id){
     try{
       const{data,error} = await sb.from('albums').delete().eq('id', id).select('id');
       if(error) throw error;
@@ -406,17 +428,12 @@
     }
   }
 
-  async function albDeleteCurrent(){
-    if(!albView || !albView.owner) return;
-    if(!confirm('Delete the album \u201C'+albView.name+'\u201D?\n\nThe artworks inside are NOT deleted \u2014 only the album.')) return;
+  function albDeleteCurrent(){
+    if(!albView || !albView.owner || albView.virt) return;
     var id = albView.id;
-    try{
-      const{error} = await sb.from('albums').delete().eq('id', id);
-      if(error) throw error;
-      albCloseView();
-      showToast('Album deleted');
-      await albRefreshAll();
-    }catch(e){ showToast(safeErr(e, 'Couldn\u2019t delete \u2014 try again')); }
+    albCfmAsk(albView.name || 'this album',
+              'The artworks inside are not deleted \u2014 only the album.',
+              function(){ albDoDelete(id); });
   }
   async function albRefreshAll(){
     var jobs = [];

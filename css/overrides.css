@@ -340,10 +340,10 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 .pfTopBtn:focus-visible,.pfActBtn:focus-visible,.pfSrchChip:focus-visible,
 .pfMenuItem:focus-visible,.loConfirmBtn:focus-visible,.pfSrchRow:focus-visible,
 .upTopBtn:focus-visible,.vwCfmBtn:focus-visible,.albCard:focus-visible,
-.albDots:focus-visible,.albMenuItem:focus-visible,
+.albDots:focus-visible,.albModVisBtn:focus-visible,
 .anRange:focus-visible,.anMore:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 .dzMenuItem:focus-visible,.dzRow:focus-visible,.pfSrchRow:focus-visible,
-.albMenuItem:focus-visible{outline-offset:-2px;}
+.albModVisBtn:focus-visible{outline-offset:-2px;}
 
 .cmiIcon img,.cmiIconPrev img,.cmuAva img,.cmFriendAvatar img,
 .dzThumb img,.dzFileThumb img,.atAv img,.pfSrchThumb img,
@@ -417,7 +417,7 @@ input[type=range].cropZoom::-moz-range-thumb{width:22px;height:22px;}
   .rkHeadN{font-size:.64rem;}
   .rkAll{font-size:.66rem;}
   .rkPgEnd,.albModHint{font-size:.66rem;}
-  .thmBadge,.pfMenuSoon,.albNote,.cmBrwHd,.albActBtn{font-size:.66rem;}
+  .thmBadge,.pfMenuSoon,.cmBrwHd,.albActBtn{font-size:.66rem;}
   .subOvPlanBadge{font-size:.64rem;}
   .cpBubbleTime,.dmMsgTime{font-size:.62rem;}
 }

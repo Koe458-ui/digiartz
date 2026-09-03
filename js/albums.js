@@ -7,16 +7,13 @@
   function albCap(){ return (albTier === 'premium' || albTier === 'max') ? 30 : 25; }
   function albRealCount(){ return albMine.filter(function(a){ return !a.virt; }).length; }
   var albView = null;
-  var albModMode = null, albModId = null;
+  var albModMode = null, albModId = null, albModSrc = 'me';
 
-  function albMosaicHTML(covers){
-    var c = Array.isArray(covers) ? covers : [], out = '';
-    for(var i=0; i<4; i++){
-      out += c[i]
-        ? '<span class="albCell"><img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(c[i]))+'" alt=""></span>'
-        : '<span class="albCell albCellEmpty"></span>';
-    }
-    return '<span class="albMosaic">'+out+'</span>';
+  // one picture stands for the album: the first thing put in it
+  function albCoverHTML(cover){
+    return '<span class="albCover">'+(cover
+      ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(cover))+'" alt="">'
+      : '')+'</span>';
   }
   function albCanManage(src, a){
     if(!currentUser) return false;
@@ -29,15 +26,15 @@
     return '<div class="albCardWrap">'+
       '<button type="button" class="albCard'+(a.virt?' albCard--virt':'')+(priv?' albCard--priv':'')+'" '+
           'onclick="albOpen(\''+src+'\',\''+id+'\')">'+
-        albMosaicHTML(a.covers)+
+        albCoverHTML(a.cover)+
         '<span class="albMeta">'+
           '<span class="albName">'+(a.virt?'<span class="albPin">'+a.ico+'</span>':'')+esc(a.name||'Untitled')+'</span>'+
           '<span class="albCount">'+n+(n===1?' ITEM':' ITEMS')+(priv?' \u00B7 PRIVATE':'')+'</span>'+
         '</span>'+
       '</button>'+
       (albCanManage(src, a)
-        ? '<button type="button" class="albDots" aria-label="Album options" aria-haspopup="menu" '+
-          'onclick="albMenuOpen(event,\''+src+'\',\''+id+'\')">\u22EF</button>'
+        ? '<button type="button" class="albDots" aria-label="Album settings" aria-haspopup="dialog" '+
+          'onclick="albEditPrompt(event,\''+src+'\',\''+id+'\')">\u22EF</button>'
         : '')+
     '</div>';
   }
@@ -69,16 +66,19 @@
     }
     var pubOf = { like: flags.likes_public === true, bookmark: flags.bookmarks_public === true };
     var virt = ['like','bookmark'].map(function(k, i){
+      // these come back newest first, so the one that started the collection
+      // is the last row
       var rows = res[i].data || [];
       return { id:k, key:k, virt:true, name:ALB_VIRT[k].name, ico:ALB_VIRT[k].ico,
                is_public:pubOf[k],
                item_count:rows.length,
-               covers:rows.slice(0,4).map(function(r){ return r.image_url; }),
+               cover:rows.length ? rows[rows.length - 1].image_url : null,
                rows:rows };
     }).filter(function(v){ return owner || v.is_public; });
     return virt.concat((res[2].data||[]).map(function(a){
+      // get_user_albums returns the earliest added image, and only that one
       return { id:a.id, virt:false, name:a.name, item_count:a.item_count,
-               covers:a.covers||[], is_public:a.is_public !== false };
+               cover:(a.covers && a.covers[0]) || null, is_public:a.is_public !== false };
     }));
   }
 
@@ -232,97 +232,50 @@
     var a = albFind(src, id);
     if(!a) return;
     a.item_count = rows.length;
-    a.covers = rows.slice(0,4).map(function(r){ return r.image_url; });
+    // an album view lists newest first, so the first thing added is last
+    a.cover = rows.length ? rows[rows.length - 1].image_url : null;
     if(src === 'me') albRenderManager(); else albRenderProfileTab();
   }
 
-  var albMenuEl = null;
-  function albMenuClose(){
-    if(albMenuEl && albMenuEl.parentNode) albMenuEl.parentNode.removeChild(albMenuEl);
-    albMenuEl = null;
-    document.removeEventListener('click', albMenuClose, true);
-    window.removeEventListener('resize', albMenuClose, true);
-    window.removeEventListener('scroll', albMenuClose, true);
+  // One dialog does all of it: naming a new album, editing an existing one, and
+  // setting who can see it. Likes and Bookmarks come through here too — they
+  // cannot be renamed or deleted, but their visibility is the artist's to set.
+  var albModPublic = true, albModVirt = null;
+
+  function albModSetVis(pub){
+    albModPublic = !!pub;
+    ['albModPub','albModPriv'].forEach(function(id, i){
+      var b = document.getElementById(id);
+      if(!b) return;
+      var on = (i === 0) === albModPublic;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    var note = document.getElementById('albModVisNote');
+    if(note) note.textContent = albModPublic
+      ? 'Anyone who opens your profile can see this.'
+      : 'Only you can see this.';
   }
-  function albMenuOpen(ev, src, id){
-    ev.preventDefault(); ev.stopPropagation();
-    var wasOpen = !!albMenuEl;
-    albMenuClose();
-    if(wasOpen) return;
-    var a = albFind(src, id);
-    if(!a || !albCanManage(src, a)) return;
-    var pub = (a.is_public !== false);
-    var sid = esc(String(src)), aid = esc(String(id));
-    var html = '';
-    if(!a.virt){
-      html += '<button type="button" class="albMenuItem" onclick="albMenuRename(\'' + sid + '\',\'' + aid + '\')">Rename</button>';
-    }
-    html += '<button type="button" class="albMenuItem" onclick="albMenuVis(\'' + sid + '\',\'' + aid + '\')">' +
-            (pub ? 'Make private' : 'Make public') + '</button>';
-    if(!a.virt){
-      html += '<button type="button" class="albMenuItem albMenuDanger" onclick="albMenuDelete(\'' + sid + '\',\'' + aid + '\')">Delete</button>';
-    }
-    var m = document.createElement('div');
-    m.className = 'albMenu'; m.setAttribute('role','menu'); m.innerHTML = html;
-    document.body.appendChild(m);
-    albMenuEl = m;
-    var r = ev.currentTarget.getBoundingClientRect();
-    var mw = m.offsetWidth, mh = m.offsetHeight;
-    var top = (r.bottom + 6 + mh > window.innerHeight) ? (r.top - mh - 6) : (r.bottom + 6);
-    m.style.top  = Math.max(8, top) + 'px';
-    m.style.left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8)) + 'px';
-    setTimeout(function(){
-      document.addEventListener('click', albMenuClose, true);
-      window.addEventListener('resize', albMenuClose, { capture:true, passive:true });
-      window.addEventListener('scroll', albMenuClose, { capture:true, passive:true });
-    }, 0);
-  }
-  async function albMenuVis(src, id){
-    var a = albFind(src, id);
-    albMenuClose();
-    if(!a || !albCanManage(src, a) || !currentUser) return;
-    var next = (a.is_public === false);
-    try{
-      if(a.virt){
-        var patch = {};
-        patch[a.key === 'like' ? 'likes_public' : 'bookmarks_public'] = next;
-        const{error} = await sb.from('profiles').update(patch).eq('id', currentUser.id);
-        if(error) throw error;
-      } else {
-        const{error} = await sb.from('albums').update({is_public:next}).eq('id', id);
-        if(error) throw error;
-      }
-      a.is_public = next;
-      if(src === 'me') albRenderManager(); else albRenderProfileTab();
-      showToast(next
-        ? (a.virt ? a.name + ' are public now' : 'Album is public')
-        : (a.virt ? a.name + ' are private now' : 'Album is private'));
-    }catch(e){ showToast(safeErr(e, 'Couldn\u2019t update \u2014 try again')); }
-  }
-  function albMenuRename(src, id){
-    var a = albFind(src, id);
-    albMenuClose();
-    if(!a || a.virt || !albCanManage(src, a)) return;
-    albModMode = 'rename'; albModId = String(id);
-    document.getElementById('albModTitle').innerHTML = 'RENAME ALBUM';
-    document.getElementById('albModSave').textContent = 'Save';
-    var inp = document.getElementById('albModIn'); inp.value = a.name || '';
+
+  function albModOpen(opts){
+    albModMode = opts.mode; albModId = opts.id || null; albModVirt = opts.virt || null;
+    document.getElementById('albModTitle').innerHTML = esc(opts.title);
+    document.getElementById('albModSave').textContent = opts.save;
+
+    var inp = document.getElementById('albModIn');
+    inp.value = opts.name || '';
+    inp.disabled = !!opts.lockName;
+    var hint = document.getElementById('albModHint');
+    if(hint) hint.textContent = opts.lockName
+      ? 'Built in, so the name stays as it is.'
+      : 'Up to 40 characters. “Likes” and “Bookmarks” are reserved.';
+
+    var del = document.getElementById('albModDelete');
+    if(del) del.hidden = !opts.canDelete;
+
+    albModSetVis(opts.isPublic !== false);
     document.getElementById('albMod').classList.add('open');
-    setTimeout(function(){ inp.focus(); inp.select(); }, 80);
-  }
-  async function albMenuDelete(src, id){
-    var a = albFind(src, id);
-    albMenuClose();
-    if(!a || !albCanManage(src, a)) return;
-    if(a.virt){ showToast(a.name + ' can\u2019t be deleted'); return; }
-    if(!confirm('Delete the album \u201C' + a.name + '\u201D?\n\nThe artworks inside are NOT deleted \u2014 only the album.')) return;
-    try{
-      const{error} = await sb.from('albums').delete().eq('id', id);
-      if(error) throw error;
-      if(albView && String(albView.id) === String(id)) albCloseView();
-      showToast('Album deleted');
-      await albRefreshAll();
-    }catch(e){ showToast(safeErr(e, 'Couldn\u2019t delete \u2014 try again')); }
+    if(!opts.lockName) setTimeout(function(){ inp.focus(); if(opts.mode==='edit') inp.select(); }, 80);
   }
 
   function albCreatePrompt(){
@@ -333,55 +286,95 @@
         : 'Album limit reached (25) \u2014 Premium or Max raises it to 30');
       return;
     }
-    albModMode = 'new'; albModId = null;
-    document.getElementById('albModTitle').innerHTML = 'NEW ALBUM';
-    document.getElementById('albModSave').textContent = 'Create';
-    var inp = document.getElementById('albModIn'); inp.value = '';
-    document.getElementById('albMod').classList.add('open');
-    setTimeout(function(){ inp.focus(); }, 80);
+    albModOpen({ mode:'new', title:'NEW ALBUM', save:'Create', name:'', isPublic:true });
   }
+
+  function albEditPrompt(ev, src, id){
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    var a = albFind(src, id);
+    if(!a || !albCanManage(src, a)) return;
+    albModSrc = src;
+    albModOpen({
+      mode:'edit', id:String(id), virt:a.virt ? a.key : null,
+      title:a.virt ? esc(String(a.name).toUpperCase()) : 'EDIT ALBUM',
+      save:'Save', name:a.name || '', lockName:!!a.virt,
+      canDelete:!a.virt, isPublic:a.is_public !== false
+    });
+  }
+
   function albRenamePrompt(){
     if(!albView || !albView.owner) return;
-    albModMode = 'rename'; albModId = albView.id;
-    document.getElementById('albModTitle').innerHTML = 'RENAME ALBUM';
-    document.getElementById('albModSave').textContent = 'Save';
-    var inp = document.getElementById('albModIn'); inp.value = albView.name || '';
-    document.getElementById('albMod').classList.add('open');
-    setTimeout(function(){ inp.focus(); inp.select(); }, 80);
+    var a = albFind(albView.src, albView.id);
+    albEditPrompt(null, albView.src, albView.id);
+    if(!a) albModOpen({ mode:'edit', id:albView.id, title:'EDIT ALBUM', save:'Save',
+                        name:albView.name || '', canDelete:true, isPublic:true });
   }
+
   function albModClose(){
     document.getElementById('albMod').classList.remove('open');
-    albModMode = null; albModId = null;
+    albModMode = null; albModId = null; albModVirt = null;
   }
+
+  // Writing visibility and reading it straight back. A row that RLS will not let
+  // us touch comes back as no rows at all rather than an error, so without the
+  // read this would cheerfully report a change that never happened.
+  async function albWriteVis(pub){
+    if(albModVirt){
+      var patch = {};
+      patch[albModVirt === 'like' ? 'likes_public' : 'bookmarks_public'] = pub;
+      const{data,error} = await sb.from('profiles').update(patch)
+        .eq('id', currentUser.id).select('likes_public,bookmarks_public');
+      if(error) throw error;
+      if(!data || !data.length) throw new Error('VIS_NOT_SAVED');
+      return;
+    }
+    const{data:rows,error:e2} = await sb.from('albums').update({ is_public: pub })
+      .eq('id', albModId).select('id,is_public');
+    if(e2) throw e2;
+    if(!rows || !rows.length) throw new Error('VIS_NOT_SAVED');
+  }
+
   async function albModSave(){
     var inp = document.getElementById('albModIn');
     var name = (inp.value || '').trim();
-    if(!name){ showToast('Enter an album name'); return; }
-    if(/^(likes?|bookmarks?)$/i.test(name)){ showToast('\u201C'+name+'\u201D is reserved \u2014 pick another name'); return; }
     var btn = document.getElementById('albModSave');
+    if(!albModVirt){
+      if(!name){ showToast('Enter an album name'); return; }
+      if(/^(likes?|bookmarks?)$/i.test(name)){ showToast('\u201C'+name+'\u201D is reserved \u2014 pick another name'); return; }
+    }
     btn.disabled = true;
     try{
-      if(albModMode === 'rename'){
-        const{error} = await sb.from('albums').update({name:name}).eq('id', albModId);
-        if(error) throw error;
-        if(albView && albView.id === String(albModId)){
-          albView.name = name;
-          document.getElementById('albViewTitle').innerHTML = esc(name.toUpperCase());
+      if(albModMode === 'edit'){
+        if(!albModVirt){
+          const{data,error} = await sb.from('albums')
+            .update({ name:name, is_public:albModPublic })
+            .eq('id', albModId).select('id,name,is_public');
+          if(error) throw error;
+          if(!data || !data.length) throw new Error('VIS_NOT_SAVED');
+          if(albView && albView.id === String(albModId)){
+            albView.name = name;
+            document.getElementById('albViewTitle').innerHTML = esc(name.toUpperCase());
+          }
+        } else {
+          await albWriteVis(albModPublic);
         }
         albModClose();
-        showToast('Album renamed');
+        showToast('Saved');
         await albRefreshAll();
       } else {
-        const{data,error} = await sb.from('albums').insert({user_id:currentUser.id, name:name}).select().single();
+        const{data,error} = await sb.from('albums')
+          .insert({ user_id:currentUser.id, name:name, is_public:albModPublic })
+          .select().single();
         if(error) throw error;
         if(data && data.id && pf.upAlbums.indexOf(String(data.id)) === -1) pf.upAlbums.push(String(data.id));
         albModClose();
-        showToast('Album created');
+        showToast(albModPublic ? 'Album created' : 'Private album created');
         await albRefreshAll();
       }
     }catch(e){
       var raw = (e && e.message) ? String(e.message) : '';
       showToast(
+        /VIS_NOT_SAVED/.test(raw)                        ? 'That isn\u2019t yours to change' :
         /albums_user_name_uniq|duplicate key/i.test(raw) ? 'You already have an album with that name' :
         /albums_name_reserved/i.test(raw)                ? 'That name is reserved \u2014 pick another' :
         /albums_name_len/i.test(raw)                     ? 'Album names are 1\u201340 characters' :
@@ -392,6 +385,27 @@
       );
     }finally{ btn.disabled = false; }
   }
+
+  async function albModDelete(){
+    if(albModMode !== 'edit' || albModVirt || !albModId) return;
+    var a = albFind(albModSrc, albModId);
+    var nm = (a && a.name) || 'this album';
+    if(!confirm('Delete the album \u201C' + nm + '\u201D?\n\nThe artworks inside are NOT deleted \u2014 only the album.')) return;
+    var id = albModId;
+    try{
+      const{data,error} = await sb.from('albums').delete().eq('id', id).select('id');
+      if(error) throw error;
+      if(!data || !data.length) throw new Error('VIS_NOT_SAVED');
+      albModClose();
+      if(albView && String(albView.id) === String(id)) albCloseView();
+      showToast('Album deleted');
+      await albRefreshAll();
+    }catch(e){
+      showToast(/VIS_NOT_SAVED/.test(String(e && e.message)) ? 'That isn\u2019t yours to delete'
+                                                            : safeErr(e, 'Couldn\u2019t delete \u2014 try again'));
+    }
+  }
+
   async function albDeleteCurrent(){
     if(!albView || !albView.owner) return;
     if(!confirm('Delete the album \u201C'+albView.name+'\u201D?\n\nThe artworks inside are NOT deleted \u2014 only the album.')) return;

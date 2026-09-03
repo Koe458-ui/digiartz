@@ -138,8 +138,8 @@
   <link rel="stylesheet" href="/css/auth.css?v=7">
   <link rel="stylesheet" href="/css/panels.css?v=31">
   <link rel="stylesheet" href="/css/upload.css?v=24">
-  <link rel="stylesheet" href="/css/widgets.css?v=25">
-  <link rel="stylesheet" href="/css/overrides.css?v=52">
+  <link rel="stylesheet" href="/css/widgets.css?v=26">
+  <link rel="stylesheet" href="/css/overrides.css?v=53">
   <link rel="stylesheet" href="/css/select.css?v=5">
  </head>
  <body>
@@ -2092,7 +2092,7 @@
   <script defer src="/js/auth.js?v=31"></script>
   <script defer src="/js/follow.js?v=2"></script>
   <script defer src="/js/profile.js?v=26"></script>
-  <script defer src="/js/albums.js?v=25"></script>
+  <script defer src="/js/albums.js?v=26"></script>
   <script defer src="/js/drafts.js?v=14"></script>
   <script defer src="/js/upqueue.js?v=9"></script>
   <script defer src="/js/avatar.js?v=6"></script>
@@ -2201,7 +2201,6 @@
     <div class="subPgTitle">ALBUMS</div>
   </div>
   <div class="albBdy">
-    <div class="albNote">Likes and Bookmarks are built in. Everything else is yours to make.</div>
     <div class="albGrid" id="albGrid"></div>
   </div>
 </div>
@@ -2215,7 +2214,7 @@
     <div class="albViewBar">
       <span class="albViewCount" id="albViewCount"></span>
       <span id="albViewActs" style="display:none;">
-        <button class="albActBtn" onclick="albRenamePrompt()">RENAME</button>
+        <button class="albActBtn" onclick="albRenamePrompt()">EDIT</button>
         <button class="albActBtn albActBtn--danger" onclick="albDeleteCurrent()">DELETE</button>
       </span>
     </div>
@@ -2229,8 +2228,21 @@
     <h3 class="albModTitle" id="albModTitle">NEW ALBUM</h3>
     <input class="albModIn" id="albModIn" maxlength="40" placeholder="Album name…" autocomplete="off"
            onkeydown="if(event.key==='Enter'){event.preventDefault();albModSave();}">
-    <div class="albModHint">Up to 40 characters. “Likes” and “Bookmarks” are reserved.</div>
+    <div class="albModHint" id="albModHint">Up to 40 characters. “Likes” and “Bookmarks” are reserved.</div>
+    <div class="albModVisLbl">Who can see it</div>
+    <div class="albModVis" role="group" aria-label="Who can see this album">
+      <button type="button" class="albModVisBtn on" id="albModPub" aria-pressed="true" onclick="albModSetVis(true)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
+        <span>Public</span>
+      </button>
+      <button type="button" class="albModVisBtn" id="albModPriv" aria-pressed="false" onclick="albModSetVis(false)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2.2"/><path d="M8 10.5V7.6a4 4 0 0 1 8 0v2.9"/></svg>
+        <span>Private</span>
+      </button>
+    </div>
+    <div class="albModVisNote" id="albModVisNote">Anyone who opens your profile can see this.</div>
     <div class="albModActs">
+      <button class="upBtnSec albModDel" id="albModDelete" onclick="albModDelete()" hidden>Delete</button>
       <button class="upBtnSec" onclick="albModClose()">Cancel</button>
       <button class="upBtnPri" id="albModSave" onclick="albModSave()">Create</button>
     </div>

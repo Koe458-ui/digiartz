@@ -27,7 +27,7 @@ begin
 end $$;
 
 create table if not exists public.follows (
-  id           uuid primary key default extensions.gen_random_uuid(),
+  id           uuid primary key default gen_random_uuid(),
   follower_id  uuid not null references public.profiles(id) on delete cascade,
   following_id uuid not null references public.profiles(id) on delete cascade,
   created_at   timestamptz not null default now()
@@ -355,9 +355,14 @@ begin
 
   if not public.dz_rate_ok('an:' || v_key, 240, 60) then return; end if;
 
+  -- 'resources' is what the section is called in the interface and 'resource'
+  -- is what every table has always stored. One spelling from here down.
   v_scope := lower(coalesce(p_scope, 'artwork'));
   if v_scope = 'resources' then v_scope := 'resource'; end if;
 
+  -- Who this lands on. Each kind answers from its own table, and only a row
+  -- the public can actually reach counts — a draft nobody can open cannot
+  -- have been liked from outside.
   if p_subject is not null and v_scope = 'artwork' then
     select a.user_id into v_owner from public.artworks a
      where a.id = p_subject and a.status = 'approved';
@@ -403,6 +408,10 @@ begin
     v_scope := 'artwork';
   end if;
 
+  -- A follow, unlike the cred it replaces, is not anonymous: the artist is
+  -- shown who followed them, so this row carries its actor like every other.
+  -- The old branch blanked the actor and hashed the key precisely because a
+  -- cred was meant to be untraceable.
   v_actor := auth.uid();
 
   insert into public.analytics_events

@@ -130,9 +130,7 @@
     }
     pf.profile=null; pf.galleryRows=[]; pf.galleryDone=false; pf.galleryBusy=false;
     pf.galleryOffset=0; pf.galleryIds=Object.create(null);
-    ['pfStatLikes','pfStatViews'].forEach(function(id){
-      var e=document.getElementById(id); if(e) delete e.dataset.total;
-    });
+    var _lk=document.getElementById('pfStatLikes'); if(_lk) delete _lk.dataset.total;
     pf.resLoaded=false; pf.mktLoaded=false; pf.blogLoaded=false; pf.resRows=[]; pf.mktRows=[]; pf.blogRows=[];
     pf.albumsLoaded=false; pf.albums=[];
 
@@ -163,8 +161,7 @@
       document.getElementById('pfJoined').textContent='';
       var _hb=document.getElementById('pfHeadBio'); if(_hb) _hb.textContent='';
       var _hn=document.getElementById('pfHandle'); if(_hn) _hn.textContent='';
-      var _sr=document.getElementById('pfStatsRow'); if(_sr) _sr.hidden=true;
-      var _fl=document.getElementById('pfFollowLine'); if(_fl) _fl.hidden=true;
+      var _st=document.getElementById('pfStats'); if(_st) _st.hidden=true;
       var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.hidden=true;
       var _wm=document.getElementById('pfWarnMark'); if(_wm) _wm.classList.remove('on');
       pfPaintTopBar(null);

@@ -597,7 +597,7 @@
   async function pfLoadStats(){
     try{
       const artC = await sb.from('artworks').select('id',{count:'exact',head:true}).eq('user_id',pf.profile.id).eq('kind',ART_KIND_ART);
-      document.getElementById('pfStatArt').textContent = artC.count||0;
+      window.pfSetArtCount(artC.count || 0);
     }catch(e){   }
   }
   var PF_DEFAULT_BIO = 'Just a regular human who likes art and creativity.';
@@ -612,29 +612,41 @@
     return (isFinite(next) && next > Date.now()) ? new Date(next) : null;
   }
 
-  function pfFmtCount(n){
-    n = +n || 0;
-    if(n >= 1e6) return (n/1e6).toFixed(n%1e6 >= 1e5 ? 1 : 0).replace(/\.0$/,'') + 'M';
-    if(n >= 1e3) return (n/1e3).toFixed(n%1e3 >= 100 ? 1 : 0).replace(/\.0$/,'') + 'K';
-    return String(n);
-  }
+  // A line of text wants the whole number, grouped — "1,284 Followers" reads;
+  // "1.3K Followers" is a dashboard tile talking.
+  window.pfStatNum = function(n){ return (+n || 0).toLocaleString(); };
 
-  function pfPaintStats(likes, views, bms, level, merit, followers){
+  // One number and its word. The label carries the plural so the line reads as
+  // a sentence — "1 Artwork", "23 Artworks" — rather than a heading and a figure.
+  function pfStatSet(numId, lblId, n, one, many){
+    var e = document.getElementById(numId);
+    if(e) e.textContent = window.pfStatNum(n);
+    var l = lblId && document.getElementById(lblId);
+    if(l) l.textContent = (Math.abs(+n || 0) === 1) ? one : many;
+  }
+  // the artwork count is also bumped from the upload queue
+  window.pfSetArtCount = function(n){
+    pfStatSet('pfStatArt', 'pfStatArtL', n, 'Artwork', 'Artworks');
+  };
+  function pfArtCount(){
+    var e = document.getElementById('pfStatArt');
+    return e ? (parseInt(String(e.textContent).replace(/[^0-9]/g, ''), 10) || 0) : 0;
+  }
+  window.pfBumpArtCount = function(by){ window.pfSetArtCount(pfArtCount() + (+by || 0)); };
+
+  function pfPaintStats(likes, views, bms, level, merit){
     function set(id, val){ var e=document.getElementById(id); if(e) e.textContent = val; }
-    function setTotal(id, val){
-      var e = document.getElementById(id);
-      if(!e) return;
-      var owned = pf.profile && e.dataset.total === String(pf.profile.id);
-      if(!owned) e.textContent = val;
+    // engagement.js owns the likes figure once it has the real total for this
+    // profile; do not paint over it with the page's own partial count
+    var lk = document.getElementById('pfStatLikes');
+    if(!(lk && pf.profile && lk.dataset.total === String(pf.profile.id))){
+      pfStatSet('pfStatLikes', 'pfStatLikesL', likes, 'Like', 'Likes');
     }
-    setTotal('pfStatLikes', pfFmtCount(likes));
-    setTotal('pfStatViews', pfFmtCount(views));
-    set('pfStatSaves', pfFmtCount(bms));
-    set('pfStatFollowers', pfFmtCount(followers));
-    set('pfStatLevel', level);
+    pfStatSet('pfStatSaves', 'pfStatSavesL', bms, 'Save', 'Saves');
     set('pfStatMerit', merit);
-    var row = document.getElementById('pfStatsRow');
-    if(row) row.hidden = false;
+    pfPaintAudience();
+    var stats = document.getElementById('pfStats');
+    if(stats) stats.hidden = false;
     var warn = document.getElementById('pfWarnMark');
     if(warn) warn.classList.toggle('on', merit <= 20);
     if(window.DZ_MS){
@@ -668,28 +680,18 @@
     }catch(e){   }
 
     if(!pf.profile || pf.profile.id !== forId) return;
-    pfPaintStats(likes, views, bms, level, merit, +pf.profile.follower_count || 0);
-    pfPaintFollowLine();
+    pfPaintStats(likes, views, bms, level, merit);
   }
 
   var pfFollowing = false, pfFollowBusy = false, pfFrBusy = false;
 
-  // the audience line under the handle — the counts live on the profile row, so
-  // this is a repaint, not a query
-  function pfPaintFollowLine(){
-    var line = document.getElementById('pfFollowLine');
-    if(!line) return;
-    // a row out of an older cache has no counters yet; wait for the fresh one
-    // rather than telling the reader this artist has nobody
-    if(!pf.profile || pf.profile.follower_count == null){ line.hidden = true; return; }
-    var fmt = (window.dzFollow && window.dzFollow.fmt)
-      ? window.dzFollow.fmt
-      : function(n){ return String(+n || 0); };
-    var a = document.getElementById('pfFollowers');
-    var b = document.getElementById('pfFollowing');
-    if(a) a.textContent = fmt(pf.profile.follower_count);
-    if(b) b.textContent = fmt(pf.profile.following_count);
-    line.hidden = false;
+  // the audience line. The counts live on the profile row, so this is a repaint
+  // rather than a query. A row out of an older cache has no counters yet; leave
+  // the last painted figures alone rather than claiming this artist has nobody.
+  function pfPaintAudience(){
+    if(!pf.profile || pf.profile.follower_count == null) return;
+    pfStatSet('pfFollowers', 'pfFollowersL', pf.profile.follower_count, 'Follower', 'Followers');
+    pfStatSet('pfFollowing', null, pf.profile.following_count);
   }
 
   function pfActLabel(btn, text){
@@ -776,9 +778,7 @@
     pfFollowing = !!on;
     pf.profile.follower_count = Math.max((+pf.profile.follower_count || 0) + (pfFollowing ? 1 : -1), 0);
     pfPaintFollowBtn();
-    pfPaintFollowLine();
-    var tile = document.getElementById('pfStatFollowers');
-    if(tile) tile.textContent = pfFmtCount(pf.profile.follower_count);
+    pfPaintAudience();
   }
 
   // a follow taken from the artwork card, or anywhere else, lands here too

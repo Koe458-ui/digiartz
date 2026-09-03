@@ -298,12 +298,12 @@
   window.closeBookmarksPage = closeBookmarksPage;
 
   function statFmt (n) {
-    return (typeof pfFmtCount === 'function')
-      ? pfFmtCount(n) : Number(n || 0).toLocaleString();
+    return (typeof window.pfStatNum === 'function')
+      ? window.pfStatNum(n) : Number(n || 0).toLocaleString();
   }
   async function refreshStatsFor (handle) {
-    var vEl = $('pfStatViews'), lEl = $('pfStatLikes');
-    if (!vEl || !lEl || !db()) return;
+    var lEl = $('pfStatLikes');
+    if (!lEl || !db()) return;
     handle = String(handle || '').replace(/^@/, '').trim();
     if (!handle || handle === '—' || /^Loading/.test(handle)) return;
     try {
@@ -320,10 +320,11 @@
       var row = Array.isArray(r.data) ? r.data[0] : r.data;
       if (!row) return;
       if (window.pf && pf.profile && String(pf.profile.id) !== String(uid)) return;
-      vEl.textContent = statFmt(row.total_views);
-      lEl.textContent = statFmt(row.total_likes);
-      vEl.dataset.total = String(uid);
+      var n = Number(row.total_likes) || 0;
+      lEl.textContent = statFmt(n);
       lEl.dataset.total = String(uid);
+      var lbl = $('pfStatLikesL');
+      if (lbl) lbl.textContent = (n === 1) ? 'Like' : 'Likes';
     } catch (e) {   }
   }
   function refreshProfileStatsIfOpen () {

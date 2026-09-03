@@ -147,6 +147,7 @@
 .pfActBtn.on{background:var(--pdim);border-color:var(--pg);color:var(--tx);}
 .pfActionRow{margin-top:.55rem;}
 @media(min-width:720px){
+  .pfActionRow{order:2;flex:0 0 auto;margin-top:0;padding-bottom:.2rem;}
   .pfActBtn{flex:0 0 auto;padding-inline:1.15rem;}
 }
 @media(max-width:520px){
@@ -180,7 +181,8 @@
 .pfStatLine--sub .pfStatN{font-weight:600;}
 
 @media(min-width:720px){
-  .pfStats{margin-top:.3rem;}
+  .pfStats{order:3;margin-top:.3rem;}
+  .pfIdMeta{order:4;}
 }
 
 .pfTabs{

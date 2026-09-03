@@ -55,7 +55,7 @@
 }
 .pfAvatar img,
 .pfEditAvatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:none;}
-.pfIdText{min-width:0;padding-bottom:.2rem;}
+.pfIdText{min-width:0;}
 .pfIdWho{order:1;}
 .pfIdMeta{order:3;flex:1 1 100%;min-width:0;}
 .pfActionRow{order:4;}
@@ -68,7 +68,7 @@
 }
 .pfHandle{
   font-family:var(--fm);font-size:clamp(.72rem,2.6vw,.82rem);
-  letter-spacing:.02em;color:var(--txd);margin-top:.1rem;
+  letter-spacing:.02em;color:var(--txd);margin-top:.05rem;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .pfWarnMark{
@@ -79,8 +79,8 @@
 
 .msName{color:var(--ms-c,inherit);}
 .msRibbon{
-  display:inline-flex;align-items:center;max-width:100%;margin-top:.45rem;
-  padding:.32rem .6rem;border-radius:999px;
+  display:inline-flex;align-items:center;max-width:100%;margin-top:.28rem;
+  padding:.28rem .55rem;border-radius:999px;
   background:var(--ms-c,var(--sur2));color:var(--ms-ink);
   border:1px solid rgba(0,0,0,.10);
   font-family:var(--fm);font-size:.6rem;font-weight:800;

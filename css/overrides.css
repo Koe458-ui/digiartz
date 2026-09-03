@@ -338,15 +338,15 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 .fgCatNav:focus-visible,.ftTab:focus-visible,.atCard:focus-visible,
 .dzWlGuideMail:focus-visible,.dzClInfoBtn:focus-visible,
 .pfTopBtn:focus-visible,.pfActBtn:focus-visible,.pfSrchChip:focus-visible,
-.pfMenuItem:focus-visible,.loConfirmBtn:focus-visible,.pfSrchRow:focus-visible,
+.pfMenuItem:focus-visible,.loConfirmBtn:focus-visible,
 .upTopBtn:focus-visible,.vwCfmBtn:focus-visible,.albCard:focus-visible,
 .albDots:focus-visible,.albModVisBtn:focus-visible,
 .anRange:focus-visible,.anMore:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
-.dzMenuItem:focus-visible,.dzRow:focus-visible,.pfSrchRow:focus-visible,
+.dzMenuItem:focus-visible,.dzRow:focus-visible,
 .albModVisBtn:focus-visible{outline-offset:-2px;}
 
 .cmiIcon img,.cmiIconPrev img,.cmuAva img,.cmFriendAvatar img,
-.dzThumb img,.dzFileThumb img,.atAv img,.pfSrchThumb img,
+.dzThumb img,.dzFileThumb img,.atAv img,
 .upDraftCard>img,.cmHdrAv img,.vwAv img{
   width:100%;height:100%;object-fit:cover;display:block;
 }

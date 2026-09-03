@@ -128,8 +128,6 @@
   }
 
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){
-    var _pfs=document.getElementById('pfSearchPage');
-    if(_pfs && _pfs.classList.contains('open')){ closePfSearch(); return; }
     var _upg=document.getElementById('upGuideMod');
     if(_upg && _upg.classList.contains('open')){ upGuideClose(); return; }
     var _cmi=document.getElementById('cmInfoPage');

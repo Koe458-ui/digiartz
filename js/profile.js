@@ -141,7 +141,6 @@
     var _mer=document.getElementById('pfStatMerit'); if(_mer) _mer.textContent='—';
     ['pfGalleryEmpty','pfAlbumEmpty','pfResEmpty','pfBlogEmpty','pfMktEmpty']
       .forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display='none'; });
-    pfSearchReset();
     var _pgs=document.getElementById('pfGallerySentinel'); if(_pgs) _pgs.style.display='none';
     var mySeq = ++pfOpenSeq;
 
@@ -310,7 +309,6 @@
     var panel = document.getElementById('profilePage');
     if(!panel.classList.contains('open')) return;
     panel.classList.remove('open');
-    closePfSearch(true);
     document.getElementById('pfEditPage').classList.remove('open');
     restoreScroll();
     if(revertUrl!==false && /^\/profile\//.test(window.location.pathname)){
@@ -611,158 +609,4 @@
     var s = 'object-position:'+tx+'% '+ty+'%';
     if(tz > 1) s += ';transform:scale('+tz+');transform-origin:'+tx+'% '+ty+'%';
     return s;
-  }
-
-  var pfSrch = { q:'', scope:'all', seq:0, timer:null, rows:{} };
-
-  var PF_SRCH_GROUPS = [
-    { key:'artwork',     label:'Artwork' },
-    { key:'blog',        label:'Blog' },
-    { key:'marketplace', label:'Marketplace' },
-    { key:'resources',   label:'Resources' }
-  ];
-
-  var PF_SRCH_UI = {
-    page:'pfSearchPage', input:'pfSrchIn', wrap:'pfSrchWrap', note:'pfSrchNote',
-    scopes:'pfSrchScopes', groups:PF_SRCH_GROUPS, st:pfSrch,
-    run:function(){ pfSearchRun(); }, lastFocus:null
-  };
-
-  function pfSearchReset(){
-    pfSrch.q=''; pfSrch.scope='all'; pfSrch.rows={};
-    clearTimeout(pfSrch.timer); pfSrch.timer=null;
-    pfSrch.seq++;
-    var input = document.getElementById('pfSrchIn');
-    if(input) input.value='';
-    window.dzSearchUI.chrome('pfSrchWrap','');
-    pfSearchPaintScopes();
-    var res = document.getElementById('pfSrchRes');
-    if(res) res.innerHTML='';
-    pfSearchNote('Type a name to search this profile.');
-  }
-
-  function pfSearchNote(msg){ window.dzSearchUI.note(PF_SRCH_UI, msg); }
-  window.dzSearchUI.trap(PF_SRCH_UI);
-
-  function openPfSearch(){
-    if(!pf.profile){ showToast('Profile still loading \u2014 try again'); return; }
-    window.dzSearchUI.open(PF_SRCH_UI);
-  }
-
-  function closePfSearch(silent){
-    var pg = document.getElementById('pfSearchPage');
-    if(!pg || !pg.classList.contains('open')) return;
-    pg.classList.remove('open');
-    if(silent !== true) document.body.style.overflow='hidden';
-    window.dzSearchUI.restoreFocus(PF_SRCH_UI, silent);
-  }
-
-  function pfSearchClear(){ window.dzSearchUI.clear(PF_SRCH_UI); }
-  function pfSearchInput(v){ window.dzSearchUI.input(PF_SRCH_UI, v); }
-  function pfSearchScope(scope){ window.dzSearchUI.scope(PF_SRCH_UI, scope); }
-  function pfSearchPaintScopes(){ window.dzSearchUI.paintScopes(PF_SRCH_UI); }
-
-  var PF_SRCH_QUERIES = [
-    { key:'artwork', table:'artworks', on:'name', select:function(){
-      return 'id,name,description,category,tags,image_url,thumb_x,thumb_y,thumb_zoom,status,created_at'; } },
-    { key:'blog', table:'blog_posts', on:'title', select:function(){
-      return 'id,user_id,title,slug,excerpt,body,cover_url,category,tags,read_minutes,created_at'; } },
-    { key:'marketplace', table:'marketplace_items', on:'title', select:function(){
-      return typeof window.dzSelectFor === 'function' ? window.dzSelectFor('marketplace')
-        : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at'; } },
-    { key:'resources', table:'resources', on:'title', select:function(){
-      return 'id,user_id,title,description,category,tags,file_storage_path,file_name,file_ext,' +
-             'file_size,preview_url,license,software,download_count,created_at'; } }
-  ];
-
-  async function pfSearchRun(){
-    if(!pf.profile || !sb) return;
-    var pattern = window.dzSearchUI.pattern(pfSrch.q);
-    var res = document.getElementById('pfSrchRes');
-    if(!res) return;
-    if(!pattern){
-      pfSrch.rows = {};
-      res.innerHTML='';
-      pfSearchNote('Type a name to search this profile.');
-      return;
-    }
-    var mySeq = ++pfSrch.seq, uid = pf.profile.id;
-    pfSearchNote('Searching…');
-
-    function want(key){ return pfSrch.scope === 'all' || pfSrch.scope === key; }
-
-    var jobs = PF_SRCH_QUERIES.filter(function(q){ return want(q.key); }).map(function(q){
-      var sel = sb.from(q.table).select(q.select())
-        .eq('user_id', uid).ilike(q.on, pattern)
-        .order('created_at',{ascending:false}).limit(30);
-      sel = q.key === 'artwork' ? sel.eq('kind', ART_KIND_ART) : sel.eq('status','approved');
-      return sel.then(function(r){ return {key:q.key, rows:(r&&r.data)||[]}; });
-    });
-
-    var out;
-    try{ out = await Promise.all(jobs); }
-    catch(e){
-      if(mySeq !== pfSrch.seq) return;
-      res.innerHTML='';
-      pfSearchNote('Couldn\u2019t search — try again.');
-      return;
-    }
-    if(mySeq !== pfSrch.seq || !pf.profile || pf.profile.id !== uid) return;
-
-    pfSrch.rows = {};
-    out.forEach(function(o){ pfSrch.rows[o.key] = o.rows; });
-    pfSearchRender();
-  }
-
-  function pfSearchRender(){
-    var res = document.getElementById('pfSrchRes');
-    if(!res) return;
-    var total = 0, html = '';
-    PF_SRCH_GROUPS.forEach(function(g){
-      var rows = pfSrch.rows[g.key] || [];
-      if(!rows.length) return;
-      total += rows.length;
-      html += '<section class="pfSrchGrp"><div class="pfSrchGrpHd">'+
-                '<span class="pfSrchGrpTitle">'+esc(g.label)+'</span>'+
-                '<span class="pfSrchGrpCount">'+rows.length+'</span>'+
-              '</div><div class="pfSrchRows">'+
-              rows.map(function(r){ return pfSearchRowHTML(g.key, r); }).join('')+
-              '</div></section>';
-    });
-    res.innerHTML = html;
-    pfSearchNote(total ? '' : 'Nothing here matches “'+pfSrch.q.trim()+'”.');
-  }
-
-  function pfSearchRowHTML(kind, r){
-    var title = (kind==='artwork' ? r.name : r.title) || 'Untitled';
-    var img   = kind==='artwork' ? r.image_url : (kind==='blog' ? r.cover_url : r.preview_url);
-    var thumb = img
-      ? '<img loading="lazy" decoding="async" src="'+esc(getThumbnailUrl(img))+'" alt="">'
-      : esc(String(kind==='resources' ? (r.file_ext||'FILE')
-                 : kind==='marketplace' ? (r.item_type||'ITEM')
-                 : kind==='blog' ? 'POST' : 'ART').toUpperCase());
-    var meta;
-    if(kind==='artwork')          meta = (r.status && r.status!=='approved' ? String(r.status).toUpperCase()+' · ' : '') + pfFormatDate(r.created_at);
-    else if(kind==='blog')        meta = (r.read_minutes||1)+' min read · '+pfFormatDate(r.created_at);
-    else if(kind==='marketplace') meta = String(r.item_type||'Listing')+' · '+pfFormatDate(r.created_at);
-    else                          meta = String(r.file_ext||'File').toUpperCase()+' · '+(r.download_count||0)+' downloads';
-    return '<button type="button" class="pfSrchRow" onclick="pfSearchOpen(\''+esc(kind)+'\',\''+esc(String(r.id))+'\')">'+
-      '<span class="pfSrchThumb">'+thumb+'</span>'+
-      '<span class="pfSrchTxt">'+
-        '<span class="pfSrchName">'+esc(title)+'</span>'+
-        '<span class="pfSrchMeta">'+esc(meta)+'</span>'+
-      '</span></button>';
-  }
-
-  function pfSearchOpen(kind, id){
-    var rows = pfSrch.rows[kind] || [];
-    var row  = rows.find(function(x){ return String(x.id)===String(id); });
-    if(!row) return;
-    if(kind==='artwork'){
-      var cats = catList(row.category).length ? catList(row.category)
-               : (catList(row.tags).length ? catList(row.tags) : ['others']);
-      openLB(row.image_url, row.name, cats[0]||'', row.description||'', String(row.id), false, rows);
-      return;
-    }
-    if(typeof window.dzOpenRow==='function') window.dzOpenRow(kind==='marketplace'?'marketplace':kind, row);
   }

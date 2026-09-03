@@ -133,13 +133,13 @@
   <link rel="stylesheet" href="/css/community.css?v=38">
   <link rel="stylesheet" href="/css/connect.css?v=13">
   <link rel="stylesheet" href="/css/ranking.css?v=16">
-  <link rel="stylesheet" href="/css/profile.css?v=36">
+  <link rel="stylesheet" href="/css/profile.css?v=37">
   <link rel="stylesheet" href="/css/admin.css?v=11">
   <link rel="stylesheet" href="/css/auth.css?v=7">
   <link rel="stylesheet" href="/css/panels.css?v=31">
   <link rel="stylesheet" href="/css/upload.css?v=24">
   <link rel="stylesheet" href="/css/widgets.css?v=31">
-  <link rel="stylesheet" href="/css/overrides.css?v=53">
+  <link rel="stylesheet" href="/css/overrides.css?v=54">
   <link rel="stylesheet" href="/css/select.css?v=5">
  </head>
  <body>
@@ -776,31 +776,6 @@
     </div>
   </div>
 
-  <div id="pfSearchPage" role="dialog" aria-modal="true" aria-label="Search this profile">
-    <div class="pfSrchHdr">
-      <button class="pfTopBtn" onclick="closePfSearch()" aria-label="Close search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
-      </button>
-      <div class="tgSearch" id="pfSrchWrap">
-        <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input type="search" class="tgSearchIn" id="pfSrchIn" placeholder="Search this profile…"
-               autocomplete="off" autocapitalize="off" spellcheck="false"
-               aria-label="Search this profile" oninput="pfSearchInput(this.value)">
-        <button type="button" class="tgSearchClear" onclick="pfSearchClear()" aria-label="Clear search">✕</button>
-      </div>
-    </div>
-    <div class="pfSrchScopes" id="pfSrchScopes" role="tablist" aria-label="Limit search to a section">
-      <button class="pfSrchChip on" role="tab" aria-selected="true"  onclick="pfSearchScope('all')">All</button>
-      <button class="pfSrchChip"    role="tab" aria-selected="false" onclick="pfSearchScope('artwork')">Artwork</button>
-      <button class="pfSrchChip"    role="tab" aria-selected="false" onclick="pfSearchScope('blog')">Blog</button>
-      <button class="pfSrchChip"    role="tab" aria-selected="false" onclick="pfSearchScope('marketplace')">Marketplace</button>
-      <button class="pfSrchChip"    role="tab" aria-selected="false" onclick="pfSearchScope('resources')">Resources</button>
-    </div>
-    <div class="pfSrchBdy">
-      <div class="pfSrchNote" id="pfSrchNote">Type a name to search this profile.</div>
-      <div id="pfSrchRes" aria-live="polite"></div>
-    </div>
-  </div>
 
   <div id="pfEditPage" role="dialog" aria-modal="true" aria-label="Edit profile">
     <div class="subPgHdr">
@@ -2085,18 +2060,18 @@
   <script defer src="/js/captcha.js?v=4"></script>
   <script defer src="/config.js"></script>
   <script defer src="/uploadVerifier.js"></script>
-  <script defer src="/js/app-core.js?v=57"></script>
+  <script defer src="/js/app-core.js?v=58"></script>
   <script defer src="/js/protect.js?v=4"></script>
   <script defer src="/js/gallery.js?v=111"></script>
   <script defer src="/js/fghead.js?v=6"></script>
   <script defer src="/js/auth.js?v=31"></script>
   <script defer src="/js/follow.js?v=2"></script>
-  <script defer src="/js/profile.js?v=27"></script>
+  <script defer src="/js/profile.js?v=28"></script>
   <script defer src="/js/albums.js?v=30"></script>
   <script defer src="/js/drafts.js?v=14"></script>
   <script defer src="/js/upqueue.js?v=9"></script>
   <script defer src="/js/avatar.js?v=6"></script>
-  <script defer src="/js/pfedit.js?v=24"></script>
+  <script defer src="/js/pfedit.js?v=25"></script>
   <script defer src="/js/mywork.js?v=30"></script>
   <script defer src="/js/startup.js?v=12"></script>
   <script defer src="/js/search.js?v=26"></script>

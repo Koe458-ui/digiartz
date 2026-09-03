@@ -326,36 +326,9 @@ html[data-theme="offwhite"] .pfBrand--youtube{--brand:#D40000;}
   text-transform:uppercase;color:var(--txd);
 }
 .pfSrchGrpCount{font-family:var(--fm);font-size:.66rem;color:var(--tc);}
-.pfSrchRows{display:flex;flex-direction:column;}
 
 .pfSrchCards{padding:0 var(--pfPad) 1rem;box-sizing:border-box;}
 .pfSrchCards.awGrid{margin:0;}
-.pfSrchRow{
-  display:flex;align-items:center;gap:.75rem;width:100%;
-  padding:.6rem var(--pfPad);min-height:60px;
-  background:none;border:none;border-bottom:1px solid var(--bdr);
-  color:var(--tx);text-align:left;cursor:pointer;
-  transition:background .15s;-webkit-tap-highlight-color:transparent;
-}
-@media(hover:hover){ .pfSrchRow:hover{background:var(--sur);} }
-.pfSrchRow:active{background:var(--sur2);}
-.pfSrchThumb{
-  flex:0 0 auto;width:48px;height:48px;border-radius:4px;overflow:hidden;
-  background:var(--sur2);border:1px solid var(--bdr);
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--fm);font-size:.6rem;letter-spacing:.08em;color:var(--txd);
-}
-.pfSrchTxt{display:block;min-width:0;flex:1 1 auto;}
-.pfSrchName{
-  display:block;
-  font-family:var(--fb);font-size:.92rem;font-weight:600;color:var(--tx);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
-.pfSrchMeta{
-  display:block;
-  font-family:var(--fm);font-size:.7rem;color:var(--txd);margin-top:.15rem;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
 
 .lgBdy{
   max-width:760px;margin:0 auto;

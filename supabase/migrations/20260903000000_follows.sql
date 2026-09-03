@@ -191,6 +191,40 @@ update public.profiles p
 
 select set_config('app.allow_follow_count_write', '0', false);
 
+-- ------------------------------------------------------ transition shims ---
+
+-- A rename is only safe if both names answer while the two versions overlap.
+-- A visitor already carrying the pre-follow bundle keeps asking profiles for
+-- cred_received_count and keeps writing to profile_creds, and the service
+-- worker holds that bundle for a while after the new one ships. PostgREST
+-- answers an unknown column with a 400, and the old profile page treats that
+-- as fatal and closes itself -- so the old names keep working here until those
+-- clients are gone.
+--
+-- Both are drop-on-sight once the site has been on the follow bundle for a
+-- release: the new bundle references neither.
+
+-- read-only, and impossible to write: a generated column rejects an INSERT
+-- that names it, so the counter stays the trigger's alone
+alter table public.profiles
+  add column if not exists cred_received_count integer
+  generated always as (follower_count) stored;
+
+grant select (cred_received_count) on public.profiles to anon, authenticated;
+
+-- the old Cred button reads and writes this by its old column names. A simple
+-- view over one table is auto-updatable, and security_invoker keeps the row
+-- policies on follows in force rather than the view owner's rights.
+create or replace view public.profile_creds
+  with (security_invoker = true) as
+  select f.id,
+         f.follower_id  as giver_id,
+         f.following_id as receiver_id,
+         f.created_at
+    from public.follows f;
+
+grant select, insert, delete on public.profile_creds to authenticated;
+
 -- ------------------------------------------------------------------- rls ---
 
 drop policy if exists creds_delete_own       on public.follows;

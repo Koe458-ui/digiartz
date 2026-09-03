@@ -162,6 +162,7 @@
       var _hb=document.getElementById('pfHeadBio'); if(_hb) _hb.textContent='';
       var _hn=document.getElementById('pfHandle'); if(_hn) _hn.textContent='';
       var _st=document.getElementById('pfStats'); if(_st) _st.hidden=true;
+      pfResetTabRail();
       var _ar=document.getElementById('pfActionRow'); if(_ar) _ar.hidden=true;
       var _wm=document.getElementById('pfWarnMark'); if(_wm) _wm.classList.remove('on');
       pfPaintTopBar(null);
@@ -271,6 +272,8 @@
       pfRenderHeadBio();
       pfRenderConnect();
       if(typeof pfPaintFollowLine === 'function') pfPaintFollowLine();
+      pfResetTabRail();
+      pfLoadTabRail();
       pfLoadStats();
       pfLoadHeadStats();
       pfLoadActionRow();
@@ -352,6 +355,18 @@
   }
 
   var PF_TABS = ['gallery','album','resources','blog','marketplace','progress','about'];
+  // Level and About describe the account itself, so they are always there. The
+  // rest are sections: a tab appears when the artist has put something in it.
+  var PF_TABS_ALWAYS = ['progress','about'];
+
+  function pfTabBtn(t){
+    return document.getElementById('pfTab' + t.charAt(0).toUpperCase() + t.slice(1));
+  }
+  function pfTabShown(t){
+    var b = pfTabBtn(t);
+    return !!b && !b.hidden;
+  }
+  function pfVisibleTabs(){ return PF_TABS.filter(pfTabShown); }
 
   function pfSwitchTab(tab){
     pf.tab=tab;
@@ -373,6 +388,85 @@
     pfLoadTab(tab);
   }
 
+  // Which sections this artist actually has something in.
+  //
+  // Each question is asked the same way its tab asks it, so the rail cannot
+  // promise a tab that then opens empty: the owner's own unpublished artwork
+  // counts, because their gallery shows it; the lists are approved-only for
+  // everyone, because that is all they ever render; and Albums counts albums
+  // the artist made, plus — for a visitor — a Likes or Bookmarks collection
+  // they have chosen to make public. An owner reaches their own Likes and
+  // Bookmarks from the menu, so an empty Albums tab is not their only way in.
+  async function pfSectionsWithContent(forId, isOwner){
+    function count(q){
+      return q.then(function(r){ return (r && !r.error && r.count) ? r.count : 0; },
+                    function(){ return 0; });
+    }
+    var art = sb.from('artworks').select('id', { count:'exact', head:true })
+                .eq('user_id', forId).eq('kind', ART_KIND_ART);
+    if(!isOwner) art = art.eq('visibility', 'published');
+
+    var res = await Promise.all([
+      count(art),
+      sb.rpc('get_user_albums', { target: forId })
+        .then(function(r){ return (r && !r.error && Array.isArray(r.data)) ? r.data.length : 0; },
+              function(){ return 0; }),
+      count(sb.from('resources').select('id', { count:'exact', head:true })
+              .eq('user_id', forId).eq('status', 'approved')),
+      count(sb.from('blog_posts').select('id', { count:'exact', head:true })
+              .eq('user_id', forId).eq('status', 'approved')),
+      count(sb.from('marketplace_items').select('id', { count:'exact', head:true })
+              .eq('user_id', forId).eq('status', 'approved')),
+      isOwner ? Promise.resolve(false)
+              : sb.from('profiles').select('likes_public,bookmarks_public')
+                  .eq('id', forId).maybeSingle()
+                  .then(function(r){ return !!(r && r.data &&
+                          (r.data.likes_public === true || r.data.bookmarks_public === true)); },
+                        function(){ return false; })
+    ]);
+
+    return {
+      gallery:     res[0] > 0,
+      album:       res[1] > 0 || res[5],
+      resources:   res[2] > 0,
+      blog:        res[3] > 0,
+      marketplace: res[4] > 0
+    };
+  }
+
+  // Hide every section tab until we know, so the rail never shows a tab and
+  // then takes it away. Level and About are there from the first paint.
+  function pfResetTabRail(){
+    PF_TABS.forEach(function(t){
+      var b = pfTabBtn(t);
+      if(b) b.hidden = (PF_TABS_ALWAYS.indexOf(t) === -1);
+    });
+  }
+
+  function pfPaintTabRail(has){
+    PF_TABS.forEach(function(t){
+      var b = pfTabBtn(t);
+      if(b && PF_TABS_ALWAYS.indexOf(t) === -1) b.hidden = !has[t];
+    });
+    // the open tab may have just been taken off the rail
+    if(!pfTabShown(pf.tab)) pfSwitchTab(pfVisibleTabs()[0] || 'progress');
+  }
+
+  async function pfLoadTabRail(){
+    if(!pf.profile || !sb) return;
+    var forId = String(pf.profile.id);
+    var isOwner = !!(currentUser && String(currentUser.id) === forId);
+    try{
+      var has = await pfSectionsWithContent(forId, isOwner);
+      if(!pfStillOn(forId)) return;
+      pfPaintTabRail(has);
+    }catch(e){
+      // a profile with a tab too few is worse than one with a tab too many
+      if(pfStillOn(forId)) pfPaintTabRail(
+        { gallery:true, album:true, resources:true, blog:true, marketplace:true });
+    }
+  }
+
   function pfLoadTab(tab){
     if(tab==='progress' && typeof xpLoadInto==='function' && pf.profile){
       xpLoadInto('pfXpWrap', pf.profile.id, { leaderboard:true });
@@ -382,18 +476,19 @@
   }
 
   function pfTabKey(e){
-    var i = PF_TABS.indexOf(pf.tab);
+    var tabs = pfVisibleTabs();
+    var i = tabs.indexOf(pf.tab);
     if(i === -1) return;
     var next;
-    if(e.key === 'ArrowRight')      next = (i + 1) % PF_TABS.length;
-    else if(e.key === 'ArrowLeft')  next = (i - 1 + PF_TABS.length) % PF_TABS.length;
+    if(e.key === 'ArrowRight')      next = (i + 1) % tabs.length;
+    else if(e.key === 'ArrowLeft')  next = (i - 1 + tabs.length) % tabs.length;
     else if(e.key === 'Home')       next = 0;
-    else if(e.key === 'End')        next = PF_TABS.length - 1;
+    else if(e.key === 'End')        next = tabs.length - 1;
     else return;
     e.preventDefault();
-    var t = PF_TABS[next];
+    var t = tabs[next];
     pfSwitchTab(t);
-    var btn = document.getElementById('pfTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    var btn = pfTabBtn(t);
     if(btn) try{ btn.focus({preventScroll:true}); }catch(e2){ btn.focus(); }
   }
   document.addEventListener('DOMContentLoaded', function(){

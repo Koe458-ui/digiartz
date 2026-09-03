@@ -192,6 +192,7 @@
   transition:color .2s,border-color .2s;
   -webkit-tap-highlight-color:transparent;
 }
+.pfTab[hidden]{display:none;}
 .pfTabIco{display:flex;}
 .pfTabIco svg{width:17px;height:17px;display:block;}
 @media(hover:hover){ .pfTab:hover{color:var(--tx);} }

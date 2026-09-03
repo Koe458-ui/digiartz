@@ -658,12 +658,23 @@
                 <span class="pfWarnMark" id="pfWarnMark" title="This account has a low merit score" aria-label="Low merit warning">!</span>
               </div>
               <div class="pfHandle" id="pfHandle"></div>
-              <div class="pfFollowLine" id="pfFollowLine" hidden>
-                <span class="pfFollowStat"><b id="pfFollowers">0</b> Followers</span>
-                <span class="pfFollowDot" aria-hidden="true">·</span>
-                <span class="pfFollowStat"><b id="pfFollowing">0</b> Following</span>
-              </div>
               <div class="msRibbon" id="pfMsRibbon" hidden></div>
+            </div>
+          </div>
+          <div class="pfStats" id="pfStats">
+            <div class="pfFollowLine" id="pfFollowLine" hidden>
+              <span class="pfFollowStat"><b id="pfFollowers">0</b> Followers</span>
+              <span class="pfFollowDot" aria-hidden="true">·</span>
+              <span class="pfFollowStat"><b id="pfFollowing">0</b> Following</span>
+            </div>
+            <div class="pfFollowLine pfCountLine" id="pfStatsRow" hidden>
+              <span class="pfFollowStat"><b id="pfStatArt">0</b> Artworks</span>
+              <span class="pfFollowDot" aria-hidden="true">·</span>
+              <span class="pfFollowStat"><b id="pfStatViews">0</b> Views</span>
+              <span class="pfFollowDot" aria-hidden="true">·</span>
+              <span class="pfFollowStat"><b id="pfStatLikes">0</b> Likes</span>
+              <span class="pfFollowDot" aria-hidden="true">·</span>
+              <span class="pfFollowStat"><b id="pfStatSaves">0</b> Saves</span>
             </div>
           </div>
           <div class="pfActionRow" id="pfActionRow" hidden>
@@ -691,38 +702,6 @@
         </div>
       </section>
 
-      <div class="pfTiles" id="pfStatsRow" hidden>
-        <div class="pfTile">
-          <span class="pfTileIco" style="--tileC:#22D3EE" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg></span>
-          <span class="pfTileNum" id="pfStatArt">0</span>
-          <span class="pfTileLbl">Artworks</span>
-        </div>
-        <div class="pfTile">
-          <span class="pfTileIco" style="--tileC:#F43F5E" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.3 4.8 13a4.6 4.6 0 1 1 6.5-6.5l.7.7.7-.7A4.6 4.6 0 1 1 19.2 13Z"/></svg></span>
-          <span class="pfTileNum" id="pfStatLikes">0</span>
-          <span class="pfTileLbl">Likes</span>
-        </div>
-        <div class="pfTile">
-          <span class="pfTileIco" style="--tileC:#38BDF8" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.2 12S5.8 5.5 12 5.5 21.8 12 21.8 12 18.2 18.5 12 18.5 2.2 12 2.2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span>
-          <span class="pfTileNum" id="pfStatViews">0</span>
-          <span class="pfTileLbl">Views</span>
-        </div>
-        <div class="pfTile">
-          <span class="pfTileIco" style="--tileC:#A78BFA" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3.5h11V21L12 16.8 6.5 21Z"/></svg></span>
-          <span class="pfTileNum" id="pfStatSaves">0</span>
-          <span class="pfTileLbl">Saves</span>
-        </div>
-        <div class="pfTile">
-          <span class="pfTileIco" style="--tileC:#FBBF24" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.4a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.6V20"/><circle cx="10" cy="8" r="3.2"/><path d="M18 8v6"/><path d="M21 11h-6"/></svg></span>
-          <span class="pfTileNum" id="pfStatFollowers">0</span>
-          <span class="pfTileLbl">Followers</span>
-        </div>
-        <div class="pfTile">
-          <span class="pfTileIco" style="--tileC:#34D399" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5.2"/><path d="m8.4 13.4-1.6 7 5.2-2.7 5.2 2.7-1.6-7"/></svg></span>
-          <span class="pfTileNum" id="pfStatLevel">1</span>
-          <span class="pfTileLbl">Level</span>
-        </div>
-      </div>
 
       <nav class="pfTabs" role="tablist" aria-label="Profile sections">
         <div class="pfTabGroup" id="pfTabGroup">

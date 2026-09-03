@@ -133,6 +133,7 @@
     ['pfStatLikes','pfStatViews'].forEach(function(id){
       var e=document.getElementById(id); if(e) delete e.dataset.total;
     });
+    var _sa=document.getElementById('pfStatArt'); if(_sa) delete _sa.dataset.n;
     pf.resLoaded=false; pf.mktLoaded=false; pf.blogLoaded=false; pf.resRows=[]; pf.mktRows=[]; pf.blogRows=[];
     pf.albumsLoaded=false; pf.albums=[];
 

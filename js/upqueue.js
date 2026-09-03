@@ -273,7 +273,11 @@
             pf.galleryRows.unshift(row);
             if(typeof pfGalleryAdopt==='function') pfGalleryAdopt(row.id);
             var _st=document.getElementById('pfStatArt');
-            if(_st) _st.textContent = (parseInt(_st.textContent,10)||0)+1;
+            if(_st){
+              var _n=(parseInt(_st.dataset.n,10)||0)+1;
+              _st.dataset.n=String(_n);
+              _st.textContent = (typeof pfFmtCount==='function') ? pfFmtCount(_n) : String(_n);
+            }
           }
           if(images.findIndex(function(i){return String(i.id)===String(row.id);})===-1) images.unshift(row);
           if(typeof mw==='object' && mw && Array.isArray(mw.art) && mw.art.findIndex(function(i){return String(i.id)===String(row.id);})===-1) mw.art.unshift(row);

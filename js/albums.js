@@ -597,7 +597,10 @@
   async function pfLoadStats(){
     try{
       const artC = await sb.from('artworks').select('id',{count:'exact',head:true}).eq('user_id',pf.profile.id).eq('kind',ART_KIND_ART);
-      document.getElementById('pfStatArt').textContent = artC.count||0;
+      var el = document.getElementById('pfStatArt');
+      // the raw count rides along in the dataset so a fresh upload can bump it
+      // without having to parse a shortened "1.2K" back into a number
+      if(el){ el.dataset.n = String(artC.count||0); el.textContent = pfFmtCount(artC.count||0); }
     }catch(e){   }
   }
   var PF_DEFAULT_BIO = 'Just a regular human who likes art and creativity.';
@@ -619,7 +622,7 @@
     return String(n);
   }
 
-  function pfPaintStats(likes, views, bms, level, merit, followers){
+  function pfPaintStats(likes, views, bms, level, merit){
     function set(id, val){ var e=document.getElementById(id); if(e) e.textContent = val; }
     function setTotal(id, val){
       var e = document.getElementById(id);
@@ -630,8 +633,6 @@
     setTotal('pfStatLikes', pfFmtCount(likes));
     setTotal('pfStatViews', pfFmtCount(views));
     set('pfStatSaves', pfFmtCount(bms));
-    set('pfStatFollowers', pfFmtCount(followers));
-    set('pfStatLevel', level);
     set('pfStatMerit', merit);
     var row = document.getElementById('pfStatsRow');
     if(row) row.hidden = false;
@@ -668,7 +669,7 @@
     }catch(e){   }
 
     if(!pf.profile || pf.profile.id !== forId) return;
-    pfPaintStats(likes, views, bms, level, merit, +pf.profile.follower_count || 0);
+    pfPaintStats(likes, views, bms, level, merit);
     pfPaintFollowLine();
   }
 
@@ -769,7 +770,7 @@
     }finally{ pfFollowBusy = false; }
   }
 
-  // the button, the header line and the tile all move together
+  // the button and the header line move together
   function pfSetFollowState(on){
     if(!pf.profile) return;
     if(on === pfFollowing) return;
@@ -777,8 +778,6 @@
     pf.profile.follower_count = Math.max((+pf.profile.follower_count || 0) + (pfFollowing ? 1 : -1), 0);
     pfPaintFollowBtn();
     pfPaintFollowLine();
-    var tile = document.getElementById('pfStatFollowers');
-    if(tile) tile.textContent = pfFmtCount(pf.profile.follower_count);
   }
 
   // a follow taken from the artwork card, or anywhere else, lands here too

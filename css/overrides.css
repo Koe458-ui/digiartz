@@ -76,12 +76,7 @@
   .hpInner{ max-width:none; }
   .ftBrandDesc{ max-width:34ch; }
 }
-/* The hero was a two-column grid here — headline left, list and button stacked
-   right. It is one left-aligned column at every width now, so the desktop rules
-   only widen the measure rather than re-laying it out. */
-@media (min-width:1024px){
-  .hpTabs{ margin-bottom:clamp(2rem,3.4vw,2.75rem); }
-}
+
 
 @media (min-width:900px){
   .dzvBody{ padding-inline:var(--shellPad); }
@@ -383,7 +378,6 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   .ftColLink{padding-block:var(--sp-4);}
   .dzBrand{padding-block:var(--sp-2);}
   .pfSrchChip,.cmiSegBtn{min-height:40px;}
-  .hpTab{min-height:40px;}
   .cmiMini,.albActBtn{min-height:36px;}
   .cropZoomBtn,
 .fgHeadSX{width:38px;height:38px;}
@@ -427,12 +421,12 @@ input[type=range].cropZoom::-moz-range-thumb{width:22px;height:22px;}
 
 @media (forced-colors:active){
   .dzIcon,.fgTopBtn,.subPgX,.cmBack,.fltPX,.upPopX,
-  .ftTab,.fgCatChip,.hpTab,.pfSrchChip{
+  .ftTab,.fgCatChip,.pfSrchChip{
     border:1px solid ButtonBorder;
     forced-color-adjust:none;
     background:ButtonFace;color:ButtonText;
   }
-  .ftTab.on,.fgCatChip.on,.hpTab[aria-selected="true"],.pfSrchChip.on{
+  .ftTab.on,.fgCatChip.on,.pfSrchChip.on{
     background:Highlight;color:HighlightText;border-color:Highlight;
   }
   .awCard,.gItem,.dzCard,.bmCard,.albCard,.spItem,.admCard{border:1px solid CanvasText;}

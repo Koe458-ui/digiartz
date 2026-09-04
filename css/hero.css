@@ -8,50 +8,39 @@
 #heroPitch{
   position:relative;
   background:var(--bg);
-  padding:calc(var(--dzTopOff) + clamp(1.5rem,5vw,4.5rem))
+  padding:calc(var(--dzTopOff) + clamp(2.5rem,7vw,6rem))
           var(--shellPad)
           clamp(2rem,6vw,5rem);
 }
 .hpInner{max-width:min(100%,1280px);margin:0;}
-
-/* Tabs: a text row, not a control bar. */
-.hpTabs{
-  display:flex;gap:clamp(1.25rem,3vw,2.25rem);
-  margin:0 0 clamp(1.5rem,3.5vw,2.5rem);
-  width:max-content;max-width:100%;
-  overflow-x:auto;overscroll-behavior-x:contain;
-  scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
-}
-.hpTabs::-webkit-scrollbar{display:none;}
-.hpTab{
-  position:relative;flex-shrink:0;border:0;background:none;cursor:pointer;
-  padding:var(--sp-2) 0;
-  font-family:var(--fd);font-size:var(--fs-sm);font-weight:600;
-  letter-spacing:var(--ls-normal);
-  color:var(--txd);white-space:nowrap;
-  transition:color .18s;
-}
-.hpTab::after{
-  content:'';position:absolute;left:0;right:0;bottom:0;height:2px;
-  background:var(--tx);border-radius:2px;
-  transform:scaleX(0);transform-origin:left;transition:transform .22s ease;
-}
-@media(hover:hover){.hpTab:hover{color:var(--tx);}}
-.hpTab[aria-selected="true"]{color:var(--tx);font-weight:700;}
-.hpTab[aria-selected="true"]::after{transform:scaleX(1);}
-.hpTab:focus-visible{outline:2px solid var(--pb);outline-offset:3px;border-radius:3px;}
 
 /* The headline is the fold. Tight leading and tracking so the mass reads as one
    block; text-wrap:balance keeps the rag from stranding a single word. */
 .hpHead{
   margin:0 0 clamp(1rem,2.4vw,1.75rem);
   font-family:var(--fd);font-weight:800;
-  font-size:clamp(2.25rem,.95rem + 5.33vw,6rem);
+  /* 48px on a phone up to 96px on a wide screen. The floor is deliberately high:
+     this headline is the fold, and on mobile it is meant to read as a poster,
+     not a paragraph. */
+  font-size:clamp(3rem,1.98rem + 4.19vw,6rem);
   line-height:1.02;
   letter-spacing:-.035em;
   color:var(--tx);
   text-wrap:balance;
-  max-width:16ch;
+  max-width:18ch;
+}
+/* Narrow measure on phones so the headline breaks into short stacked lines
+   rather than running the full width. ch scales with the font, so this stays
+   proportional as the clamp grows. */
+@media(max-width:767px){
+  .hpHead{
+    /* 57px on a 320 phone, 64px from 390 up. The cap meets the desktop curve
+       where this query ends (64px at 767, 63.9 at 768), so there is no step at
+       the boundary. 9ch keeps it stacked four lines deep. */
+    font-size:clamp(3.5rem,1rem + 12.8vw,4rem);
+    max-width:9ch;
+    text-wrap:initial;
+  }
 }
 .hpHead em{font-style:normal;color:var(--brand-red);}
 
@@ -95,26 +84,19 @@
 @media(hover:hover){.hpAlt:hover{gap:var(--sp-5);opacity:.72;}}
 .hpAlt:focus-visible{outline:2px solid var(--pb);outline-offset:4px;border-radius:4px;}
 
-.hpPanel.hpIn > *{animation:none;opacity:1;transform:none;}
 
 /* Short landscape (phone on its side): the fold is ~350px tall, so the headline
    has to give up most of its size and the prose steps aside entirely. */
 @media(max-height:500px) and (orientation:landscape){
   #heroPitch{padding-top:calc(var(--dzTopOff) + var(--sp-5));padding-bottom:var(--sp-6);}
   .hpSub{display:none;}
-  .hpHead{margin-bottom:var(--sp-5);font-size:clamp(1.75rem,4.5vw,2.5rem);max-width:26ch;}
-  .hpTabs{margin-bottom:var(--sp-5);}
-  .hpCta,.hpAlt{min-height:44px;}
+  .hpHead{margin-bottom:var(--sp-5);font-size:clamp(1.75rem,4.5vw,2.5rem);max-width:22ch;}
+    .hpCta,.hpAlt{min-height:44px;}
 }
 
 @media(prefers-reduced-motion:reduce){
-  .hpCta,.hpTab,.hpAlt,.hpTab::after{transition:none;}
+  .hpCta,.hpAlt{transition:none;}
 }
-@media(max-width:480px){
-  .hpTab{padding:var(--sp-3) var(--sp-6);font-size:var(--fs-sm);}
-  .hpTabs{margin-bottom:clamp(1.1rem,4vw,1.4rem);}
-}
-
 .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 
 /* Sits at body level, outside the wrapper that pads for the fixed header, so it

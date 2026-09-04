@@ -3,7 +3,7 @@
   --tc:#9A9DA6;
   --bg:#1A1A1F; --sur:#24242C; --sur2:#2E2E38;
   --bdr:#40404E; --bdrh:#56566A;
-  --tx:#F3F3F8; --tx2-rgb:216,216,228; --txd:rgba(var(--tx2-rgb),.68);
+  --tx:#F3F3F8; --tx2-rgb:216,216,228; --txd:rgba(var(--tx2-rgb),.80);
   --pg:#F4F4F6; --pb:#FFFFFF; --ps:#FFFFFF; --pgd:#C6C6CE;
   --pg-rgb:244,244,246; --pgd-rgb:198,198,206;
   --pdim:rgba(var(--pg-rgb),.10);
@@ -11,14 +11,17 @@
   --sh-card:0 1px 3px rgba(5,3,8,.3),0 4px 14px rgba(5,3,8,.35);
   --sh-card-hover:0 6px 20px rgba(5,3,8,.4);
   --vbg:#101015; --vsur:#191920; --vsur2:#222229;
-  --vtx:#F1F1F5; --vtx2-rgb:210,210,222; --vtxd:rgba(var(--vtx2-rgb),.66);
+  --vtx:#F1F1F5; --vtx2-rgb:210,210,222; --vtxd:rgba(var(--vtx2-rgb),.78);
   --vtc:#9DA1A9; --vtc-rgb:157,161,169;
   --vpg:#8E939C; --vpb:#BCC0C6; --vps:#D2D5D9;
   --fbg:#131318; --fsur:#1C1C23; --fsur2:#23232B;
   --fbdr:#31313D; --fbdrh:#43434F;
-  --fd:'Sora','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  --fb:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-  --fm:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  /* One family across the site. --fd/--fb/--fm stay as separate names because
+     the roles differ in weight and tracking, not in typeface; dropping Sora also
+     drops a whole font request. */
+  --fd:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --fb:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --fm:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
 
   --danger:#fca5a5;
   --brand-red:#EF4444;
@@ -52,7 +55,7 @@ html[data-theme="offwhite"]{
   --tc:#6F6B58;
   --bg:#F7F5EB; --sur:#FFFEF9; --sur2:#F0EEDF;
   --bdr:#D8D3B8; --bdrh:#BAB499;
-  --tx:#1F1D15; --tx2-rgb:62,58,44; --txd:rgba(var(--tx2-rgb),.74);
+  --tx:#1F1D15; --tx2-rgb:62,58,44; --txd:rgba(var(--tx2-rgb),.84);
   --pg:#17151F; --pb:#0F0E15; --ps:#000000; --pgd:#2E2C3A;
   --pg-rgb:23,21,31; --pgd-rgb:46,44,58;
   --pdim:rgba(var(--pg-rgb),.07);
@@ -60,7 +63,7 @@ html[data-theme="offwhite"]{
   --sh-card:0 1px 3px rgba(26,24,38,.10),0 4px 14px rgba(26,24,38,.12);
   --sh-card-hover:0 6px 20px rgba(26,24,38,.16);
   --vbg:#EEEBDC; --vsur:#FBFAF2; --vsur2:#F3F1E4;
-  --vtx:#211F16; --vtx2-rgb:70,66,50; --vtxd:rgba(var(--vtx2-rgb),.78);
+  --vtx:#211F16; --vtx2-rgb:70,66,50; --vtxd:rgba(var(--vtx2-rgb),.86);
   --vtc:#6E6957; --vtc-rgb:110,105,87;
   --vpg:#63604F; --vpb:#514E3F; --vps:#403D31;
   --fbg:#E8E5D4; --fsur:#F3F1E4; --fsur2:#EEEBDC;
@@ -93,14 +96,14 @@ html[data-theme="offwhite"]{
   --tc:#6C6C68;
   --bg:#F3F3F1; --sur:#FCFCFA; --sur2:#EAEAE7;
   --bdr:#D2D2CD; --bdrh:#B2B2AC;
-  --tx:#1A1A18; --tx2-rgb:58,58,54; --txd:rgba(var(--tx2-rgb),.78);
+  --tx:#1A1A18; --tx2-rgb:58,58,54; --txd:rgba(var(--tx2-rgb),.86);
   --pg:#17171A; --pb:#0F0F12; --ps:#000000; --pgd:#2E2E32;
   --pg-rgb:23,23,26; --pgd-rgb:46,46,50;
   --pdim:rgba(var(--pg-rgb),.07);
   --sh-card:0 1px 3px rgba(24,24,28,.10),0 4px 14px rgba(24,24,28,.12);
   --sh-card-hover:0 6px 20px rgba(24,24,28,.16);
   --vbg:#E9E9E6; --vsur:#F8F8F6; --vsur2:#EFEFEC;
-  --vtx:#1D1D1B; --vtx2-rgb:64,64,60; --vtxd:rgba(var(--vtx2-rgb),.80);
+  --vtx:#1D1D1B; --vtx2-rgb:64,64,60; --vtxd:rgba(var(--vtx2-rgb),.86);
   --vtc:#6A6A65; --vtc-rgb:106,106,101;
   --vpg:#60605C; --vpb:#4E4E4A; --vps:#3D3D3A;
   --fbg:#E5E5E2; --fsur:#EFEFEC; --fsur2:#E9E9E6;
@@ -136,6 +139,79 @@ html[data-theme="offwhite"]{
 @media(min-width:700px){  :root{ --artGap:4px; } }
 @media(min-width:1280px){ :root{ --artGap:5px; } }
 
+
+/* ============================================================================
+   Type & spacing scale
+   ----------------------------------------------------------------------------
+   Before this existed the site carried ~110 distinct font-size values, and 68%
+   of rendered text sat under 14px — the point where small-vision readers start
+   losing it — with the single biggest cluster (57 nodes) at 11.5px and the
+   floor at 8.6px. Body text is 16px because that is the browser default and the
+   accepted minimum for reading; supplementary text bottoms out at 14px and only
+   tracked uppercase micro-labels go to 12px.
+
+   The ramp is 12 / 13 / 14 / 15 / 16 / 18 / 20 / 24 / 28 / 34 / 44. It is tight
+   at the bottom, where a dense art UI genuinely needs to separate a counter from
+   a caption from a label, and opens up above body where the steps have to be
+   felt rather than measured. The shape generalises the --an-fs-* ramp that
+   analytics.css already proved out; those names now alias into this scale.
+
+   The small end does NOT shrink on mobile — a phone is where the readability
+   floor matters most. Only --fs-2xl and up scale down, via clamp.
+   ========================================================================== */
+:root{
+  --fs-3xs:.75rem;    /* 12px  tracked uppercase micro-labels only */
+  --fs-2xs:.8125rem;  /* 13px  counters, timestamps */
+  --fs-xs:.875rem;    /* 14px  metadata, captions, chips — supplementary floor */
+  --fs-sm:.9375rem;   /* 15px  dense UI: nav, buttons, tabs */
+  --fs-md:1rem;       /* 16px  body, inputs (also keeps iOS from zooming) */
+  --fs-lg:1.125rem;   /* 18px  lead text, artwork/card titles */
+  --fs-xl:1.25rem;    /* 20px  h4, section titles */
+  --fs-2xl:clamp(1.375rem,1.15rem + .95vw,1.5rem);   /* 22 → 24 */
+  --fs-3xl:clamp(1.5rem,1.16rem + 1.45vw,1.75rem);   /* 24 → 28 */
+  --fs-4xl:clamp(1.75rem,1.25rem + 2.1vw,2.125rem);  /* 28 → 34 */
+  --fs-5xl:clamp(2.125rem,1.4rem + 3.1vw,2.75rem);   /* 34 → 44 */
+  --fs-hero:clamp(2.5rem,1.5rem + 4.4vw,4rem);       /* 40 → 64 display */
+
+  /* Line height. Long measures need air; a single-line chip or a numeral in a
+     badge needs none, or it inflates its own box. */
+  --lh-flat:1;
+  --lh-tight:1.15;   /* display + h1/h2 */
+  --lh-snug:1.3;     /* h3/h4, card and artwork titles */
+  --lh-normal:1.45;  /* UI text, buttons, nav, single-line labels */
+  --lh-body:1.6;     /* descriptions, paragraphs */
+  --lh-loose:1.75;   /* long-form legal / help copy */
+
+  /* Letter spacing. Big type tightens, small tracked uppercase opens up.
+     Replaces 29 hand-picked values. */
+  --ls-tighter:-.02em; /* display */
+  --ls-tight:-.01em;   /* headings */
+  --ls-normal:0;
+  --ls-wide:.04em;     /* buttons, small caps-ish UI */
+  --ls-wider:.1em;     /* uppercase labels */
+  --ls-widest:.16em;   /* rare: tiny uppercase eyebrows */
+
+  /* Spacing scale. The old gap values clustered at .5/.55/.6/.65/.7rem — five
+     near-duplicates inside 4px that read as noise rather than rhythm. The low
+     end stays 2px-granular so collapsing them does not inflate tight rows
+     (chip strips, icon+label pairs); above 16px the steps widen out. */
+  --sp-1:.25rem;    /*  4 */
+  --sp-2:.375rem;   /*  6 */
+  --sp-3:.5rem;     /*  8 */
+  --sp-4:.625rem;   /* 10 */
+  --sp-5:.75rem;    /* 12 */
+  --sp-6:1rem;      /* 16 */
+  --sp-7:1.5rem;    /* 24 */
+  --sp-8:2rem;      /* 32 */
+  --sp-9:3rem;      /* 48 */
+  --sp-10:4rem;     /* 64 */
+
+  /* Vertical rhythm between stacked sections */
+  --stack-sm:var(--sp-5);
+  --stack-md:var(--sp-7);
+  --stack-lg:var(--sp-9);
+}
+
 #artworks,#subOverview,footer.siteFooter{
   content-visibility:auto;
 }
@@ -143,12 +219,30 @@ html[data-theme="offwhite"]{
 #subOverview{contain-intrinsic-size:auto 700px;}
 footer.siteFooter{contain-intrinsic-size:auto 480px;}
 
-body{line-height:1.6;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
-h1,h2,h3,h4,h5,h6{color:var(--heading-color);line-height:1.15;}
-h1{font-weight:800;letter-spacing:-.02em;}
-h2,h3{font-weight:700;letter-spacing:-.01em;}
+body{font-size:var(--fs-md);line-height:var(--lh-body);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+
+/* Default sizes for bare headings, so an element that never got a class still
+   lands on the ramp instead of the browser's own h1..h6 defaults. */
+h1,h2,h3,h4,h5,h6{color:var(--heading-color);line-height:var(--lh-tight);}
+h1{font-size:var(--fs-4xl);font-weight:800;letter-spacing:var(--ls-tighter);}
+h2{font-size:var(--fs-3xl);font-weight:700;letter-spacing:var(--ls-tight);}
+h3{font-size:var(--fs-2xl);font-weight:700;letter-spacing:var(--ls-tight);}
+h4{font-size:var(--fs-xl);font-weight:700;letter-spacing:var(--ls-tight);line-height:var(--lh-snug);}
+h5{font-size:var(--fs-lg);font-weight:600;line-height:var(--lh-snug);}
+h6{font-size:var(--fs-md);font-weight:600;line-height:var(--lh-snug);}
 a{color:var(--link-color);}
 kbd{font-variant-numeric:tabular-nums;}
+
+/* Form controls inherit the body face rather than the UA's, and never sit below
+   16px on a phone — Safari auto-zooms the page on focus when they do, which then
+   strands the user at a scrolled-in viewport. The :not() chain keeps this ahead
+   of the per-component classes without needing !important. */
+input,textarea,select,button{font-family:inherit;}
+@media(max-width:767px){
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),
+  textarea,
+  select{font-size:var(--fs-md);}
+}
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
@@ -167,12 +261,12 @@ body{
   min-height:100dvh;
 }
 
-#intro{position:fixed;inset:0;z-index:9999;background:color-mix(in srgb,var(--bg) 28%,transparent);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:.9rem;opacity:1;transition:opacity .3s ease;pointer-events:auto;}
+#intro{position:fixed;inset:0;z-index:9999;background:color-mix(in srgb,var(--bg) 28%,transparent);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:var(--sp-6);opacity:1;transition:opacity .3s ease;pointer-events:auto;}
 #intro.iHide{opacity:0;pointer-events:none;}
 #intro.iGone{visibility:hidden;}
 .iSpin{width:44px;height:44px;border-radius:50%;border:3px solid rgba(var(--pg-rgb),.18);border-top-color:var(--pg);animation:iSpin .8s linear infinite;}
 @keyframes iSpin{to{transform:rotate(360deg)}}
-.iTxt{font-family:var(--fm);font-size:.72rem;letter-spacing:.3em;color:var(--tx);text-shadow:0 1px 6px rgba(0,0,0,.35);}
+.iTxt{font-family:var(--fm);font-size:var(--fs-xs);letter-spacing:var(--ls-widest);color:var(--tx);text-shadow:0 1px 6px rgba(0,0,0,.35);}
 @media(prefers-reduced-motion:reduce){.iSpin{animation-duration:1.6s;}}
 
 :root{ --dzTopH:56px; }
@@ -188,7 +282,7 @@ body{
   z-index:400;
   height:var(--dzTopOff);
   box-sizing:border-box;
-  display:flex;align-items:center;gap:.75rem;
+  display:flex;align-items:center;gap:var(--sp-5);
   padding:var(--sat) var(--shellPad) 0;
   border-bottom:1px solid var(--bdr);
   background:color-mix(in srgb,var(--bg) 92%,transparent);
@@ -198,8 +292,8 @@ body{
   flex:0 0 auto;
   display:inline-flex;align-items:baseline;
   font-family:var(--fd);font-weight:800;
-  font-size:clamp(1.28rem,3.4vw,1.42rem);
-  letter-spacing:-.01em;
+  font-size:var(--fs-3xl);
+  letter-spacing:var(--ls-tight);
   text-decoration:none;
   -webkit-tap-highlight-color:transparent;
   transition:opacity .2s ease,transform .15s ease;
@@ -223,9 +317,9 @@ html[data-theme="graydark"] .dzBrandD{color:var(--tx);}
   position:relative;
   flex:0 0 auto;
   border:0;background:none;cursor:pointer;
-  padding:.5rem .25rem;
+  padding:var(--sp-3) var(--sp-1);
   font-family:var(--fd);font-weight:700;
-  font-size:clamp(.9rem,1vw,.96rem);letter-spacing:.01em;
+  font-size:var(--fs-md);letter-spacing:var(--ls-wide);
   color:var(--txd);
   text-decoration:none;white-space:nowrap;
   -webkit-tap-highlight-color:transparent;
@@ -249,7 +343,7 @@ html[data-theme="graydark"] .dzBrandD{color:var(--tx);}
   display:none;
 }
 .dzUpWrap.open::after{display:block;}
-.dzLinkDd{display:inline-flex;align-items:center;gap:.3rem;}
+.dzLinkDd{display:inline-flex;align-items:center;gap:var(--sp-1);}
 .dzLinkChev{
   width:13px;height:13px;flex:0 0 auto;opacity:.65;
   transition:transform .28s cubic-bezier(.16,1,.3,1),opacity .2s ease;
@@ -290,9 +384,9 @@ html[data-theme="graydark"] .dzBrandD{color:var(--tx);}
 }
 .dzUpItem{
   --upA:var(--pg);
-  display:flex;align-items:center;gap:.7rem;
+  display:flex;align-items:center;gap:var(--sp-5);
   box-sizing:border-box;text-align:left;
-  padding:.6rem;margin:0 .3rem;
+  padding:var(--sp-4);margin:0 var(--sp-1);
   border:0;border-radius:12px;background:none;cursor:pointer;
   color:var(--tx);
   -webkit-tap-highlight-color:transparent;
@@ -313,8 +407,8 @@ html[data-theme="graydark"] .dzBrandD{color:var(--tx);}
 .dzUpWrap.open .dzUpDdInner > :nth-child(3){transition-delay:0s,.15s,.15s;}
 .dzUpWrap.open .dzUpDdInner > :nth-child(4){transition-delay:0s,.195s,.195s;}
 .dzUpWrap.open .dzUpDdInner > :nth-child(5){transition-delay:0s,.24s,.24s;}
-.dzUpItem:first-child{margin-top:.3rem;}
-.dzUpItem:last-child{margin-bottom:.3rem;}
+.dzUpItem:first-child{margin-top:var(--sp-1);}
+.dzUpItem:last-child{margin-bottom:var(--sp-1);}
 a.dzUpItem{text-decoration:none;color:inherit;}
 .dzUpItem:focus-visible,
 .dzMenuSubItem:focus-visible{outline:2px solid var(--upA);outline-offset:-2px;}
@@ -330,16 +424,16 @@ a.dzUpItem{text-decoration:none;color:inherit;}
   .dzUpItem:hover{background:var(--sur2);}
   .dzUpItem:hover .dzUpIco{background:color-mix(in srgb,var(--upA) 26%,transparent);}
 }
-.dzUpTxt{display:flex;flex-direction:column;gap:.08rem;min-width:0;}
+.dzUpTxt{display:flex;flex-direction:column;gap:var(--sp-1);min-width:0;}
 .dzUpNm{
   font-family:var(--fd);font-weight:700;
-  font-size:.9rem;letter-spacing:.005em;color:var(--tx);
+  font-size:var(--fs-md);letter-spacing:var(--ls-wide);color:var(--tx);
   white-space:nowrap;
 }
-.dzUpDesc{font-size:.73rem;line-height:1.35;color:var(--txd);white-space:normal;}
+.dzUpDesc{font-size:var(--fs-xs);line-height:var(--lh-snug);color:var(--txd);white-space:normal;}
 
 .dzActions{
-  display:flex;align-items:center;gap:.1rem;
+  display:flex;align-items:center;gap:var(--sp-1);
   flex:0 0 auto;margin-left:auto;
 }
 .dzIcon{
@@ -355,26 +449,26 @@ a.dzUpItem{text-decoration:none;color:inherit;}
 @media(hover:hover){ .dzIcon:hover{background:var(--sur2);} }
 .hNotifDot{
   position:absolute;top:4px;right:2px;
-  min-width:16px;height:16px;padding:0 4px;
+  min-width:16px;height:16px;padding:0 var(--sp-1);
   box-sizing:border-box;border-radius:999px;
   display:none;align-items:center;justify-content:center;
   background:var(--brand-red);color:#fff;
   box-shadow:0 0 0 2px var(--bg);
-  font-family:var(--fm);font-size:.58rem;font-weight:700;
-  line-height:1;letter-spacing:0;
+  font-family:var(--fm);font-size:var(--fs-3xs);font-weight:700;
+  line-height:var(--lh-flat);letter-spacing:0;
   pointer-events:none;
 }
 #hNotifBtn.hasUnread .hNotifDot{display:flex;}
 
 .dzCartCount{
   position:absolute;top:3px;right:1px;
-  min-width:16px;height:16px;padding:0 4px;
+  min-width:16px;height:16px;padding:0 var(--sp-1);
   box-sizing:border-box;border-radius:999px;
   display:none;align-items:center;justify-content:center;
   background:var(--brand-red);color:#fff;
   box-shadow:0 0 0 2px var(--bg);
-  font-family:var(--fm);font-size:.58rem;font-weight:700;
-  line-height:1;letter-spacing:0;
+  font-family:var(--fm);font-size:var(--fs-3xs);font-weight:700;
+  line-height:var(--lh-flat);letter-spacing:0;
   pointer-events:none;
 }
 .dzCartBtn.hasItems .dzCartCount{display:flex;}
@@ -429,16 +523,16 @@ a.dzUpItem{text-decoration:none;color:inherit;}
   min-height:0;
   overflow:hidden;
   display:flex;flex-direction:column;
-  padding:.35rem var(--shellPad) .6rem;
+  padding:var(--sp-2) var(--shellPad) var(--sp-4);
 }
 .dzMenuItem{
   display:block;width:100%;
   box-sizing:border-box;
   text-align:left;
   border:0;background:none;cursor:pointer;
-  padding:.78rem .55rem;
+  padding:var(--sp-5) var(--sp-3);
   font-family:var(--fd);font-weight:700;
-  font-size:1rem;letter-spacing:.01em;
+  font-size:var(--fs-md);letter-spacing:var(--ls-wide);
   color:var(--tx);
   text-decoration:none;white-space:nowrap;
   -webkit-tap-highlight-color:transparent;
@@ -474,7 +568,7 @@ a.dzUpItem{text-decoration:none;color:inherit;}
 .dzMenuItem.bnActive{background:var(--pdim);color:var(--pb);}
 
 .dzMenuTog{
-  display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+  display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4);
 }
 .dzMenuChev{
   width:17px;height:17px;flex:0 0 auto;color:var(--txd);
@@ -493,20 +587,20 @@ a.dzUpItem{text-decoration:none;color:inherit;}
 }
 .dzMenuSubItem{
   --upA:var(--pg);
-  display:flex;align-items:center;gap:.6rem;
+  display:flex;align-items:center;gap:var(--sp-4);
   box-sizing:border-box;text-align:left;
-  margin-left:.3rem;
+  margin-left:var(--sp-1);
   border:0;background:none;cursor:pointer;
-  padding:.58rem .5rem;border-radius:11px;
+  padding:var(--sp-4) var(--sp-3);border-radius:11px;
   font-family:var(--fd);font-weight:600;
-  font-size:.92rem;letter-spacing:.005em;color:var(--tx);
+  font-size:var(--fs-md);letter-spacing:var(--ls-wide);color:var(--tx);
   white-space:nowrap;
   -webkit-tap-highlight-color:transparent;
   transition:background .18s ease;
 }
 a.dzMenuSubItem{text-decoration:none;color:var(--tx);}
-.dzMenuSubItem:first-child{margin-top:.1rem;}
-.dzMenuSubItem:last-child{margin-bottom:.4rem;}
+.dzMenuSubItem:first-child{margin-top:var(--sp-1);}
+.dzMenuSubItem:last-child{margin-bottom:var(--sp-2);}
 .dzMenuSubItem:active{background:var(--sur2);}
 @media(hover:hover){ .dzMenuSubItem:hover{background:var(--sur2);} }
 .dzUpIcoSm{width:30px;height:30px;border-radius:9px;}

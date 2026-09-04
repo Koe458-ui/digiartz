@@ -32,11 +32,11 @@ const SHELL_URLS = [
   '/apple-touch-icon.png?v=4',
   '/icon-192.png?v=4',
 
-  '/css/base.css?v=40',
+  '/css/base.css?v=41',
   '/css/hero.css?v=140',
   '/css/viewer.css?v=52',
   '/css/community.css?v=40',
-  '/css/connect.css?v=15',
+  '/css/connect.css?v=16',
   '/css/ranking.css?v=18',
   '/css/profile.css?v=39',
   '/css/admin.css?v=13',

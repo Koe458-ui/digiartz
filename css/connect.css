@@ -28,7 +28,7 @@ footer.siteFooter {
   min-width: 0;
 }
 .ftBrandName {
-  font-family: var(--fd);
+  font-family: var(--fw);
   font-size: var(--fs-3xl);
   font-weight: 900;
   letter-spacing: var(--ls-wider);
@@ -157,7 +157,7 @@ footer.siteFooter {
   gap: var(--sp-7) var(--sp-8);
 }
 .ftBaseLogo {
-  font-family: var(--fd);
+  font-family: var(--fw);
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: var(--ls-widest);

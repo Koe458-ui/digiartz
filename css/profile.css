@@ -99,8 +99,10 @@
 .msRibbon[hidden]{display:none;}
 .msRibbon .msRibLvl{opacity:.62;margin-right:var(--sp-2);}
 
+/* The same prose the About tab sets: --fb at --fs-md on --lh-body. It is the
+   same sentence in both places and was two sizes. */
 .pfHeadBio{
-  font-family:var(--fb);font-size:var(--fs-lg);line-height:var(--lh-body);
+  font-family:var(--fb);font-size:var(--fs-md);line-height:var(--lh-body);
   color:var(--txd);margin-top:var(--sp-5);max-width:72ch;
 }
 .pfHeadBio:empty{display:none;}
@@ -158,12 +160,14 @@
   margin:var(--sp-1) 0 var(--sp-1);
 }
 .pfStats[hidden]{display:none;}
+/* Both lines at one size. The first was --fs-lg and the second --fs-md, which
+   is what made the block look unsettled — two rows of the same kind of thing,
+   set differently. They read at the body size, like the bio under them. */
 .pfStatLine{
   display:flex;flex-wrap:wrap;align-items:baseline;
   column-gap:var(--sp-5);row-gap:var(--sp-1);margin:0;
-  font-family:var(--fb);font-size:var(--fs-lg);line-height:var(--lh-normal);
+  font-family:var(--fb);font-size:var(--fs-md);line-height:var(--lh-normal);
 }
-.pfStatLine--sub{font-size:var(--fs-md);}
 .pfStat{display:inline-flex;align-items:baseline;gap:var(--sp-1);white-space:nowrap;}
 .pfStatN{
   font-family:var(--fm);font-weight:700;font-variant-numeric:tabular-nums;

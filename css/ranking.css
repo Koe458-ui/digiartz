@@ -390,9 +390,16 @@
 }
 
 @media (max-width: 560px) {
+  /* One card per row, so nothing needs to line up with a card beside it: the
+     description stops growing to fill the card, which is what put a band of
+     empty space above every arrow, and the card closes up around its text. */
   .subOvGrid {
     grid-template-columns: 1fr;
+    gap: var(--sp-5);
   }
+  .subOvCardInner { padding: var(--sp-6); gap: var(--sp-3); }
+  .subOvDesc { flex: 0 0 auto; }
+  .subOvArrowRow { margin-top: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

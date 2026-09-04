@@ -963,6 +963,9 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 }
 /* Nothing to follow or befriend on your own card. */
 .atCard.atMine .atActs{display:none;}
+/* A blocked account has no friend action, so Follow takes the whole row. */
+.atCard.atOneAct .atActs{grid-template-columns:1fr;}
+.atBtn[hidden]{display:none;}
 
 /* The board of artists is not the grid of artworks: these cards are wide, so
    one to a row on a phone, two on a tablet or a small desktop, three from a

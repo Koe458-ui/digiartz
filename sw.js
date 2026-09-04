@@ -33,7 +33,7 @@ const SHELL_URLS = [
   '/icon-192.png?v=4',
 
   '/css/base.css?v=45',
-  '/css/hero.css?v=159',
+  '/css/hero.css?v=160',
   '/css/viewer.css?v=52',
   '/css/community.css?v=40',
   '/css/connect.css?v=18',
@@ -80,7 +80,7 @@ const SHELL_URLS = [
   '/js/mywork.js?v=30',
   '/js/startup.js?v=12',
   '/js/search.js?v=28',
-  '/js/feed.js?v=19',
+  '/js/feed.js?v=20',
   '/js/herosearch.js?v=9',
   '/js/effects.js?v=14',
   '/js/legal-content.js?v=4',

@@ -146,6 +146,11 @@
   }
 
   var FRIEND_LABEL = { none:'Add friend', sent:'Requested', incoming:'Accept', friends:'Message' };
+  // frState also answers blocked_by_me and blocked_me. Neither has an action on
+  // a card, and the profile page hides its button for them, so this does too —
+  // without it a blocked account read "Add friend" and pressing it would have
+  // tried to accept a request that is not there.
+  function feedFriendBlocked(st){ return st === 'blocked_by_me' || st === 'blocked_me' || st === 'blocked'; }
 
   function feedPaintActions(card, p){
     var id  = p && p.id ? String(p.id) : '';
@@ -158,9 +163,12 @@
 
     var st = (window.pfFriendBridge && window.pfFriendBridge.state)
       ? String(window.pfFriendBridge.state(id) || 'none') : 'none';
+    frd.hidden = feedFriendBlocked(st);
     frd.textContent = FRIEND_LABEL[st] || FRIEND_LABEL.none;
     frd.dataset.frState = st;
     frd.classList.toggle('on', st === 'friends');
+    // one button left in the row should still fill it
+    card.classList.toggle('atOneAct', frd.hidden);
 
     var on = !!(window.dzFollow && window.dzFollow.is && window.dzFollow.is(id));
     fol.textContent = on ? 'Following' : 'Follow';
@@ -199,6 +207,7 @@
       var br = window.pfFriendBridge;
       if(!br) return;
       var st = frd.dataset.frState || 'none';
+      if(feedFriendBlocked(st)) return;
       if(st === 'friends'){
         br.chat({ id: id, username: p.username, avatar_url: p.avatar_url });
         return;

@@ -279,10 +279,13 @@ body{
 .iTxt{font-family:var(--fm);font-size:var(--fs-xs);letter-spacing:var(--ls-widest);color:var(--tx);text-shadow:0 1px 6px rgba(0,0,0,.35);}
 @media(prefers-reduced-motion:reduce){.iSpin{animation-duration:1.6s;}}
 
-:root{ --dzTopH:56px; }
-@media(min-width:768px){ :root{ --dzTopH:60px; } }
-@media(min-width:1280px){ :root{ --dzTopH:64px; } }
-@media(max-height:460px) and (orientation:landscape){ :root{ --dzTopH:48px; } }
+/* The bar is sized off its tallest child, and on touch that is a 44px icon —
+   so 52px is the floor, not a preference. The wordmark was the reason it felt
+   heavy: it inherited the 1.6 body leading, so a 28px logo occupied 45px. */
+:root{ --dzTopH:52px; }
+@media(min-width:768px){ :root{ --dzTopH:56px; } }
+@media(min-width:1280px){ :root{ --dzTopH:58px; } }
+@media(max-height:460px) and (orientation:landscape){ :root{ --dzTopH:46px; } }
 
 :root{ --dzTopOff:calc(var(--dzTopH) + var(--sat)); }
 
@@ -302,7 +305,8 @@ body{
   flex:0 0 auto;
   display:inline-flex;align-items:baseline;
   font-family:var(--fd);font-weight:800;
-  font-size:var(--fs-3xl);
+  font-size:var(--fs-2xl);
+  line-height:var(--lh-flat);
   letter-spacing:var(--ls-tight);
   text-decoration:none;
   -webkit-tap-highlight-color:transparent;

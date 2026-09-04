@@ -397,7 +397,9 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   .tgSearchIn{min-height:44px;}
 
   .ftColLink{padding-block:var(--sp-4);display:flex;align-items:center;}
-  .dzBrand{padding-block:var(--sp-2);}
+  /* the wordmark is the home link: de-leading it left the text 32px tall, so the
+     hit area is restored explicitly rather than by padding it back out */
+  .dzBrand{min-height:44px;align-items:center;}
   .avCmDel{padding:var(--sp-3) var(--sp-3);}
 }
 

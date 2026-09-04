@@ -12,57 +12,42 @@
     return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
+  // One line and one sentence per section, built the same way every time: the
+  // section's own word carried in the signature, then eight of the things that
+  // are actually in it and "and more". The eight are drawn from the section's
+  // own category list, so the sentence and the rail under it agree. The verb
+  // is the section's own — you discover artwork, buy from the marketplace,
+  // read the blog, download a resource, apply for work.
   var HEADS = {
     artworks: {
-      lead: 'Browse *Artworks*',
+      lead: 'Browse *artworks*',
       hint: 'Search artworks by title',
-      desc: 'Every piece here was published by an artist in the DigiArtz community and ' +
-            '*cleared before it went up*. Character illustration and concept art, anime and ' +
-            'manga, fan art and original work, landscapes, vehicles, creatures, 3D renders ' +
-            'and pixel art — fifty categories of it, from first sketches to finished ' +
-            'commissions. Open a piece to see it full size, read how it was made and follow ' +
-            '*the artist who made it*. Pick a category below to narrow the grid, or search it ' +
-            'by name.'
+      desc: 'Discover anime art, characters, landscapes, sketches, concept art, ' +
+            'fan art, 3D renders, pixel art, and more.'
     },
     marketplace: {
-      lead: 'Browse the *Marketplace*',
+      lead: 'Browse the *marketplace*',
       hint: 'Search listings',
-      desc: 'Digital work for sale, *listed by the artists who made it*. Finished artwork and ' +
-            'prints, brush and texture packs, website and UI templates, icon sets, 3D models, ' +
-            'and commissions taken to order. Every listing says exactly what the buyer ' +
-            'receives, in what format and under what licence, before any money is involved — ' +
-            'and *what you buy is yours to download, not rented to you by a plan*. Narrow it by ' +
-            'what you are after, or search by name.'
+      desc: 'Buy prints, digital downloads, website templates, UI kits, icon ' +
+            'sets, brushes, 3D models, commissions, and more.'
     },
     blog: {
-      lead: 'Read the *Blog*',
+      lead: 'Read the *blog*',
       hint: 'Search posts',
-      desc: 'Writing from the community: *step-by-step tutorials*, studio notes on how a piece ' +
-            'came together, interviews with artists about how they work, tool and hardware ' +
-            'reviews, and news from around the site. Posts are written by members rather than ' +
-            '*by a marketing desk*, so they tend to be specific about the parts that are ' +
-            'actually difficult. Pick a category to narrow the list, or search it for the ' +
-            'subject you came for.'
+      desc: 'Catch up on tutorials, artist spotlights, interviews, tips and ' +
+            'guides, reviews, community news, events, challenges, and more.'
     },
     resources: {
-      lead: 'Find *Resources*',
+      lead: 'Find *resources*',
       hint: 'Search resources',
-      desc: 'Files other artists have *made and given away* — brush sets, textures and ' +
-            'overlays, fonts, reference packs, colour palettes, mockups, layered PSDs, 3D ' +
-            'assets, icons and plugins. Each one lists what is inside the download, what ' +
-            'software it opens in and *what you are licensed to do with it*, so there is no ' +
-            'guessing after the fact. Narrow it to the kind of file you need, or search for ' +
-            'it by name.'
+      desc: 'Download brushes, textures, fonts, PSD files, 3D assets, references, ' +
+            'colour palettes, mockups, and more.'
     },
     jobs: {
-      lead: 'Find *Creative Work*',
+      lead: 'Find *creative work*',
       hint: 'Search postings',
-      desc: '*Paid work for artists*, posted by the studios and people hiring. Freelance ' +
-            'briefs, full-time and part-time roles, remote positions, internships, contests ' +
-            'and open collaborations. Every posting has to *name a pay range and a way to ' +
-            'apply* before it goes up, and postings *expire on their own* rather than sitting ' +
-            'there long after the role is filled. Narrow it by the kind of work you want, or ' +
-            'search it for a skill or a studio.'
+      desc: 'Apply for freelance briefs, full-time roles, part-time roles, remote ' +
+            'positions, internships, contests, collaborations, and more.'
     }
   };
 

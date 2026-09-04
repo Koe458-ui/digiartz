@@ -16,7 +16,8 @@
 
 /* The headline is the fold. Tight leading and tracking so the mass reads as one
    block; text-wrap:balance keeps the rag from stranding a single word. */
-.hpHead{
+.hpHead,
+.fgHeadLead{
   margin:0 0 clamp(1rem,2.4vw,1.75rem);
   font-family:var(--fd);font-weight:800;
   /* 68px on a small phone up to 112px on a wide screen. The floor is high on
@@ -36,26 +37,28 @@
    phone and desktop rules can never step apart. Only the measure changes here:
    9ch stacks it four lines deep on a phone, 18ch lets it open out above. */
 @media(max-width:767px){
-  .hpHead{max-width:9ch;text-wrap:initial;}
+  .hpHead,.fgHeadLead{max-width:9ch;text-wrap:initial;}
 }
 /* Above the stack the headline is only two lines, so the binding constraint is
    "Create & Inspire." fitting the measure — which leaves far more room than the
    phone curve could use. It gets its own, steeper ramp: 84px at the breakpoint,
    where the shared curve also lands, up to 152px. */
 @media(min-width:768px){
-  .hpHead{font-size:clamp(5.25rem,.5rem + 9.6vw,9.5rem);}
+  .hpHead,.fgHeadLead{font-size:clamp(5.25rem,.5rem + 9.6vw,9.5rem);}
 }
 /* The two verbs carry the wordmark's script, in the brand red — the only place
    outside the top bar that face appears. It needs the tracking back at zero: the
    headline's -.035em is drawn for a grotesque and jams a joined script. */
-.hpHead em{
+.hpHead em,
+.fgHeadLead .fgHi{
   font-style:normal;color:var(--brand-red);
   font-family:var(--fsig);font-weight:400;
   letter-spacing:0;
   -webkit-text-stroke:var(--sigInk) currentColor;
 }
 
-.hpSub{
+.hpSub,
+.fgHeadDesc{
   margin:0 0 clamp(1.75rem,4vw,2.75rem);
   font-family:var(--fb);
   font-size:clamp(1.1875rem,.95rem + 1.15vw,1.75rem);
@@ -100,8 +103,8 @@
    has to give up most of its size and the prose steps aside entirely. */
 @media(max-height:500px) and (orientation:landscape){
   #heroPitch{padding-top:calc(var(--dzTopOff) + var(--sp-5));padding-bottom:var(--sp-6);}
-  .hpSub{display:none;}
-  .hpHead{margin-bottom:var(--sp-5);font-size:clamp(1.75rem,4.5vw,2.5rem);max-width:22ch;}
+  .hpSub,.fgHeadDesc{display:none;}
+  .hpHead,.fgHeadLead{margin-bottom:var(--sp-5);font-size:clamp(1.75rem,4.5vw,2.5rem);max-width:22ch;}
     .hpCta,.hpAlt{min-height:44px;}
 }
 
@@ -260,24 +263,25 @@
   padding:clamp(1.4rem,4vw,2.4rem) var(--fgPad) 0;
   text-align:center;
 }
-.fgHeadLead{
-  max-width:34rem;margin:0 auto;
-  font-family:var(--fd);font-weight:800;
-  font-size:var(--fs-5xl);
-  line-height:var(--lh-tight);letter-spacing:var(--ls-tighter);
-  color:var(--tx);
+/* The hero sets the size of both of these; all the section head does is centre
+   them, which is the one way it differs. */
+.fgHeadLead{margin-left:auto;margin-right:auto;}
+/* Except on the narrowest phone, where the hero's curve is one the section head
+   cannot use: "marketplace" is a single word half again as long as anything in
+   the hero headline, and a word cannot wrap. It runs 22px past a 320 viewport
+   at the shared size, so below 360 the lead is sized off the viewport instead
+   and the longest word fits by construction. */
+@media(max-width:359px){
+  .fgHeadLead{font-size:19vw;}
 }
 .fgHi{
   font-style:normal;
   color:var(--brand-red);
   font-weight:700;
 }
-.fgHeadLead .fgHi{font-weight:inherit;}
 .fgHeadDesc{
-  max-width:52rem;margin:var(--sp-5) auto 0;
-  font-size:var(--fs-lg);
-  line-height:var(--lh-body);color:var(--txd);
-  text-wrap:pretty;
+  margin-left:auto;margin-right:auto;
+  margin-bottom:0;
 }
 
 .fgHeadSearch{

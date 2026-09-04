@@ -77,7 +77,7 @@
     var key = pattern.toLowerCase();
     if(hsArtistMemo[key]){ done(hsArtistMemo[key]); return; }
     db.from('profiles')
-      .select('id,username,display_name,avatar_url,banner_url,bio')
+      .select(window.DZ_ARTIST_COLS || 'id,username,display_name,avatar_url,banner_url,bio,follower_count')
       .or('username.ilike.' + pattern + ',display_name.ilike.' + pattern)
       .order('username', { ascending:true }).limit(HS_WHO_CAP)
       .then(function(r){
@@ -108,6 +108,9 @@
       hsState.rows.forEach(function(p){
         if(typeof buildArtistCard === 'function') grid.appendChild(buildArtistCard(p.id));
       });
+      if(typeof window.dzPaintPeople === 'function'){
+        window.dzPaintPeople(hsState.rows.map(function(p){ return p && p.id; }).filter(Boolean));
+      }
     } else {
       hsState.rows.forEach(function(r){
         if(typeof buildAwCard !== 'function') return;

@@ -53,9 +53,16 @@
   }
 
   function feedFetchArtists(ids, done){
-    var missing = ids.filter(function(u){ return dzArtistCache[u] === undefined; });
+    // A row cached by one of the other fetches may predate follower_count, so a
+    // present-but-incomplete entry counts as missing. null means "no such
+    // profile" and is left alone.
+    var missing = ids.filter(function(u){
+      var p = dzArtistCache[u];
+      return p === undefined || (p && p.follower_count === undefined);
+    });
     if(!missing.length || !sb){ done(); return; }
-    sb.from('profiles').select('id,username,display_name,avatar_url,banner_url,bio,follower_count').in('id', missing)
+    sb.from('profiles').select(window.DZ_ARTIST_COLS ||
+      'id,username,display_name,avatar_url,banner_url,bio,follower_count').in('id', missing)
       .then(function(res){
         ((res && res.data) || []).forEach(function(p){ if(p && p.id) dzArtistCache[p.id] = p; });
         missing.forEach(function(u){ if(dzArtistCache[u] === undefined) dzArtistCache[u] = null; });
@@ -98,10 +105,36 @@
     return n >= 1000 ? (Math.round(n / 100) / 10) + 'k' : String(n);
   }
 
-  // Artworks and likes come from the gallery already in memory rather than a
-  // query per card; followers come from the profile row, which is where the
-  // count lives.
+  // An artist's totals are their whole published body of work, not the part of
+  // it this feed happens to have loaded — a search result for someone with no
+  // art in the current gallery would otherwise read 0. One query for the batch
+  // rather than one per card; the in-memory count stands in until it lands.
+  var dzArtStats = {};
+
+  function feedFetchArtStats(ids, done){
+    var missing = ids.filter(function(u){ return u && dzArtStats[u] === undefined; });
+    if(!missing.length || !sb){ done(); return; }
+    missing.forEach(function(u){ dzArtStats[u] = null; });
+    sb.from('artworks').select('user_id,like_count')
+      .in('user_id', missing).eq('status', 'approved').eq('visibility', 'published')
+      .then(function(res){
+        missing.forEach(function(u){ dzArtStats[u] = { art: 0, likes: 0 }; });
+        ((res && res.data) || []).forEach(function(r){
+          var st = r && dzArtStats[r.user_id];
+          if(!st) return;
+          st.art++;
+          st.likes += (+r.like_count || 0);
+        });
+        done();
+      }, function(){
+        missing.forEach(function(u){ if(dzArtStats[u] === null) delete dzArtStats[u]; });
+        done();
+      });
+  }
+
   function feedArtistTally(uid){
+    var known = uid && dzArtStats[uid];
+    if(known) return known;
     var list = filterHidden((awArtworksCache || []).slice());
     var art = 0, likes = 0;
     for(var i = 0; i < list.length; i++){
@@ -247,17 +280,26 @@
     }
   }
 
-  function paintPeopleBatch(uids){
-    feedFetchArtists(uids, function(){
-      var grid = document.getElementById('awGrid');
-      if(!grid) return;
-      uids.forEach(function(uid){
-        var sel = (window.CSS && CSS.escape) ? CSS.escape(uid) : String(uid).replace(/["\\]/g, '\\$&');
-        var card = grid.querySelector('.atCard[data-uid="' + sel + '"]');
-        if(card && !card.classList.contains('atReady')) paintArtistCard(card, dzArtistCache[uid]);
+  function feedRepaintPeople(uids, onlyUnpainted){
+    var grid = document.getElementById('awGrid');
+    uids.forEach(function(uid){
+      var sel = (window.CSS && CSS.escape) ? CSS.escape(uid) : String(uid).replace(/["\\]/g, '\\$&');
+      var q = '.atCard[data-uid="' + sel + '"]';
+      var cards = grid ? Array.prototype.slice.call(grid.querySelectorAll(q)) : [];
+      // the search page and the hero search draw these outside #awGrid
+      Array.prototype.push.apply(cards, Array.prototype.slice.call(document.querySelectorAll(q)));
+      cards.forEach(function(card){
+        if(onlyUnpainted && card.classList.contains('atReady')) return;
+        if(dzArtistCache[uid] !== undefined) paintArtistCard(card, dzArtistCache[uid]);
       });
     });
   }
+
+  function paintPeopleBatch(uids){
+    feedFetchArtists(uids, function(){ feedRepaintPeople(uids, true); });
+    feedFetchArtStats(uids, function(){ feedRepaintPeople(uids, false); });
+  }
+  window.dzPaintPeople = paintPeopleBatch;
 
   function feedEmptyText(){
     var cat = feedCatOf();

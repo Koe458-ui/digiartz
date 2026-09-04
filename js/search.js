@@ -128,7 +128,7 @@
         if(want('artist')){
           var who = fgArtistPattern(raw);
           jobs.push(sb.from('profiles')
-            .select('id,username,display_name,avatar_url,banner_url,bio')
+            .select(window.DZ_ARTIST_COLS || 'id,username,display_name,avatar_url,banner_url,bio,follower_count')
             .or('username.ilike.'+who+',display_name.ilike.'+who)
             .order('username',{ascending:true}).limit(24)
             .then(function(r){ return {key:'artist', rows:(r&&r.data)||[]}; }));
@@ -214,6 +214,11 @@
         rows.forEach(function(p){
           if(typeof buildArtistCard === 'function') wrap.appendChild(buildArtistCard(p.id));
         });
+        // the cards carry an artist's whole published totals, which are a query
+        // of their own; it repaints them when it lands
+        if(typeof window.dzPaintPeople === 'function'){
+          window.dzPaintPeople(rows.map(function(p){ return p && p.id; }).filter(Boolean));
+        }
       } else if(g.how === 'card'){
         rows.forEach(function(r){
           if(typeof buildAwCard !== 'function') return;

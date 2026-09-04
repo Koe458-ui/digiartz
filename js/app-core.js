@@ -700,6 +700,12 @@
     invalidateThread: noop2, invalidateAnalytics: noop2, invalidateUserList: noop2
   };
   function noop2(){ return Promise.resolve(); }
+  // Every path that fills dzArtistCache reads the same columns. They used to
+  // each name their own, and a card painted from a row fetched by one of the
+  // others had no follower_count and read 0.
+  var DZ_ARTIST_COLS = 'id,username,display_name,avatar_url,banner_url,bio,follower_count';
+  window.DZ_ARTIST_COLS = DZ_ARTIST_COLS;
+
   function dzCached(){ return window.dzCache || DZ_CACHE_SHIM; }
   window.dzCached = dzCached;
 
@@ -1187,7 +1193,7 @@
     _dzArtistWanted = {};
     if(!ids.length || !sb) return;
     ids.forEach(function(u){ _dzArtistFlight[u] = true; });
-    sb.from('profiles').select('id,username,display_name,avatar_url,banner_url,bio').in('id', ids)
+    sb.from('profiles').select(DZ_ARTIST_COLS).in('id', ids)
       .then(function(res){
         var rows = (res && res.data) || [];
         rows.forEach(function(p){ if(p && p.id) dzArtistCache[p.id] = p; });

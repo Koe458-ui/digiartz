@@ -446,7 +446,10 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   .albActBtn,
   .tgSearchIn{min-height:44px;}
 
-  .ftColLink{padding-block:var(--sp-4);display:flex;align-items:center;}
+  /* min-height already guarantees the 44px target; the padding on top of it,
+     and the gap between one 44px row and the next, only bought dead space. */
+  .ftColLink{display:flex;align-items:center;}
+  .ftColList{gap:0;}
   /* the wordmark is the home link: de-leading it left the text 32px tall, so the
      hit area is restored explicitly rather than by padding it back out */
   .dzBrand{min-height:44px;align-items:center;}

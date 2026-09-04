@@ -880,12 +880,15 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 .atName{
   max-width:100%;overflow:hidden;overflow-wrap:anywhere;
   display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
-  margin-top:var(--sp-3);
+  margin-top:var(--sp-2);
   font-family:var(--fd);font-weight:700;
   font-size:var(--fs-lg);color:var(--tx);line-height:var(--lh-snug);
 }
 .atUser{
   font-family:var(--fm);font-size:var(--fs-sm);
+  /* Single-line label, so it takes the scale's label leading rather than the
+     body's — on 1.6 the handle sat in a 24px box under a 23px name. */
+  line-height:var(--lh-snug);
   letter-spacing:var(--ls-wide);color:var(--txd);
 }
 .atGo{

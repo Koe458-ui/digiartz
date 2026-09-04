@@ -40,7 +40,12 @@
 .pfBanner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:0;}
 
 .pfId{padding:0 var(--pfPad) var(--sp-6);}
-.pfIdTop{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--sp-5) var(--sp-6);}
+/* The row is bottom-aligned to the avatar, so the name — the top of a stack
+   nearly as tall as the avatar — lands level with the banner's edge and reads
+   as if it is touching it. Nothing inside the row can move it down (a negative
+   margin on the avatar only moves the row's top, not the avatar), so the row
+   itself starts lower. */
+.pfIdTop{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--sp-5) var(--sp-6);padding-top:var(--sp-4);}
 .pfIdWho{display:flex;align-items:flex-end;gap:var(--sp-5);min-width:0;flex:1 1 auto;}
 .pfAvatarWrap{flex:0 0 auto;margin-top:calc(var(--pfAvSz) / -2.35);}
 .pfIdWho,.pfAvatarWrap{--pfAvSz:clamp(76px,20vw,124px);}
@@ -68,6 +73,10 @@
 }
 .pfHandle{
   font-family:var(--fm);font-size:var(--fs-sm);
+  /* A handle is a single-line label, not a paragraph: on the body's 1.6 it sat
+     in a box half again its own height, which is where the gap under the name
+     came from. --lh-snug is what the scale is for. */
+  line-height:var(--lh-snug);
   letter-spacing:var(--ls-wide);color:var(--txd);margin-top:.05rem;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }

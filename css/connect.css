@@ -103,6 +103,7 @@ footer.siteFooter {
   gap: var(--sp-3);
   font-family: var(--fb);
   font-size: var(--fs-sm);
+  line-height: var(--lh-snug);
   color: var(--txd);
   background: none;
   border: none;

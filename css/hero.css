@@ -789,8 +789,9 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   }
   .tgSearch.hsBar{max-width:none;}
   #artworks .awTop .ftWrap{
+    --ftPad:0px;
     flex:0 1 auto;min-width:0;
-    margin:0;padding:0;
+    margin:0;
   }
   #artworks .awTop .ftRail{justify-content:flex-start;}
 }
@@ -804,27 +805,36 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 }
 
 #artworks .ftWrap{
+  --ftPad:var(--shellPad);
+  --ftNavW:40px;
   position:relative;
-  display:flex;align-items:center;justify-content:center;
-  gap:var(--sp-2);min-width:0;
   margin:var(--sp-6) 0 0;
-  padding:0 var(--shellPad);
+  padding:0 var(--ftPad);
   box-sizing:border-box;
 }
 #artworks .ftRail{
-  flex:0 1 auto;min-width:0;
   display:flex;gap:var(--sp-3);
   justify-content:center;
   justify-content:safe center;
-  padding:var(--sp-1) var(--sp-1);
+  padding:var(--sp-1) var(--ftNavW);
   overflow-x:auto;overflow-y:hidden;
   overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
   scrollbar-width:none;-ms-overflow-style:none;
   scroll-snap-type:x proximity;
 }
 #artworks .ftRail::-webkit-scrollbar{display:none;}
+/* The arrows sit over the rail, so each one gets a short run of page colour
+   under it — a board scrolling past fades out rather than butting into it. */
+#artworks .ftWrap::before,
+#artworks .ftWrap::after{
+  content:'';position:absolute;top:0;bottom:0;z-index:1;
+  width:calc(var(--ftNavW) + var(--sp-5));
+  pointer-events:none;
+}
+#artworks .ftWrap::before{left:var(--ftPad);background:linear-gradient(90deg,var(--bg) 58%,transparent);}
+#artworks .ftWrap::after{right:var(--ftPad);background:linear-gradient(270deg,var(--bg) 58%,transparent);}
 .ftNav{
-  flex:0 0 auto;
+  position:absolute;top:50%;transform:translateY(-50%);z-index:2;
   display:flex;align-items:center;justify-content:center;
   width:34px;height:34px;padding:0;
   border:1px solid var(--bdr);border-radius:999px;
@@ -833,6 +843,8 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   transition:background .2s,border-color .2s,opacity .2s;
 }
 .ftNav svg{width:17px;height:17px;display:block;}
+.ftPrev{left:var(--ftPad);}
+.ftNext{right:var(--ftPad);}
 @media(hover:hover){
   .ftNav:hover{background:var(--sur2);border-color:var(--bdrh);}
 }
@@ -923,7 +935,7 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 @media(max-width:600px){
   .ftTab{font-size:var(--fs-sm);padding:var(--sp-3) var(--sp-4);}
   #artworks .ftRail{gap:var(--sp-2);}
-  #artworks .ftWrap{gap:var(--sp-1);padding:0 var(--sp-4);}
+  #artworks .ftWrap{--ftPad:var(--sp-4);--ftNavW:34px;}
   .ftNav{width:30px;height:30px;}
   .ftNav svg{width:15px;height:15px;}
 }

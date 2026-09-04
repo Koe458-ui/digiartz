@@ -891,6 +891,11 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   /* Single-line label, so it takes the scale's label leading rather than the
      body's — on 1.6 the handle sat in a 24px box under a 23px name. */
   line-height:var(--lh-snug);
+  /* Equal gaps measured box to box are not equal gaps seen ink to ink: the
+     name's box carries 2.7px of leading below its letters and the button's
+     border has none, so the same 6px read as 9.4px above the handle and 7.5px
+     below it. This gives that difference back. */
+  margin-top:-2px;
   letter-spacing:var(--ls-wide);color:var(--txd);
 }
 .atGo{

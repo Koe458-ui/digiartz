@@ -133,77 +133,6 @@
   text-transform: uppercase;
 }
 
-.subQuota {
-  max-width: 1040px;
-  margin: 0 auto var(--sp-9);
-  padding: var(--sp-7) var(--sp-7) var(--sp-6);
-  border: 1px solid var(--bdr);
-  border-radius: 14px;
-  background: var(--sur);
-}
-.subQuotaTitle {
-  font-family: var(--fm);
-  font-size: var(--fs-2xs);
-  letter-spacing: var(--ls-widest);
-  text-transform: uppercase;
-  color: var(--txd);
-  text-align: center;
-  margin-bottom: var(--sp-6);
-}
-.subQuotaRow {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--sp-5);
-}
-.subQuotaCell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-1);
-  padding: var(--sp-5) var(--sp-3);
-  border: 1px solid var(--bdr);
-  border-radius: 10px;
-  background: var(--sur2);
-}
-.subQuotaPlan {
-  font-family: var(--fm);
-  font-size: var(--fs-2xs);
-  letter-spacing: var(--ls-widest);
-  text-transform: uppercase;
-  color: var(--txd);
-}
-.subQuotaNum {
-  font-family: var(--fd);
-  font-size:var(--fs-4xl);
-  font-weight: 900;
-  line-height: var(--lh-tight);
-  color: var(--tx);
-}
-.subQuotaUnit {
-  font-family: var(--fb, sans-serif);
-  font-size: var(--fs-xs);
-  color: var(--txd);
-}
-.subQuotaCell--lite    { border-color: rgba(59,130,246,.35); }
-.subQuotaCell--premium { border-color: rgba(168,85,247,.35); }
-.subQuotaCell--max     { border-color: rgba(234,179,8,.35); }
-.subQuotaNote {
-  font-family: var(--fb, sans-serif);
-  font-size: var(--fs-xs);
-  line-height: var(--lh-body);
-  color: var(--txd);
-  text-align: center;
-  margin: var(--sp-6) 0 0;
-}
-@media (max-width: 519px) {
-  .subQuota      { padding: var(--sp-6) var(--sp-6) var(--sp-6); margin-bottom: var(--sp-8); }
-  .subQuotaRow   { grid-template-columns: repeat(2, 1fr); gap: var(--sp-4); }
-  .subQuotaNote  { text-align: left; }
-}
-
 .subGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -214,8 +143,7 @@
   align-items: start;
 }
 @media (min-width: 1024px) {
-  .subGrid,
-  .subQuota{ max-width: none; }
+  .subGrid{ max-width: none; }
   .subGrid{ gap: clamp(1.5rem, 2.2vw, 2.4rem); }
 }
 .subTagline {

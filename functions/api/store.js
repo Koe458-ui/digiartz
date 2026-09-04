@@ -94,30 +94,7 @@ function fmtMoney(minor, cur) {
   } catch { return major + ' ' + cur; }
 }
 
-const QUOTA = [
-  { plan: 'Free', num: '5', tone: 'free' },
-  { plan: 'Lite', num: '10', tone: 'lite' },
-  { plan: 'Premium', num: '15', tone: 'premium' },
-  { plan: 'Max', num: '20', tone: 'max' },
-];
-
 function plansHtml(priced) {
-  const quota =
-    '<div class="subQuota" role="group" aria-labelledby="subQuotaTitle">' +
-      '<div class="subQuotaTitle" id="subQuotaTitle">Daily download limit</div>' +
-      '<ul class="subQuotaRow">' +
-      QUOTA.map((q) =>
-        '<li class="subQuotaCell subQuotaCell--' + q.tone + '">' +
-          '<span class="subQuotaPlan">' + esc(q.plan) + '</span>' +
-          '<span class="subQuotaNum">' + esc(q.num) + '</span>' +
-          '<span class="subQuotaUnit">per day</span>' +
-        '</li>').join('') +
-      '</ul>' +
-      '<p class="subQuotaNote">Your allowance resets every day at midnight UTC. ' +
-      'Downloading your own artwork never counts against it. Premium and Max ' +
-      'download the original file; Free and Lite get a high-quality 1600px copy.</p>' +
-    '</div>';
-
   const cards =
     '<div class="subGrid">' +
     priced.map((p) =>
@@ -175,7 +152,7 @@ function plansHtml(priced) {
 
   return '<div class="subPgHeadline"><h2>Choose Your Plan</h2>' +
          '<p>Support the project and unlock exclusive benefits</p></div>' +
-         quota + cards + compare;
+         cards + compare;
 }
 
 const MODULE = `

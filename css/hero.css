@@ -862,8 +862,20 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   display:flex;flex-direction:column;
   overflow:hidden;
   background:var(--sur);
-  border:1px solid var(--bdr);border-radius:14px;
   transition:border-color .2s ease,transform .2s ease;
+}
+/* Doubled up to beat .awCard, which sets border:0 and radius:4px and is loaded
+   after this file. These cards sit 3px apart on a ground barely lighter than
+   their own fill, so without a line of their own they run together. Mixing a
+   little of the text colour into the border token darkens the line on the two
+   paper themes and lightens it on charcoal — one rule, right in all three, and
+   still 1px and light. */
+.awCard.atCard{
+  border:1px solid color-mix(in srgb,var(--bdr) 82%,var(--tx) 18%);
+  border-radius:14px;
+}
+@media(hover:hover){
+  .awCard.atCard.atReady:not(.atDead):hover{border-color:var(--bdrh);}
 }
 .atCard.atReady:not(.atDead){cursor:pointer;}
 @media(hover:hover){
@@ -956,14 +968,21 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
    one to a row on a phone, two on a tablet or a small desktop, three from a
    large desktop up — at the 1600px shell cap that is a ~500px card, which is
    where a banner and a two-button row still read. */
-/* Doubled up on purpose: awGrid--artists is one class, so on its own it ties
-   with .awGrid and loses to ranking.css, which is loaded later. */
+/* Keyed off the cards rather than the caller: the feed board, the search page
+   and the hero search all draw artist cards into a .awGrid, and any future one
+   will too. The explicit class stays for browsers without :has(). Both are two
+   classes deep on purpose — one is not enough to beat ranking.css. */
+.awGrid:has(.atCard),
 .awGrid.awGrid--artists{grid-template-columns:1fr;}
 @media(min-width:700px){
+  .awGrid:has(.atCard),
   .awGrid.awGrid--artists{grid-template-columns:repeat(2,1fr);}
   .atCard{--atBanH:112px;--atAvSz:84px;}
 }
-@media(min-width:1280px){ .awGrid.awGrid--artists{grid-template-columns:repeat(3,1fr);} }
+@media(min-width:1280px){
+  .awGrid:has(.atCard),
+  .awGrid.awGrid--artists{grid-template-columns:repeat(3,1fr);}
+}
 
 .atCard:not(.atReady) .atName{width:54%;height:.8em;border-radius:4px;background:var(--sur2);}
 .atCard:not(.atReady) .atUser{width:36%;height:.7em;border-radius:4px;background:var(--sur2);}

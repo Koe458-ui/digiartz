@@ -19,10 +19,10 @@
 .hpHead{
   margin:0 0 clamp(1rem,2.4vw,1.75rem);
   font-family:var(--fd);font-weight:800;
-  /* 48px on a phone up to 96px on a wide screen. The floor is deliberately high:
-     this headline is the fold, and on mobile it is meant to read as a poster,
-     not a paragraph. */
-  font-size:clamp(3rem,1.98rem + 4.19vw,6rem);
+  /* 68px on a small phone up to 112px on a wide screen. The floor is high on
+     purpose: this headline is the fold, and it is meant to read as a poster
+     rather than a paragraph at every width. */
+  font-size:clamp(4.25rem,3.5rem + 3.75vw,7rem);
   line-height:1.02;
   letter-spacing:-.035em;
   color:var(--tx);
@@ -32,22 +32,25 @@
 /* Narrow measure on phones so the headline breaks into short stacked lines
    rather than running the full width. ch scales with the font, so this stays
    proportional as the clamp grows. */
+/* One size curve runs the whole range — 72px on a 320 phone up to 96px — so the
+   phone and desktop rules can never step apart. Only the measure changes here:
+   9ch stacks it four lines deep on a phone, 18ch lets it open out above. */
 @media(max-width:767px){
-  .hpHead{
-    /* 57px on a 320 phone, 64px from 390 up. The cap meets the desktop curve
-       where this query ends (64px at 767, 63.9 at 768), so there is no step at
-       the boundary. 9ch keeps it stacked four lines deep. */
-    font-size:clamp(3.5rem,1rem + 12.8vw,4rem);
-    max-width:9ch;
-    text-wrap:initial;
-  }
+  .hpHead{max-width:9ch;text-wrap:initial;}
+}
+/* Above the stack the headline is only two lines, so the binding constraint is
+   "Create & Inspire." fitting the measure — which leaves far more room than the
+   phone curve could use. It gets its own, steeper ramp: 84px at the breakpoint,
+   where the shared curve also lands, up to 152px. */
+@media(min-width:768px){
+  .hpHead{font-size:clamp(5.25rem,.5rem + 9.6vw,9.5rem);}
 }
 .hpHead em{font-style:normal;color:var(--brand-red);}
 
 .hpSub{
   margin:0 0 clamp(1.75rem,4vw,2.75rem);
   font-family:var(--fb);
-  font-size:clamp(1.0625rem,.9rem + .95vw,1.375rem);
+  font-size:clamp(1.1875rem,.95rem + 1.15vw,1.75rem);
   line-height:var(--lh-normal);
   color:var(--txd);
   max-width:42ch;

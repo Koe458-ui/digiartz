@@ -103,7 +103,6 @@
   color: var(--txd);
   text-transform: uppercase;
 }
-.subPgTitle .s { color: var(--pg); }
 
 .subPgBdy {
   padding: var(--sp-9) var(--shellPad) 6rem;

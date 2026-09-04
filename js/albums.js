@@ -160,7 +160,7 @@
     if(!a) return;
     var owner = !a.virt && (src === 'me' || !!pf.isOwner);
     albView = { src:src, id:String(id), virt:!!a.virt, name:a.name, owner:owner, rows:null };
-    document.getElementById('albViewTitle').innerHTML = esc(String(a.name||'').toUpperCase());
+    document.getElementById('albViewTitle').innerHTML = esc(String(a.name||''));
     document.getElementById('albViewActs').style.display = owner ? '' : 'none';
     document.getElementById('albViewPage').classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -354,7 +354,7 @@
           if(!data || !data.length) throw new Error('VIS_NOT_SAVED');
           if(albView && albView.id === String(albModId)){
             albView.name = name;
-            document.getElementById('albViewTitle').innerHTML = esc(name.toUpperCase());
+            document.getElementById('albViewTitle').innerHTML = esc(name);
           }
         } else {
           await albWriteVis(albModPublic);

@@ -182,6 +182,41 @@
 .secT,
 .subPgTitle{ color:var(--pg); }
 
+/* Every panel's header wears the signature — the same brush face as the
+   wordmark. It has to come with two other changes or it is unreadable: the
+   tracking these titles carry is drawn for a grotesque and pulls a joined
+   script apart, and the titles are set in caps, which a script has no business
+   in. So the tracking goes to zero and the caps come down to sentence case.
+   Done here rather than in the markup because half these titles are written by
+   JS (FG_TITLE, the community header, album and legal names) and would each
+   need their own change to stay in step. Lives in overrides because the rules
+   it beats are spread across hero, panels and widgets. */
+.fgTopTitle,.pfTopTitle,.upTopTitle,
+#frdPage .subPgTitle,
+.subPgTitle{
+  font-family:var(--fsig);font-weight:400;
+  letter-spacing:0;
+  text-transform:lowercase;
+  /* ::first-letter needs a block box, and a span in a flex row is not one
+     everywhere; inline-block makes it one without changing the row. */
+  display:inline-block;
+}
+.fgTopTitle::first-letter,.pfTopTitle::first-letter,.upTopTitle::first-letter,
+.subPgTitle::first-letter{text-transform:uppercase;}
+/* One of these headers is not ours to case: the album view puts the member's
+   own album name in it. albums.js no longer uppercases it, and it is left
+   alone here, so "NASA Renders" stays that and does not come back as
+   "Nasa renders". */
+#albViewTitle{text-transform:none;}
+/* One size and one colour for the lot. These titles used to be set at three
+   sizes in three files — the panel bars at --fs-xl, the sub-pages at --fs-sm,
+   Friends at its own — and in two colours, which read as a dimmer heading on
+   the sub-pages than on the panels. A script sits smaller on the line than the
+   grotesque it replaces, so the shared size is a step up from any of them. */
+.fgTopTitle,.pfTopTitle,.upTopTitle,
+#frdPage .subPgTitle,
+.subPgTitle{font-size:var(--fs-2xl);color:var(--tx);}
+
 .subPgHeadline h2{ color:var(--upTitle,var(--pg)); }
 
 .faqTitle,

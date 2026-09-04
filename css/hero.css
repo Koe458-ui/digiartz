@@ -339,6 +339,8 @@
 @media(prefers-reduced-motion:reduce){ .fgHeadFlt{transition:none;} }
 
 .fgCatWrap{
+  --ftPad:0px;
+  --ftNavW:40px;
   position:relative;
   margin-top:clamp(1rem,2.6vw,1.4rem);
 }
@@ -350,62 +352,71 @@
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;-ms-overflow-style:none;
   cursor:grab;
-  gap:var(--sp-1);
-  padding:var(--sp-1);
+  gap:var(--sp-3);
+  padding:var(--sp-1) var(--ftNavW);
   scroll-behavior:smooth;
 }
 .fgCatRail::-webkit-scrollbar{display:none;}
 .fgCatRail.fgDrag{cursor:grabbing;scroll-behavior:auto;}
 .fgCatRail.fgDrag .fgCatChip{pointer-events:none;user-select:none;-webkit-user-select:none;}
 
-.fgCatChip{
+/* One board, one look: the hero feed rail and every section's category rail
+   are the same text-only pill, and the same pair of arrows over each end. */
+.ftTab,.fgCatChip{
   flex:0 0 auto;
   display:inline-flex;align-items:center;
-  padding:var(--sp-5) var(--sp-6);margin:0;box-sizing:border-box;
-  min-height:calc(1.4rem + 26px + 2px);
-  border:1px solid var(--bdr);border-radius:6px;
-  background:var(--sur);color:var(--txd);cursor:pointer;
+  padding:var(--sp-3) var(--sp-5);margin:0;box-sizing:border-box;
+  border:1px solid transparent;border-radius:999px;
+  background:none;color:var(--txd);cursor:pointer;
   font-family:var(--fb);font-size:var(--fs-sm);font-weight:600;letter-spacing:var(--ls-tight);
   white-space:nowrap;-webkit-tap-highlight-color:transparent;
-  transition:background .2s ease,border-color .2s ease,color .2s ease,transform .16s ease;
+  transition:border-color .2s,background .2s,color .2s,transform .2s;
 }
+.ftTab.on,.fgCatChip.on{border-color:var(--pg);background:var(--pdim);color:var(--tx);}
 @media(hover:hover){
-  .fgCatChip:hover{border-color:var(--bdrh);color:var(--tx);}
-  .fgCatChip.on:hover{border-color:var(--pg);}
+  .ftTab:hover,.fgCatChip:hover{color:var(--tx);}
+  .ftTab.on:hover,.fgCatChip.on:hover{border-color:var(--pg);}
 }
-.fgCatChip:active{transform:scale(.97);}
-.fgCatChip.on{
-  border-color:var(--pg);background:var(--pdim);color:var(--tx);
-}
+.ftTab:active,.fgCatChip:active{transform:scale(.97);}
 
-.fgCatNav{
-  display:none;
-  position:absolute;top:50%;transform:translateY(-50%);
-  width:38px;height:38px;padding:0;z-index:2;
-  align-items:center;justify-content:center;
+.ftNav,.fgCatNav{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:2;
+  display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;padding:0;
   border:1px solid var(--bdr);border-radius:999px;
   background:var(--sur);color:var(--tx);cursor:pointer;
   -webkit-tap-highlight-color:transparent;
   transition:background .2s,border-color .2s,opacity .2s;
 }
-.fgCatNav svg{width:18px;height:18px;display:block;}
-.fgCatPrev{left:0;}
-.fgCatNext{right:0;}
+.ftNav svg,.fgCatNav svg{width:17px;height:17px;display:block;}
+.ftPrev,.fgCatPrev{left:var(--ftPad);}
+.ftNext,.fgCatNext{right:var(--ftPad);}
 @media(hover:hover){
-  .fgCatNav:hover{background:var(--sur2);border-color:var(--bdrh);}
+  .ftNav:hover,.fgCatNav:hover{background:var(--sur2);border-color:var(--bdrh);}
 }
-.fgCatNav:disabled{opacity:.3;cursor:default;}
-.fgCatNav.fgNavOff{display:none;}
-@media(min-width:1024px) and (hover:hover) and (pointer:fine){
-  .fgCatNav{display:flex;}
-  .fgCatWrap{padding:0 var(--sp-9);}
+.ftNav:disabled,.fgCatNav:disabled{opacity:.32;cursor:default;}
+
+/* The arrows sit over the rail, so each one gets a short run of page colour
+   under it — a tab scrolling past fades out rather than butting into it. */
+#artworks .ftWrap::before,#artworks .ftWrap::after,
+.fgCatWrap::before,.fgCatWrap::after{
+  content:'';position:absolute;top:0;bottom:0;z-index:1;
+  width:calc(var(--ftNavW) + var(--sp-5));
+  pointer-events:none;
 }
+#artworks .ftWrap::before,.fgCatWrap::before{
+  left:var(--ftPad);background:linear-gradient(90deg,var(--bg) 58%,transparent);
+}
+#artworks .ftWrap::after,.fgCatWrap::after{
+  right:var(--ftPad);background:linear-gradient(270deg,var(--bg) 58%,transparent);
+}
+
 @media(max-width:600px){
-  .fgCatRail{gap:var(--sp-1);}
-  .fgCatChip{
-    font-size:var(--fs-sm);padding:var(--sp-4) var(--sp-5);border-radius:5px;
-    min-height:calc(1.2rem + 23px + 2px);
-  }
+  .fgCatRail{gap:var(--sp-2);}
+  .fgCatWrap{--ftNavW:34px;}
+  .ftTab,.fgCatChip{padding:var(--sp-3) var(--sp-4);}
+  .ftNav,.fgCatNav{width:30px;height:30px;}
+  .ftNav svg,.fgCatNav svg{width:15px;height:15px;}
 }
 @media(prefers-reduced-motion:reduce){
   .fgCatChip,.fgCatNav{transition:none;}
@@ -823,48 +834,7 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   scroll-snap-type:x proximity;
 }
 #artworks .ftRail::-webkit-scrollbar{display:none;}
-/* The arrows sit over the rail, so each one gets a short run of page colour
-   under it — a board scrolling past fades out rather than butting into it. */
-#artworks .ftWrap::before,
-#artworks .ftWrap::after{
-  content:'';position:absolute;top:0;bottom:0;z-index:1;
-  width:calc(var(--ftNavW) + var(--sp-5));
-  pointer-events:none;
-}
-#artworks .ftWrap::before{left:var(--ftPad);background:linear-gradient(90deg,var(--bg) 58%,transparent);}
-#artworks .ftWrap::after{right:var(--ftPad);background:linear-gradient(270deg,var(--bg) 58%,transparent);}
-.ftNav{
-  position:absolute;top:50%;transform:translateY(-50%);z-index:2;
-  display:flex;align-items:center;justify-content:center;
-  width:34px;height:34px;padding:0;
-  border:1px solid var(--bdr);border-radius:999px;
-  background:var(--sur);color:var(--tx);cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
-  transition:background .2s,border-color .2s,opacity .2s;
-}
-.ftNav svg{width:17px;height:17px;display:block;}
-.ftPrev{left:var(--ftPad);}
-.ftNext{right:var(--ftPad);}
-@media(hover:hover){
-  .ftNav:hover{background:var(--sur2);border-color:var(--bdrh);}
-}
-.ftNav:disabled{opacity:.32;cursor:default;}
-.ftTab{
-  flex:0 0 auto;scroll-snap-align:center;
-  display:inline-flex;align-items:center;
-  padding:var(--sp-3) var(--sp-5);box-sizing:border-box;
-  border:1px solid transparent;border-radius:999px;
-  background:none;color:var(--txd);cursor:pointer;
-  font-family:var(--fb);font-size:var(--fs-sm);font-weight:600;letter-spacing:var(--ls-tight);
-  white-space:nowrap;-webkit-tap-highlight-color:transparent;
-  transition:border-color .2s,background .2s,color .2s,transform .2s;
-}
-.ftTab.on{border-color:var(--pg);background:var(--pdim);color:var(--tx);}
-@media(hover:hover){
-  .ftTab:hover{color:var(--tx);}
-  .ftTab.on:hover{border-color:var(--pg);}
-}
-.ftTab:active{transform:scale(.97);}
+.ftTab{scroll-snap-align:center;}
 
 .atCard{cursor:default;}
 .atCard.atReady:not(.atDead){cursor:pointer;}
@@ -933,11 +903,8 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 }
 
 @media(max-width:600px){
-  .ftTab{font-size:var(--fs-sm);padding:var(--sp-3) var(--sp-4);}
   #artworks .ftRail{gap:var(--sp-2);}
   #artworks .ftWrap{--ftPad:var(--sp-4);--ftNavW:34px;}
-  .ftNav{width:30px;height:30px;}
-  .ftNav svg{width:15px;height:15px;}
 }
 @media(prefers-reduced-motion:reduce){
   .ftTab,.atGo,.ftNav{transition:none;}

@@ -212,14 +212,15 @@
     for (var sec in HEADS) fgHeadSyncCat(sec);
   }
 
+  // Both arrows stay on screen at every width, dimmed once the rail has no
+  // more room to travel that way, so the rail never shifts under a tap.
   function ends(rail) {
     var wrap = rail.parentNode;
     var prev = wrap.querySelector('.fgCatPrev');
     var next = wrap.querySelector('.fgCatNext');
     var max  = rail.scrollWidth - rail.clientWidth;
-    var can  = max > 1;
-    if (prev) { prev.classList.toggle('fgNavOff', !can); prev.disabled = !can || rail.scrollLeft <= 1; }
-    if (next) { next.classList.toggle('fgNavOff', !can); next.disabled = !can || rail.scrollLeft >= max - 1; }
+    if (prev) prev.disabled = rail.scrollLeft <= 1;
+    if (next) next.disabled = rail.scrollLeft >= max - 1;
   }
 
   function railWatch(rail) {

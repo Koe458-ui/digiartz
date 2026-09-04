@@ -33,7 +33,7 @@ const SHELL_URLS = [
   '/icon-192.png?v=4',
 
   '/css/base.css?v=41',
-  '/css/hero.css?v=143',
+  '/css/hero.css?v=144',
   '/css/viewer.css?v=52',
   '/css/community.css?v=40',
   '/css/connect.css?v=16',
@@ -68,7 +68,7 @@ const SHELL_URLS = [
   '/js/app-core.js?v=58',
   '/js/protect.js?v=4',
   '/js/gallery.js?v=111',
-  '/js/fghead.js?v=6',
+  '/js/fghead.js?v=7',
   '/js/auth.js?v=31',
   '/js/follow.js?v=2',
   '/js/profile.js?v=28',

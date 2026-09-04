@@ -369,7 +369,7 @@
   border:1px solid transparent;border-radius:999px;
   background:none;color:var(--txd);cursor:pointer;
   font-family:var(--fb);font-size:var(--fs-sm);font-weight:600;letter-spacing:var(--ls-tight);
-  white-space:nowrap;-webkit-tap-highlight-color:transparent;
+  white-space:nowrap;text-decoration:none;-webkit-tap-highlight-color:transparent;
   transition:border-color .2s,background .2s,color .2s,transform .2s;
 }
 .ftTab.on,.fgCatChip.on{border-color:var(--pg);background:var(--pdim);color:var(--tx);}

@@ -128,7 +128,7 @@
   })();
   </script>
   <link rel="stylesheet" href="/css/base.css?v=41">
-  <link rel="stylesheet" href="/css/hero.css?v=144">
+  <link rel="stylesheet" href="/css/hero.css?v=145">
   <link rel="stylesheet" href="/css/viewer.css?v=52">
   <link rel="stylesheet" href="/css/community.css?v=40">
   <link rel="stylesheet" href="/css/connect.css?v=16">
@@ -387,31 +387,34 @@
     </div>
     <div class="ftWrap" id="ftWrap">
       <button type="button" class="ftNav ftPrev" data-ftnav="-1" aria-label="Scroll boards left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 19-7-7 7-7"/></svg></button>
-      <div class="ftRail" id="ftRail" role="tablist" aria-label="Feed boards">
-        <button type="button" class="ftTab" id="ftTab-following" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="following">
+      <div class="ftRail" id="ftRail" role="group" aria-label="Feed boards">
+        <button type="button" class="ftTab" id="ftTab-following" aria-pressed="false" data-feed="following">
           <span class="ftLbl">Following</span>
         </button>
-        <button type="button" class="ftTab on" id="ftTab-trending" role="tab" aria-selected="true" aria-controls="awGrid" data-feed="trending">
+        <button type="button" class="ftTab on" id="ftTab-trending" aria-pressed="true" data-feed="trending">
           <span class="ftLbl">Trending</span>
         </button>
-        <button type="button" class="ftTab" id="ftTab-new" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="new">
+        <button type="button" class="ftTab" id="ftTab-new" aria-pressed="false" data-feed="new">
           <span class="ftLbl">New arrival</span>
         </button>
-        <button type="button" class="ftTab" id="ftTab-weekly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="weekly">
+        <button type="button" class="ftTab" id="ftTab-weekly" aria-pressed="false" data-feed="weekly">
           <span class="ftLbl">Weekly hits</span>
         </button>
-        <button type="button" class="ftTab" id="ftTab-monthly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="monthly">
+        <button type="button" class="ftTab" id="ftTab-monthly" aria-pressed="false" data-feed="monthly">
           <span class="ftLbl">Monthly hits</span>
         </button>
-        <button type="button" class="ftTab" id="ftTab-artists" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="artists">
+        <button type="button" class="ftTab" id="ftTab-artists" aria-pressed="false" data-feed="artists">
           <span class="ftLbl">Artists</span>
         </button>
+        <a class="ftTab ftGo" href="/marketplace" data-sec="marketplace"><span class="ftLbl">Marketplace</span></a>
+        <a class="ftTab ftGo" href="/blog" data-sec="blog"><span class="ftLbl">Blog</span></a>
+        <a class="ftTab ftGo" href="/resources" data-sec="resources"><span class="ftLbl">Resources</span></a>
       </div>
       <button type="button" class="ftNav ftNext" data-ftnav="1" aria-label="Scroll boards right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
     </div>
     </div>
     <div class="awGrid" id="hsResults" role="region" aria-label="Search results" hidden></div>
-    <div class="awGrid" id="awGrid" role="tabpanel" aria-labelledby="ftTab-trending">
+    <div class="awGrid" id="awGrid" role="region" aria-labelledby="ftTab-trending">
       <a class="awCard" href="/artwork/7cd74497-cd51-446b-a084-afb6b04fa84c"><div class="awImgWrap"><img loading="eager" fetchpriority="high" decoding="async" src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/9f8c7d5a-49c2-4eb2-9bdd-608141294444/1783056107143_Ethereal_Violet__t300.webp" alt="Ethereal Violet — digital artwork on DigiArtz"></div></a>
       <a class="awCard" href="/artwork/42b36e1e-0bea-4bd6-a1d4-33615cddbd8d"><div class="awImgWrap"><img loading="eager" fetchpriority="high" decoding="async" src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/094f47b1-937e-4c63-b72a-5dde050258fe/1782822019716_Archer_Queen__t300.webp" alt="Archer Queen — digital artwork on DigiArtz"></div></a>
       <a class="awCard" href="/artwork/87230979-277b-48e7-9190-dcd90f1c8956"><div class="awImgWrap"><img loading="eager" fetchpriority="auto" decoding="async" src="https://tmqzqlrpjpydiftlrzmj.supabase.co/storage/v1/object/public/koe-media/artworks/1781717079470_Prushka__t300.webp" alt="Prushka — digital artwork on DigiArtz"></div></a>
@@ -2020,7 +2023,7 @@
   <script defer src="/js/mywork.js?v=30"></script>
   <script defer src="/js/startup.js?v=12"></script>
   <script defer src="/js/search.js?v=26"></script>
-  <script defer src="/js/feed.js?v=14"></script>
+  <script defer src="/js/feed.js?v=15"></script>
   <script defer src="/js/herosearch.js?v=8"></script>
 
  <div id="rippleHost"></div>

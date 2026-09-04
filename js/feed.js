@@ -217,12 +217,12 @@
     var rail = document.getElementById('ftRail');
     if(!rail) return;
     if(typeof window.hsReset === 'function') window.hsReset();
-    var tabs = rail.querySelectorAll('.ftTab');
+    var tabs = rail.querySelectorAll('.ftTab[data-feed]');
     var picked = null;
     for(var i = 0; i < tabs.length; i++){
       var on = tabs[i].getAttribute('data-feed') === id;
       tabs[i].classList.toggle('on', on);
-      tabs[i].setAttribute('aria-selected', on ? 'true' : 'false');
+      tabs[i].setAttribute('aria-pressed', on ? 'true' : 'false');
       tabs[i].tabIndex = on ? 0 : -1;
       if(on) picked = tabs[i];
     }
@@ -240,6 +240,18 @@
       void grid.offsetWidth;
       grid.classList.add('awSwap');
     }
+  }
+
+  function ftGo(sec, e){
+    var path = typeof window.dzRoutePath === 'function' ? window.dzRoutePath(sec) : null;
+    if(path && typeof window.dzRouteGo === 'function' && window.dzRouteGo(path)){
+      if(e) e.preventDefault();
+      return;
+    }
+    if(typeof window.openFG !== 'function') return;
+    if(e) e.preventDefault();
+    window.openFG();
+    if(typeof window.fgSwitchSection === 'function') window.fgSwitchSection(sec);
   }
 
   function ftReveal(btn){
@@ -286,12 +298,15 @@
     });
     rail.addEventListener('click', function(e){
       var btn = e.target.closest ? e.target.closest('.ftTab') : null;
-      if(btn) ftSelect(btn.getAttribute('data-feed'));
+      if(!btn) return;
+      var sec = btn.getAttribute('data-sec');
+      if(sec){ ftGo(sec, e); return; }
+      ftSelect(btn.getAttribute('data-feed'));
     });
     rail.addEventListener('keydown', function(e){
       var step = e.key === 'ArrowRight' ? 1 : (e.key === 'ArrowLeft' ? -1 : 0);
       if(!step) return;
-      var tabs = Array.prototype.slice.call(rail.querySelectorAll('.ftTab'));
+      var tabs = Array.prototype.slice.call(rail.querySelectorAll('.ftTab[data-feed]'));
       var at = tabs.indexOf(document.activeElement);
       if(at < 0) return;
       e.preventDefault();
@@ -299,7 +314,7 @@
       next.focus();
       ftSelect(next.getAttribute('data-feed'));
     });
-    var tabs = rail.querySelectorAll('.ftTab');
+    var tabs = rail.querySelectorAll('.ftTab[data-feed]');
     for(var i = 0; i < tabs.length; i++){
       tabs[i].tabIndex = tabs[i].classList.contains('on') ? 0 : -1;
     }

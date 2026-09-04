@@ -4,6 +4,20 @@
   function feedIsArtists(){ return feedTab === 'artists'; }
   function feedIsFollowing(){ return feedTab === 'following'; }
 
+  // Every category on the site is a board on the rail, addressed as cat:<slug>.
+  // "others" is left off: it is where an upload lands when nobody picked a
+  // category, so a board of it is a board of the unsorted.
+  function feedCatOf(tab){
+    var t = tab === undefined ? feedTab : tab;
+    return String(t || '').indexOf('cat:') === 0 ? t.slice(4) : null;
+  }
+  function feedInCat(list, slug){
+    return (list || []).filter(function(a){
+      var cs = catList(a && a.category);
+      return (cs.length ? cs : ['others']).indexOf(slug) !== -1;
+    });
+  }
+
   function feedFollowApi(){ return window.dzFollow || null; }
 
   // The whole approved gallery is already in memory, so "artwork from artists I
@@ -134,6 +148,8 @@
   }
 
   function feedEmptyText(){
+    var cat = feedCatOf();
+    if(cat) return 'NO ARTWORK IN THIS CATEGORY YET';
     if(feedTab === 'artists') return 'NO ARTISTS YET';
     if(feedIsFollowing()){
       var signedIn = (typeof currentUser !== 'undefined' && currentUser);
@@ -151,7 +167,10 @@
     if(!grid) return;
 
     var src = filterHidden((list || []).slice());
-    if(feedIsArtists()){
+    var cat = feedCatOf();
+    if(cat){
+      awRList = sortByTrending(feedInCat(src, cat)).slice(0, FEED_CAP);
+    } else if(feedIsArtists()){
       awRList = feedArtistsOf(src);
     } else if(feedIsFollowing()){
       awRList = feedFollowingOf(src).slice(0, FEED_CAP);
@@ -242,18 +261,6 @@
     }
   }
 
-  function ftGo(sec, e){
-    var path = typeof window.dzRoutePath === 'function' ? window.dzRoutePath(sec) : null;
-    if(path && typeof window.dzRouteGo === 'function' && window.dzRouteGo(path)){
-      if(e) e.preventDefault();
-      return;
-    }
-    if(typeof window.openFG !== 'function') return;
-    if(e) e.preventDefault();
-    window.openFG();
-    if(typeof window.fgSwitchSection === 'function') window.fgSwitchSection(sec);
-  }
-
   function ftReveal(btn){
     var rail = document.getElementById('ftRail');
     if(!rail || !btn) return;
@@ -275,9 +282,35 @@
     if(next) next.disabled = rail.scrollLeft >= max - 1;
   }
 
+  // The six boards are in the markup because they are the same six on every
+  // load; the categories are built here from the one list the rest of the site
+  // filters by, so a category added there arrives on the rail with no second
+  // edit to keep in step.
+  function ftBuildCats(rail){
+    if(typeof SITE_CATEGORIES === 'undefined' || !SITE_CATEGORIES.length) return;
+    var frag = document.createDocumentFragment();
+    SITE_CATEGORIES.forEach(function(c){
+      if(!c || !c.slug || c.slug === 'others') return;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ftTab';
+      b.id = 'ftTab-cat-' + c.slug;
+      b.tabIndex = -1;
+      b.setAttribute('aria-pressed', 'false');
+      b.setAttribute('data-feed', 'cat:' + c.slug);
+      var l = document.createElement('span');
+      l.className = 'ftLbl';
+      l.textContent = c.label;
+      b.appendChild(l);
+      frag.appendChild(b);
+    });
+    rail.appendChild(frag);
+  }
+
   (function(){
     var rail = document.getElementById('ftRail');
     if(!rail) return;
+    ftBuildCats(rail);
     var wrap = rail.parentNode;
     var queued = false;
     function sync(){
@@ -298,10 +331,7 @@
     });
     rail.addEventListener('click', function(e){
       var btn = e.target.closest ? e.target.closest('.ftTab') : null;
-      if(!btn) return;
-      var sec = btn.getAttribute('data-sec');
-      if(sec){ ftGo(sec, e); return; }
-      ftSelect(btn.getAttribute('data-feed'));
+      if(btn) ftSelect(btn.getAttribute('data-feed'));
     });
     rail.addEventListener('keydown', function(e){
       var step = e.key === 'ArrowRight' ? 1 : (e.key === 'ArrowLeft' ? -1 : 0);

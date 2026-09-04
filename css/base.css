@@ -30,6 +30,12 @@
      into headings. */
   --fw:'Syne','Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --fsig:'Kaushan Script','Syne','Open Sans',-apple-system,BlinkMacSystemFont,cursive;
+  /* Kaushan ships one weight and it is lighter than the 800-weight grotesque it
+     replaced, so everywhere the script appears it is inked by a stroke rather
+     than a synthesised bold, which smears a script this slanted. One knob, in
+     em so it holds from a 20px panel header to a 152px headline. Past about
+     .06em the counters in e, a and p start to close. */
+  --sigInk:.05em;
 
   --danger:#fca5a5;
   --brand-red:#EF4444;
@@ -316,7 +322,7 @@ body{
      stroke rather than a synthesised bold, which smears a script this slanted.
      In em, so it holds at every step of the clamp. */
   font-family:var(--fsig);font-weight:400;
-  font-size:clamp(1.625rem,1.35rem + 1.15vw,2rem);
+  font-size:clamp(1.75rem,1.4rem + 1.35vw,2.125rem);
   line-height:var(--lh-flat);
   letter-spacing:0;
   text-decoration:none;
@@ -327,7 +333,7 @@ body{
 .dzBrand:active{transform:scale(.97);}
 .dzBrand:focus-visible,
 .dzLink:focus-visible{outline:2px solid var(--pg);outline-offset:3px;border-radius:6px;}
-.dzBrandD,.dzBrandA{-webkit-text-stroke:.03em currentColor;}
+.dzBrandD,.dzBrandA{-webkit-text-stroke:var(--sigInk) currentColor;}
 .dzBrandD{color:#0A0A0A;}
 html[data-theme="graydark"] .dzBrandD{color:var(--tx);}
 .dzBrandA{color:var(--brand-red);}

@@ -52,6 +52,7 @@
   font-style:normal;color:var(--brand-red);
   font-family:var(--fsig);font-weight:400;
   letter-spacing:0;
+  -webkit-text-stroke:var(--sigInk) currentColor;
 }
 
 .hpSub{

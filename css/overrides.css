@@ -197,6 +197,7 @@
   font-family:var(--fsig);font-weight:400;
   letter-spacing:0;
   text-transform:lowercase;
+  -webkit-text-stroke:var(--sigInk) currentColor;
   /* ::first-letter needs a block box, and a span in a flex row is not one
      everywhere; inline-block makes it one without changing the row. */
   display:inline-block;

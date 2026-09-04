@@ -374,16 +374,32 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 .rkDot::after{content:'';position:absolute;inset:-9px;border-radius:50%;}
 .rkDots{gap:var(--sp-5);}
 
+/* Touch targets. This block already existed but its floors were 36-40px, under
+   the 44px a finger actually needs, and it missed the controls in the header,
+   the hero search and the footer. Everything a coarse pointer can hit is 44px
+   here; pointer:coarse keeps it off mouse-driven layouts, where 34px nav links
+   are fine. */
 @media (pointer:coarse){
-  .ftColLink{padding-block:var(--sp-4);}
-  .dzBrand{padding-block:var(--sp-2);}
-  .pfSrchChip,.cmiSegBtn{min-height:40px;}
-  .cmiMini,.albActBtn{min-height:36px;}
+  .dzIcon,
+  .hsMode,
+  .subOvArrow,
+  .fltPX,
   .cropZoomBtn,
-.fgHeadSX{width:38px;height:38px;}
-  .fgHeadFlt{width:38px;height:38px;}
+  .fgHeadSX,
+  .fgHeadFlt{width:44px;height:44px;}
+
+  .dzLink,
+  .ftColLink,
+  .pfSrchChip,
+  .cmiSegBtn,
+  .cmiMini,
+  .albActBtn,
+  .tgSearchIn{min-height:44px;}
+
+  .ftColLink{padding-block:var(--sp-4);display:flex;align-items:center;}
+  .dzBrand{padding-block:var(--sp-2);}
   .avCmDel{padding:var(--sp-3) var(--sp-3);}
-  }
+}
 
 input[type=range].cropZoom{height:32px;background:transparent;}
 input[type=range].cropZoom::-webkit-slider-thumb,

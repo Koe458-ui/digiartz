@@ -290,13 +290,12 @@
   }
 
   function feedRepaintPeople(uids, onlyUnpainted){
-    var grid = document.getElementById('awGrid');
     uids.forEach(function(uid){
       var sel = (window.CSS && CSS.escape) ? CSS.escape(uid) : String(uid).replace(/["\\]/g, '\\$&');
       var q = '.atCard[data-uid="' + sel + '"]';
-      var cards = grid ? Array.prototype.slice.call(grid.querySelectorAll(q)) : [];
-      // the search page and the hero search draw these outside #awGrid
-      Array.prototype.push.apply(cards, Array.prototype.slice.call(document.querySelectorAll(q)));
+      // one pass over the document catches the feed board, the search page and
+      // the hero search alike, without painting a card in #awGrid twice
+      var cards = Array.prototype.slice.call(document.querySelectorAll(q));
       cards.forEach(function(card){
         if(onlyUnpainted && card.classList.contains('atReady')) return;
         if(dzArtistCache[uid] !== undefined) paintArtistCard(card, dzArtistCache[uid]);

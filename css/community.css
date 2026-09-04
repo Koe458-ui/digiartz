@@ -296,9 +296,6 @@
   display:flex;flex-direction:column;
   padding:var(--sp-2) var(--pfPad) 0;
 }
-#cmBrowsePage .pfSrchChip.on{
-  background:rgba(47,163,124,.14);border-color:#2FA37C;color:var(--tx);
-}
 
 .cmBrwHd{
   padding:var(--sp-6) var(--pfPad) var(--sp-1);
@@ -534,7 +531,8 @@
   .cmStats{gap:var(--sp-7);}
 }
 
-#artworks, #subOverview, footer.siteFooter{
+#artworks,
+footer.siteFooter{
   --bg:inherit;--sur:inherit;--sur2:inherit;
   --bdr:inherit;--bdrh:inherit;
   --tx:inherit;--txd:inherit;
@@ -543,11 +541,6 @@
   background:var(--bg);
   color:var(--tx);
 }
-
-#subOverview .subOvPlanBadge--lite    { color:#93c5fd; border-color:#3b5c8a; background:rgba(59,130,246,.14); }
-#subOverview .subOvPlanBadge--premium { color:#C4B5FD; border-color:#5b4a8a; background:rgba(139,92,246,.16); }
-#subOverview .subOvPlanBadge--max     { color:#fcd34d; border-color:#8a6a2a; background:rgba(234,179,8,.14); }
-#subOverview .subOvPlanBadge--dev     { color:#fca5a5; border-color:#8a3a3a; background:rgba(220,38,38,.14); }
 
 #communityPage,#cmChatPanel,#frdPage{
   --cmBg:var(--bg);
@@ -698,7 +691,6 @@ html[data-theme="offwhite"] #cmChatPanel{--cmAmberInk:#9A6A08;}
   .cpEmojiBtn{width:38px;height:38px;}
   .cpBar{padding:var(--sp-4) var(--shellPad);gap:var(--sp-3);}
 }
-
 
 .cmGraceBar{
   display:flex;align-items:center;gap:var(--sp-5);flex-wrap:wrap;

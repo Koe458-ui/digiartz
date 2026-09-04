@@ -55,52 +55,7 @@
       if (menuTxt) menuTxt.textContent = 'Login';
     }
 
-    syncSubOverviewCard();
     if (typeof cpSyncAvatar === 'function') cpSyncAvatar();
-  }
-
-  function syncSubOverviewCard() {
-    var avatarEl   = document.getElementById('subOvAvatarLetter');
-    var nameEl     = document.getElementById('subOvUsernameLabel');
-    var badgeEl    = document.getElementById('subOvBadge');
-    var profileCard = document.getElementById('subOvProfileCard');
-    if (!avatarEl || !nameEl || !badgeEl) return;
-
-    function setProfileTier(tier) {
-      if (!profileCard) return;
-      profileCard.classList.remove(
-        'subOvCard--profile-lite',
-        'subOvCard--profile-premium',
-        'subOvCard--profile-max',
-        'subOvCard--profile-dev'
-      );
-      if (tier === 'lite')    profileCard.classList.add('subOvCard--profile-lite');
-      if (tier === 'premium') profileCard.classList.add('subOvCard--profile-premium');
-      if (tier === 'max')     profileCard.classList.add('subOvCard--profile-max');
-      if (tier === 'dev')     profileCard.classList.add('subOvCard--profile-dev');
-    }
-
-    if (currentUser) {
-      var letter = cpGetAvatarLetter();
-      var name   = cpGetDisplayName();
-      paintAvatarChip('subOvAvatarImg', 'subOvAvatarTxt', currentUserAvatarUrl, letter);
-      nameEl.textContent   = name;
-
-      var plan   = (typeof userPlan === 'string') ? userPlan : 'guest';
-      if (typeof isDev !== 'undefined' && isDev) plan = 'dev';
-      var labels = { guest:'FREE', lite:'LITE', premium:'PREMIUM', max:'MAX', dev:'DEV' };
-      var label  = labels[plan] || 'FREE';
-      badgeEl.textContent = label;
-
-      badgeEl.className = 'subOvPlanBadge subOvPlanBadge--' + (labels[plan] ? plan : 'guest');
-      setProfileTier(plan);
-    } else {
-      paintAvatarChip('subOvAvatarImg', 'subOvAvatarTxt', null, '?');
-      nameEl.textContent   = 'Profile';
-      badgeEl.textContent  = 'FREE';
-      badgeEl.className    = 'subOvPlanBadge subOvPlanBadge--guest';
-      setProfileTier('guest');
-    }
   }
 
   var setLastFocus = null;
@@ -606,7 +561,6 @@
         isDev=false; userRole=null; userPlan=null; syncAdmBtn();
         dzSetPlan('guest', null); dzPaintLimits();
         if(typeof dzPaintAds === 'function') dzPaintAds();
-        syncSubOverviewCard();
         notifRefreshBadge();
         closeProfilePage();
         closeMyWorkPage();

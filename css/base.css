@@ -168,7 +168,6 @@ html[data-theme="offwhite"]{
 @media(min-width:700px){  :root{ --artGap:4px; } }
 @media(min-width:1280px){ :root{ --artGap:5px; } }
 
-
 /* ============================================================================
    Type & spacing scale
    ----------------------------------------------------------------------------
@@ -251,11 +250,12 @@ html[data-theme="offwhite"]{
   --stack-lg:var(--sp-9);
 }
 
-#artworks,#subOverview,footer.siteFooter{
+#artworks,
+footer.siteFooter{
   content-visibility:auto;
 }
 #artworks{contain-intrinsic-size:auto 900px;}
-#subOverview{contain-intrinsic-size:auto 700px;}
+
 footer.siteFooter{contain-intrinsic-size:auto 480px;}
 
 body{font-size:var(--fs-md);line-height:var(--lh-body);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
@@ -680,6 +680,6 @@ a.dzMenuSubItem{text-decoration:none;color:var(--tx);}
   overflow: hidden;
   background: var(--bg);
 }
-@media print {
+@media print{
   img, picture, canvas, video { visibility: hidden !important; }
 }

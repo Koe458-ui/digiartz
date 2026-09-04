@@ -99,7 +99,6 @@
 @media(hover:hover){.hpAlt:hover{gap:var(--sp-5);opacity:.72;}}
 .hpAlt:focus-visible{outline:2px solid var(--pb);outline-offset:4px;border-radius:4px;}
 
-
 /* Short landscape (phone on its side): the fold is ~350px tall, so the headline
    has to give up most of its size and the prose steps aside entirely. */
 @media(max-height:500px) and (orientation:landscape){
@@ -122,8 +121,7 @@
 #sBanner a{color:var(--pb);}
 
 .sec{padding:var(--sp-10) var(--sp-8);max-width:1200px;margin:0 auto;}
-.secT{font-family:var(--fd);font-size:var(--fs-hero);font-weight:800;letter-spacing:var(--ls-tighter);display:flex;align-items:center;gap:var(--sp-3);}
-.secT .s{color:var(--pg);font-size:.5em;}
+
 .secSub{font-family:var(--fm);font-size:var(--fs-xs);letter-spacing:var(--ls-widest);color:var(--txd);margin-bottom:var(--sp-8);}
 
 .gItem{position:relative;overflow:hidden;background:var(--sur);border:0;border-radius:4px;line-height:0;}
@@ -987,9 +985,21 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   .awGrid.awGrid--artists{grid-template-columns:repeat(3,1fr);}
 }
 
-.atCard:not(.atReady) .atName{width:54%;height:.8em;border-radius:4px;background:var(--sur2);}
-.atCard:not(.atReady) .atUser{width:36%;height:.7em;border-radius:4px;background:var(--sur2);}
-.atCard:not(.atReady) .atActs{opacity:.35;}
+/* The bars stand in for a line of text, so they are as tall as that line —
+   at .8em and .7em the card was 16px shorter before it painted and jumped when
+   it did. --lh-snug is what both of them are set in. */
+.atCard:not(.atReady) .atName,
+.atCard:not(.atReady) .atUser{
+  height:var(--lh-snug);height:1.3em;
+  border-radius:4px;background:var(--sur2);
+}
+.atCard:not(.atReady) .atName{width:54%;}
+.atCard:not(.atReady) .atUser{width:36%;}
+/* Before the profile lands the card knows nothing, and "0 Followers" is a lie
+   rather than a placeholder — the buttons have no labels yet either. Hidden
+   rather than removed, so the card does not change height when it paints. */
+.atCard:not(.atReady) .atStats,
+.atCard:not(.atReady) .atActs{visibility:hidden;}
 
 @keyframes awSwapIn{
   from{opacity:0;transform:translateY(8px);}

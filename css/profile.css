@@ -308,21 +308,7 @@ html[data-theme="offwhite"] .pfBrand--youtube{--brand:#D40000;}
 }
 .pfSrchHdr .tgSearch,
 .pfMenuTxt{flex:1 1 auto;min-width:0;}
-.pfSrchScopes{
-  display:flex;gap:var(--sp-2);padding:var(--sp-5) var(--pfPad);
-  overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
-  -webkit-overflow-scrolling:touch;
-}
-.pfSrchScopes::-webkit-scrollbar{display:none;}
-.pfSrchChip{
-  flex:0 0 auto;min-height:34px;
-  font-family:var(--fb);font-size:var(--fs-sm);font-weight:600;
-  padding:var(--sp-2) var(--sp-5);border-radius:999px;
-  border:1px solid var(--bdr);background:var(--sur);color:var(--txd);
-  cursor:pointer;transition:background .18s,border-color .18s,color .18s;
-  -webkit-tap-highlight-color:transparent;
-}
-.pfSrchChip.on{background:var(--pdim);border-color:var(--pg);color:var(--tx);}
+
 /* The gallery search page opens on a question rather than a bare field: a
    small head in the section-head pattern, the sentence under it, then the
    field, then one rail of everything you could narrow to. Small on purpose —

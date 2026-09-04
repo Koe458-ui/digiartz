@@ -77,7 +77,6 @@
   .ftBrandDesc{ max-width:34ch; }
 }
 
-
 @media (min-width:900px){
   .dzvBody{ padding-inline:var(--shellPad); }
   #dzView[data-sec="blog"] .dzvBody,
@@ -179,7 +178,6 @@
   }
 }
 
-.secT,
 .subPgTitle{ color:var(--pg); }
 
 /* Every panel header is one thing: Inter, one weight, one size, one colour,
@@ -355,15 +353,29 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   #anPage,#anListPage,#setPage,#legalPage,#dzPanelHost{transition:none;}
 }
 
-.dzIcon:focus-visible,.dzMenuItem:focus-visible,.dzRow:focus-visible,
-.lmClose:focus-visible,.fgTopBtn:focus-visible,.fgCatChip:focus-visible,
-.fgCatNav:focus-visible,.ftTab:focus-visible,.ftNav:focus-visible,.atCard:focus-visible,
-.dzWlGuideMail:focus-visible,.dzClInfoBtn:focus-visible,
-.pfTopBtn:focus-visible,.pfActBtn:focus-visible,.pfSrchChip:focus-visible,
-.pfMenuItem:focus-visible,.loConfirmBtn:focus-visible,
-.upTopBtn:focus-visible,.vwCfmBtn:focus-visible,.albCard:focus-visible,
-.albDots:focus-visible,.albModVisBtn:focus-visible,
-.anRange:focus-visible,.anMore:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
+.dzIcon:focus-visible,
+.dzMenuItem:focus-visible,
+.dzRow:focus-visible,
+.lmClose:focus-visible,
+.fgTopBtn:focus-visible,
+.fgCatChip:focus-visible,
+.fgCatNav:focus-visible,
+.ftTab:focus-visible,
+.ftNav:focus-visible,
+.atCard:focus-visible,
+.dzWlGuideMail:focus-visible,
+.dzClInfoBtn:focus-visible,
+.pfTopBtn:focus-visible,
+.pfActBtn:focus-visible,
+.pfMenuItem:focus-visible,
+.loConfirmBtn:focus-visible,
+.upTopBtn:focus-visible,
+.vwCfmBtn:focus-visible,
+.albCard:focus-visible,
+.albDots:focus-visible,
+.albModVisBtn:focus-visible,
+.anRange:focus-visible,
+.anMore:focus-visible{outline:2px solid var(--pg);outline-offset:2px;}
 .dzMenuItem:focus-visible,.dzRow:focus-visible,
 .albModVisBtn:focus-visible{outline-offset:-2px;}
 
@@ -431,19 +443,17 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
    are fine. */
 @media (pointer:coarse){
   .dzIcon,
-  .hsMode,
-  .subOvArrow,
-  .fltPX,
-  .cropZoomBtn,
-  .fgHeadSX,
-  .fgHeadFlt{width:44px;height:44px;}
+.hsMode,
+.fltPX,
+.cropZoomBtn,
+.fgHeadSX,
+.fgHeadFlt{width:44px;height:44px;}
 
   .dzLink,
-  .pfSrchChip,
-  .cmiSegBtn,
-  .cmiMini,
-  .albActBtn,
-  .tgSearchIn{min-height:44px;}
+.cmiSegBtn,
+.cmiMini,
+.albActBtn,
+.tgSearchIn{min-height:44px;}
 
   /* A 44px row for a 15px link is mostly empty, and six of them stacked read
      as a gap-toothed list. The link is its own height now and takes its touch
@@ -466,7 +476,7 @@ input[type=range].cropZoom::-moz-range-thumb{width:22px;height:22px;}
   .rkAll{font-size:var(--fs-2xs);}
   .rkPgEnd,.albModHint{font-size:var(--fs-2xs);}
   .thmBadge,.pfMenuSoon,.cmBrwHd,.albActBtn{font-size:var(--fs-2xs);}
-  .subOvPlanBadge{font-size:var(--fs-2xs);}
+  
   .cpBubbleTime,.dmMsgTime{font-size:var(--fs-2xs);}
 }
 
@@ -492,13 +502,21 @@ input[type=range].cropZoom::-moz-range-thumb{width:22px;height:22px;}
 }
 
 @media (forced-colors:active){
-  .dzIcon,.fgTopBtn,.subPgX,.cmBack,.fltPX,.upPopX,
-  .ftTab,.ftNav,.fgCatChip,.pfSrchChip{
+  .dzIcon,
+.fgTopBtn,
+.subPgX,
+.cmBack,
+.fltPX,
+.upPopX,
+.ftTab,
+.ftNav,
+.fgCatChip{
     border:1px solid ButtonBorder;
     forced-color-adjust:none;
     background:ButtonFace;color:ButtonText;
   }
-  .ftTab.on,.fgCatChip.on,.pfSrchChip.on{
+  .ftTab.on,
+.fgCatChip.on{
     background:Highlight;color:HighlightText;border-color:Highlight;
   }
   .awCard,.gItem,.dzCard,.bmCard,.albCard,.spItem,.admCard{border:1px solid CanvasText;}

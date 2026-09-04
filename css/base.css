@@ -22,11 +22,14 @@
   --fd:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   --fb:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   --fm:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-  /* The wordmark, and only the wordmark. Syne was drawn for the art centre
-     Synesthésie and reads as an art-world face rather than a product one — the
-     point is that it is not the grotesque every other site defaults to. Kept off
-     --fd so it can never leak into headings. */
+  /* Two wordmark faces, and nothing else uses either. --fw is the caps lockup
+     the footer sets: Syne, drawn for the art centre Synesthésie, which reads as
+     an art-world face rather than a product one. --fsig is the signature in the
+     top bar — a brush script, because the mark up there is a signature on the
+     work rather than a label for it. Both kept off --fd so neither can leak
+     into headings. */
   --fw:'Syne','Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fsig:'Kaushan Script','Syne','Open Sans',-apple-system,BlinkMacSystemFont,cursive;
 
   --danger:#fca5a5;
   --brand-red:#EF4444;
@@ -309,10 +312,13 @@ body{
 .dzBrand{
   flex:0 0 auto;
   display:inline-flex;align-items:baseline;
-  font-family:var(--fw);font-weight:800;
+  /* Kaushan ships one weight, so the little extra the mark wants comes from a
+     stroke rather than a synthesised bold, which smears a script this slanted.
+     In em, so it holds at every step of the clamp. */
+  font-family:var(--fsig);font-weight:400;
   font-size:clamp(1.625rem,1.35rem + 1.15vw,2rem);
   line-height:var(--lh-flat);
-  letter-spacing:var(--ls-tight);
+  letter-spacing:0;
   text-decoration:none;
   -webkit-tap-highlight-color:transparent;
   transition:opacity .2s ease,transform .15s ease;
@@ -321,6 +327,7 @@ body{
 .dzBrand:active{transform:scale(.97);}
 .dzBrand:focus-visible,
 .dzLink:focus-visible{outline:2px solid var(--pg);outline-offset:3px;border-radius:6px;}
+.dzBrandD,.dzBrandA{-webkit-text-stroke:.03em currentColor;}
 .dzBrandD{color:#0A0A0A;}
 html[data-theme="graydark"] .dzBrandD{color:var(--tx);}
 .dzBrandA{color:var(--brand-red);}

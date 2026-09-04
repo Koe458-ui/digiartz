@@ -45,7 +45,14 @@
 @media(min-width:768px){
   .hpHead{font-size:clamp(5.25rem,.5rem + 9.6vw,9.5rem);}
 }
-.hpHead em{font-style:normal;color:var(--brand-red);}
+/* The two verbs carry the wordmark's script, in the brand red — the only place
+   outside the top bar that face appears. It needs the tracking back at zero: the
+   headline's -.035em is drawn for a grotesque and jams a joined script. */
+.hpHead em{
+  font-style:normal;color:var(--brand-red);
+  font-family:var(--fsig);font-weight:400;
+  letter-spacing:0;
+}
 
 .hpSub{
   margin:0 0 clamp(1.75rem,4vw,2.75rem);

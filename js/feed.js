@@ -77,9 +77,9 @@
         '<span class="atName"></span>' +
         '<span class="atUser"></span>' +
         '<div class="atStats">' +
-          '<span class="atStat"><b class="atStatN atStatFol">0</b><span class="atStatL">Followers</span></span>' +
-          '<span class="atStat"><b class="atStatN atStatArt">0</b><span class="atStatL">Artworks</span></span>' +
-          '<span class="atStat"><b class="atStatN atStatLike">0</b><span class="atStatL">Likes</span></span>' +
+          '<span class="atStat"><b class="atStatN atStatFol">0</b> <span class="atStatL">Followers</span></span> ' +
+          '<span class="atStat"><b class="atStatN atStatArt">0</b> <span class="atStatL">Artworks</span></span> ' +
+          '<span class="atStat"><b class="atStatN atStatLike">0</b> <span class="atStatL">Likes</span></span>' +
         '</div>' +
         '<div class="atActs">' +
           '<button type="button" class="atBtn atBtnFrd"></button>' +
@@ -107,7 +107,7 @@
     for(var i = 0; i < list.length; i++){
       if(!list[i] || String(list[i].user_id) !== String(uid)) continue;
       art++;
-      likes += (+list[i].likes || 0);
+      likes += (+list[i].like_count || +list[i].likes || 0);
     }
     return { art: art, likes: likes };
   }
@@ -209,7 +209,9 @@
 
     var bn = card.querySelector('.atBanner');
     if(bn && p && p.banner_url){
-      bn.style.backgroundImage = 'url("' + imgResize(p.banner_url, 600) + '")';
+      // A banner spans the card and is seen at up to 3x on a phone: ask for the
+      // 1000px webp rather than the 600, so it is sharp rather than upscaled.
+      bn.style.backgroundImage = 'url("' + imgResize(p.banner_url, 1000) + '")';
     }
     feedPaintAvatar(av, ltr, p, name);
 

@@ -875,6 +875,8 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
     color-mix(in srgb,var(--pg) 16%,var(--sur2)),
     var(--sur2));
   background-position:center;background-size:cover;background-repeat:no-repeat;
+  /* Nothing over the banner: no scrim, no blur, no filter. */
+  filter:none;
 }
 .atBody{
   flex:1 1 auto;

@@ -19,7 +19,7 @@
   --bdrs:color-mix(in srgb,var(--tc) 18%,var(--bg));
 }
 #profilePage .subPgHdr,
-#pfEditPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;border-bottom:1px solid rgba(var(--pg-rgb),.08);}
+#pfEditPage .subPgHdr{background:color-mix(in srgb,var(--bg) 92%,transparent)!important;}
 #profilePage .subPgTitle{color:var(--tx);}
 #profilePage .awCard{background:var(--sur);}
 
@@ -286,8 +286,7 @@ html[data-theme="offwhite"] .pfBrand--youtube{--brand:#D40000;}
 .pfSrchHdr{
   position:sticky;top:0;z-index:4;
   display:flex;align-items:center;gap:var(--sp-3);
-  padding:var(--sp-3) var(--pfPad);
-  border-bottom:1px solid var(--bdr);isolation:isolate;
+  padding:var(--sp-3) var(--pfPad);isolation:isolate;
 }
 .pfSrchHdr::before{
   content:'';position:absolute;inset:0;z-index:-1;

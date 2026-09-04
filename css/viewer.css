@@ -21,7 +21,6 @@
   flex:0 0 auto;position:relative;z-index:6;
   display:flex;align-items:center;justify-content:space-between;
   padding:var(--sp-5) var(--sp-6);
-  border-bottom:1px solid var(--bdr);
   background:var(--bg);
 }
 
@@ -258,7 +257,6 @@
 
 .cmHdr{
   position:sticky;top:0;z-index:10;
-  border-bottom:1px solid var(--bdr);
   padding:1.1rem max(var(--shellPad),4.2rem);
   flex-shrink:0;
   display:flex;align-items:center;justify-content:center;gap:var(--sp-5);
@@ -592,7 +590,6 @@
   position:sticky;top:0;z-index:1;
   display:flex;align-items:center;justify-content:space-between;
   padding:var(--sp-6) var(--sp-7);
-  border-bottom:1px solid var(--bdr);
   flex-shrink:0;
 }
 .spTitle{font-family:var(--fd);font-size:var(--fs-lg);font-weight:700;letter-spacing:var(--ls-widest);color:var(--tx);}

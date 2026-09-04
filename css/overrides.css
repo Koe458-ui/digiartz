@@ -1,4 +1,4 @@
-.dzvTop{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-5) var(--sp-6);border-bottom:1px solid var(--bdr);background:var(--bg);}
+.dzvTop{display:flex;align-items:center;justify-content:space-between;padding:var(--sp-5) var(--sp-6);background:var(--bg);}
 .avNavTxt{background:none;border:0;padding:var(--sp-2) var(--sp-1);margin:0;cursor:pointer;
   color:var(--tx);font-family:var(--fb);font-size:var(--fs-lg);font-weight:600;letter-spacing:var(--ls-wide);}
 .avNavTxt:hover{color:var(--ps);}

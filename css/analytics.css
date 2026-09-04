@@ -11,7 +11,7 @@
 }
 
 #anPage .subPgHdr,
-#anListPage .subPgHdr{background:var(--bg)!important;border-bottom:1px solid color-mix(in srgb,var(--pg) 8%,var(--bg));}
+#anListPage .subPgHdr{background:var(--bg)!important;}
 #anPage .subPgHdr::before,
 #anListPage .subPgHdr::before{background:var(--bg)!important;backdrop-filter:none;-webkit-backdrop-filter:none;}
 #anPage .subPgTitle{color:var(--tx);}
@@ -73,7 +73,6 @@
   display:flex;gap:var(--sp-2);overflow-x:auto;scrollbar-width:none;
   padding:var(--sp-4) 0;margin-bottom:var(--sp-6);
   background:var(--bg);
-  border-bottom:1px solid var(--bdr);
 }
 .anNav::-webkit-scrollbar{display:none;}
 .anNavBtn{

@@ -4,12 +4,12 @@
   var CHUNKS = {
     analytics: {
       src: ['/js/analytics.js?v=21'],
-      css: ['/css/analytics.css?v=16'],
+      css: ['/css/analytics.css?v=17'],
       api: ['openAnalyticsPage']
     },
     hubs: {
       src: ['/js/hubs.js?v=5'],
-      css: ['/css/analytics.css?v=16'],
+      css: ['/css/analytics.css?v=17'],
       api: ['anHubOpen', 'payHubOpen']
     },
     share: {

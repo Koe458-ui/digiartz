@@ -185,8 +185,7 @@
   aspect-ratio:10/9;
 }
 .thmPrevTop{
-  display:flex;align-items:center;height:16%;
-  border-bottom:1px solid var(--p-ln,#40404E);padding-left:9%;
+  display:flex;align-items:center;height:16%;padding-left:9%;
 }
 .thmPrevLogo{
   width:9px;height:9px;background:var(--p-ac,#F4F4F6);
@@ -506,7 +505,7 @@ html.thmFade #themePage{
 
 .albViewBar{
   display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap;
-  padding:var(--sp-1) 0 var(--sp-6);border-bottom:1px solid var(--bdr);margin-bottom:var(--sp-1);
+  padding:var(--sp-1) 0 var(--sp-6);margin-bottom:var(--sp-1);
 }
 .albViewCount{
   font-family:var(--fm);font-size:var(--fs-3xs);letter-spacing:var(--ls-widest);color:var(--txd);margin-right:auto;

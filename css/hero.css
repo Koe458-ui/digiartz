@@ -204,13 +204,12 @@
   display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4);
   isolation:isolate;
 }
-.fgTopBar{padding:var(--sp-2) var(--fgPad);border-bottom:1px solid var(--bdr);}
+.fgTopBar{padding:var(--sp-2) var(--fgPad);}
 .pfTopBar{
   min-height:var(--pfBarH);
   padding:var(--sp-2) var(--pfPad);
-  border-bottom:1px solid var(--bdrs,var(--bdr));
 }
-.upTopBar{padding:var(--sp-2) var(--shellPad);border-bottom:1px solid rgba(var(--pg-rgb),.08);}
+.upTopBar{padding:var(--sp-2) var(--shellPad);}
 .fgTopBar::before,.pfTopBar::before,.upTopBar::before{
   content:'';position:absolute;inset:0;z-index:-1;
 }
@@ -1019,7 +1018,7 @@ html.dzCoOpen, html.dzCoOpen body{overflow:hidden;}
 
 .dzCoBar{
   flex:0 0 auto;display:flex;align-items:center;gap:var(--sp-5);
-  padding:var(--sp-4) var(--sp-6);border-bottom:1px solid var(--bdr);background:var(--sur);
+  padding:var(--sp-4) var(--sp-6);background:var(--sur);
 }
 .dzCoBack{
   width:34px;height:34px;flex:0 0 auto;border:1px solid var(--bdr);border-radius:9px;

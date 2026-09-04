@@ -568,11 +568,10 @@
   background:var(--cmBg);
 }
 #communityPage .cmHdr,#cmChatPanel .cmHdr{
-  border-bottom:1px solid var(--cmBdr);
 }
 #communityPage .cmHdr::before,#cmChatPanel .cmHdr::before{background:var(--cmBg)!important;}
 
-#communityPage .cmTopBar{border-bottom:1px solid var(--cmBdr);}
+#communityPage .cmTopBar{}
 #communityPage .cmTopBar::before{background:color-mix(in srgb,var(--cmBg) 92%,transparent);}
 #communityPage .fgTopTitle,#communityPage .fgTopBtn{color:var(--cmTx);}
 #communityPage .fgTopBtn:focus-visible{outline-color:var(--cmAccent);}

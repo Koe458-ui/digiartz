@@ -283,7 +283,6 @@ footer.siteFooter {
 .lmHead{
   display:flex;align-items:center;justify-content:space-between;
   padding:var(--sp-7) var(--sp-8) var(--sp-6);
-  border-bottom:1px solid var(--bdr);
   flex-shrink:0;
   background:linear-gradient(to right,color-mix(in srgb,var(--tc) 6%,transparent),transparent);
 }

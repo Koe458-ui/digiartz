@@ -145,6 +145,17 @@ html[data-theme="offwhite"]{
   --shellPad:max(3%,var(--safeX));
   --fgPad:var(--shellPad);
   --pfPad:var(--shellPad);
+  /* One search field, wherever it appears — the hero, a section head, the
+     search page, the community browser. The icons were drawn at a third of the
+     bar's height, which reads as an undersized glyph in an oversized field
+     rather than as a pair; at 40% they sit in it. The round buttons are sized
+     to the 36px they need to stay tappable without crowding the field. */
+  --srchH:50px;
+  --srchIco:20px;
+  --srchBtn:36px;
+}
+@media(max-width:600px){
+  :root{ --srchH:46px; --srchIco:18px; --srchBtn:32px; }
 }
 @media(min-width:768px){
   :root{ --shellPad:max(6%,var(--safeX)); }

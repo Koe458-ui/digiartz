@@ -412,8 +412,13 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   width:40px;height:40px;
   flex-shrink:0;
 }
-.hsMode{width:40px;height:40px;margin-right:-.5rem;}
-.hsMode .hsIco{inset:7px;width:auto;height:auto;}
+/* The mode toggle is a button the size of the field's other round controls,
+   with the glyph inside drawn at the same size as the search glyph beside it —
+   the two read as a pair rather than as one icon twice the other. */
+.hsMode{width:var(--srchBtn);height:var(--srchBtn);margin-right:-.5rem;}
+/* Centred at a fixed size rather than by inset, so the 44px floor a coarse
+   pointer puts on the button grows the tap area without growing the glyph. */
+.hsMode .hsIco{inset:0;margin:auto;width:var(--srchIco);height:var(--srchIco);}
 
 .rkDot{position:relative;}
 .rkDot::after{content:'';position:absolute;inset:-9px;border-radius:50%;}

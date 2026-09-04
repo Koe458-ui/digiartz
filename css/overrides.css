@@ -76,28 +76,11 @@
   .hpInner{ max-width:none; }
   .ftBrandDesc{ max-width:34ch; }
 }
+/* The hero was a two-column grid here — headline left, list and button stacked
+   right. It is one left-aligned column at every width now, so the desktop rules
+   only widen the measure rather than re-laying it out. */
 @media (min-width:1024px){
-  .hpInner{ max-width:min(100%,1320px); margin-inline:0; }
-  .hpTabs{ margin-bottom:clamp(2rem,3.4vw,3rem); }
-  .hpPanel{
-    display:grid;
-    grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);
-    column-gap:clamp(3rem,7vw,7rem);
-    align-items:start;
-  }
-  .hpHead{
-    grid-column:1; grid-row:1 / span 2;
-    margin:0;
-    font-size:var(--fs-hero);
-    line-height:var(--lh-tight); letter-spacing:var(--ls-tighter);
-  }
-  .hpList{
-    grid-column:2; grid-row:1;
-    margin:.4rem 0 clamp(1.8rem,2.6vw,2.4rem);
-    gap:var(--sp-6);
-  }
-  .hpList li{ font-size:var(--fs-lg); line-height:var(--lh-normal); }
-  .hpCta{ grid-column:2; grid-row:2; justify-self:start; }
+  .hpTabs{ margin-bottom:clamp(2rem,3.4vw,2.75rem); }
 }
 
 @media (min-width:900px){
@@ -179,7 +162,7 @@
   .upField label{ font-size:var(--fs-sm); }
   .upIn, .upField textarea, .upField select{ font-size:var(--fs-md); }
 
-  .upBtnPri, .dzBuy, .subBtn, .hpCta{
+  .upBtnPri, .dzBuy, .subBtn{
     min-height:46px;
     font-size:var(--fs-md);
     padding:var(--sp-5) var(--sp-6);
@@ -187,7 +170,6 @@
   }
   .subBtn{ letter-spacing:var(--ls-widest); }
   .dzBuy{ font-size:var(--fs-sm); letter-spacing:var(--ls-wider); }
-  .hpCta{ font-size:var(--fs-md); border-radius:999px; padding:var(--sp-5) var(--sp-7); }
 }
 
 @media (min-width:1440px){

@@ -294,7 +294,7 @@ body{
   box-sizing:border-box;
   display:flex;align-items:center;gap:var(--sp-5);
   padding:var(--sat) var(--shellPad) 0;
-  border-bottom:1px solid var(--bdr);
+  /* no rule under the bar — the hero reads as one surface with the nav */
   background:color-mix(in srgb,var(--bg) 92%,transparent);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
 }

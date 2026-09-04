@@ -1,74 +1,114 @@
+/* ---------------------------------------------------------------------------
+   Hero. Editorial layout: one left-aligned column, a headline that carries the
+   whole fold, a single line of prose under it, then a solid primary action with
+   a quiet text link beside it. The tabs above stay — they are the mechanism the
+   whole section runs on — but they are set as plain text with an underline on
+   the active one, so nothing competes with the headline for first read.
+   ------------------------------------------------------------------------- */
 #heroPitch{
   position:relative;
   background:var(--bg);
-  padding:calc(var(--dzTopOff) + clamp(.5rem,2.2vw,1.1rem))
+  padding:calc(var(--dzTopOff) + clamp(1.5rem,5vw,4.5rem))
           var(--shellPad)
-          clamp(1.6rem,4.5vw,3.4rem);
+          clamp(2rem,6vw,5rem);
 }
-.hpInner{max-width:760px;margin:0 auto;}
+.hpInner{max-width:min(100%,1280px);margin:0;}
 
+/* Tabs: a text row, not a control bar. */
 .hpTabs{
-  display:flex;gap:var(--sp-1);padding:var(--sp-1);margin:0 0 clamp(1.4rem,3.5vw,2rem);
-  background:var(--sur);border:1px solid var(--bdr);border-radius:999px;
+  display:flex;gap:clamp(1.25rem,3vw,2.25rem);
+  margin:0 0 clamp(1.5rem,3.5vw,2.5rem);
   width:max-content;max-width:100%;
   overflow-x:auto;overscroll-behavior-x:contain;
   scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;
 }
 .hpTabs::-webkit-scrollbar{display:none;}
 .hpTab{
-  flex-shrink:0;border:0;cursor:pointer;border-radius:999px;
-  padding:var(--sp-3) var(--sp-6);
-  font-family:var(--fd);font-size:var(--fs-sm);font-weight:700;letter-spacing:var(--ls-wide);
-  background:none;color:var(--txd);white-space:nowrap;
-  transition:color .2s,background .2s;
+  position:relative;flex-shrink:0;border:0;background:none;cursor:pointer;
+  padding:var(--sp-2) 0;
+  font-family:var(--fd);font-size:var(--fs-sm);font-weight:600;
+  letter-spacing:var(--ls-normal);
+  color:var(--txd);white-space:nowrap;
+  transition:color .18s;
+}
+.hpTab::after{
+  content:'';position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:var(--tx);border-radius:2px;
+  transform:scaleX(0);transform-origin:left;transition:transform .22s ease;
 }
 @media(hover:hover){.hpTab:hover{color:var(--tx);}}
-.hpTab[aria-selected="true"]{background:var(--pg);color:var(--text-on-accent);}
-.hpTab:focus-visible{outline:2px solid var(--pb);outline-offset:2px;}
+.hpTab[aria-selected="true"]{color:var(--tx);font-weight:700;}
+.hpTab[aria-selected="true"]::after{transform:scaleX(1);}
+.hpTab:focus-visible{outline:2px solid var(--pb);outline-offset:3px;border-radius:3px;}
 
+/* The headline is the fold. Tight leading and tracking so the mass reads as one
+   block; text-wrap:balance keeps the rag from stranding a single word. */
 .hpHead{
-  margin:0 0 clamp(.9rem,2.6vw,1.5rem);
+  margin:0 0 clamp(1rem,2.4vw,1.75rem);
   font-family:var(--fd);font-weight:800;
-  font-size:var(--fs-hero);
-  line-height:var(--lh-tight);letter-spacing:var(--ls-tighter);color:var(--tx);
+  font-size:clamp(2.25rem,.95rem + 5.33vw,6rem);
+  line-height:1.02;
+  letter-spacing:-.035em;
+  color:var(--tx);
   text-wrap:balance;
+  max-width:16ch;
 }
 .hpHead em{font-style:normal;color:var(--brand-red);}
 
-.hpList{list-style:none;margin:0 0 clamp(1.2rem,3.5vw,2rem);padding:0;display:flex;flex-direction:column;gap:clamp(.5rem,1.8vw,.7rem);}
-.hpList li{display:flex;align-items:flex-start;gap:var(--sp-4);font-family:var(--fb);font-size:var(--fs-md);line-height:var(--lh-normal);color:var(--txd);}
-.hpTick{
-  flex-shrink:0;width:20px;height:20px;margin-top:var(--sp-1);border-radius:50%;
-  background:color-mix(in srgb,var(--pg) 18%,transparent);
-  display:flex;align-items:center;justify-content:center;
+.hpSub{
+  margin:0 0 clamp(1.75rem,4vw,2.75rem);
+  font-family:var(--fb);
+  font-size:clamp(1.0625rem,.9rem + .95vw,1.375rem);
+  line-height:var(--lh-normal);
+  color:var(--txd);
+  max-width:42ch;
+  text-wrap:pretty;
 }
-.hpTick svg{width:11px;height:11px;stroke:var(--pg);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+
+.hpActions{display:flex;align-items:center;gap:clamp(1.25rem,3vw,2rem);flex-wrap:wrap;}
 
 .hpCta{
   display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-3);cursor:pointer;
-  /* the 46px floor only existed in the >=1280 block, so touch sizing was left to
-     padding alone on the devices that actually need it */
-  min-height:46px;
-  border:0;border-radius:999px;padding:var(--sp-5) var(--sp-7);
+  min-height:52px;
+  border:0;border-radius:8px;
+  padding:var(--sp-5) clamp(1.5rem,3vw,2.25rem);
   background:var(--pg);color:var(--text-on-accent);
   font-family:var(--fd);font-size:var(--fs-md);font-weight:700;
-  box-shadow:0 8px 22px color-mix(in srgb,var(--pg) 32%,transparent);
-  transition:filter .2s;
+  letter-spacing:var(--ls-normal);
+  transition:transform .18s,filter .18s;
 }
-@media(hover:hover){.hpCta:hover{filter:brightness(1.08);}}
+@media(hover:hover){.hpCta:hover{filter:brightness(1.12);transform:translateY(-1px);}}
+.hpCta:active{transform:translateY(0);}
 .hpCta:focus-visible{outline:2px solid var(--pb);outline-offset:3px;}
 
-.hpPanel.hpIn > *,
-.hpPanel.hpIn > .hpList li{animation:none;opacity:1;transform:none;}
+.hpAlt{
+  display:inline-flex;align-items:center;gap:var(--sp-3);cursor:pointer;
+  min-height:52px;padding:0;border:0;background:none;
+  font-family:var(--fd);font-size:var(--fs-md);font-weight:700;
+  color:var(--tx);
+  transition:gap .18s,opacity .18s;
+}
+.hpArrow{
+  width:1.15em;height:1.15em;flex-shrink:0;
+  stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+}
+@media(hover:hover){.hpAlt:hover{gap:var(--sp-5);opacity:.72;}}
+.hpAlt:focus-visible{outline:2px solid var(--pb);outline-offset:4px;border-radius:4px;}
+
+.hpPanel.hpIn > *{animation:none;opacity:1;transform:none;}
+
+/* Short landscape (phone on its side): the fold is ~350px tall, so the headline
+   has to give up most of its size and the prose steps aside entirely. */
 @media(max-height:500px) and (orientation:landscape){
-  #heroPitch{padding-bottom:var(--sp-6);}
-  .hpList{display:none;}
-  .hpHead{margin-bottom:var(--sp-6);font-size:var(--fs-5xl);}
-  .hpTabs{margin-bottom:var(--sp-6);}
+  #heroPitch{padding-top:calc(var(--dzTopOff) + var(--sp-5));padding-bottom:var(--sp-6);}
+  .hpSub{display:none;}
+  .hpHead{margin-bottom:var(--sp-5);font-size:clamp(1.75rem,4.5vw,2.5rem);max-width:26ch;}
+  .hpTabs{margin-bottom:var(--sp-5);}
+  .hpCta,.hpAlt{min-height:44px;}
 }
 
 @media(prefers-reduced-motion:reduce){
-  .hpCta,.hpTab{transition:none;}
+  .hpCta,.hpTab,.hpAlt,.hpTab::after{transition:none;}
 }
 @media(max-width:480px){
   .hpTab{padding:var(--sp-3) var(--sp-6);font-size:var(--fs-sm);}

@@ -167,11 +167,21 @@ html[data-theme="offwhite"]{
   --fs-md:1rem;       /* 16px  body, inputs (also keeps iOS from zooming) */
   --fs-lg:1.125rem;   /* 18px  lead text, artwork/card titles */
   --fs-xl:1.25rem;    /* 20px  h4, section titles */
-  --fs-2xl:clamp(1.375rem,1.15rem + .95vw,1.5rem);   /* 22 → 24 */
-  --fs-3xl:clamp(1.5rem,1.16rem + 1.45vw,1.75rem);   /* 24 → 28 */
-  --fs-4xl:clamp(1.75rem,1.25rem + 2.1vw,2.125rem);  /* 28 → 34 */
-  --fs-5xl:clamp(2.125rem,1.4rem + 3.1vw,2.75rem);   /* 34 → 44 */
-  --fs-hero:clamp(2.5rem,1.5rem + 4.4vw,4rem);       /* 40 → 64 display */
+  /* Display steps are anchored at the PHONE end, not the desktop end. The
+     readability problem this scale exists to fix was in the small text; a 27px
+     headline on a 390px screen was never hard to read, and lifting it to 41px
+     just made the hero wrap to three lines and swallow the fold. So these floors
+     stay close to what the old per-element clamps produced on a phone, and the
+     growth happens across the viewport instead. */
+  --fs-2xl:clamp(1.25rem,1.05rem + .55vw,1.5rem);     /* 20 → 24 */
+  --fs-3xl:clamp(1.375rem,1.05rem + 1.1vw,1.75rem);   /* 22 → 28 */
+  --fs-4xl:clamp(1.5rem,1.05rem + 1.6vw,2.125rem);    /* 24 → 34 */
+  --fs-5xl:clamp(1.6875rem,1.05rem + 2.4vw,2.75rem);  /* 27 → 44 */
+  --fs-hero:clamp(1.875rem,1rem + 3.6vw,3.875rem);    /* 30 → 62 display */
+
+  /* Note: a glyph centred in a fixed-px box (avatar initials, icon placeholders)
+     is sized as a fraction of that box in px, NOT from this scale — a clamp
+     there shrinks the mark away from a circle whose size never moved. */
 
   /* Line height. Long measures need air; a single-line chip or a numeral in a
      badge needs none, or it inflates its own box. */

@@ -151,7 +151,7 @@
 .cmiIcon{
   width:82px;height:82px;border-radius:50%;overflow:hidden;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-size:var(--fs-5xl);line-height:var(--lh-flat);
+  font-size:38px;line-height:var(--lh-flat);
   background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 55%,#60a5fa 100%);
   color:#fff;font-family:var(--fd);font-weight:800;
   border:1px solid var(--bdrh);
@@ -234,7 +234,7 @@
   width:62px;height:62px;border-radius:50%;flex-shrink:0;overflow:hidden;
   display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 55%,#60a5fa 100%);
-  color:#fff;font-family:var(--fd);font-weight:800;font-size:var(--fs-3xl);
+  color:#fff;font-family:var(--fd);font-weight:800;font-size:24px;
   border:1px solid var(--bdrh);
 }
 .cmiIconPickMeta{display:flex;flex-wrap:wrap;gap:var(--sp-3);min-width:0;flex:1;}
@@ -472,7 +472,7 @@
 .cmCardIcon{
   width:46px;height:46px;border-radius:50%;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-size:var(--fs-3xl);line-height:var(--lh-flat);overflow:hidden;
+  font-size:22px;line-height:var(--lh-flat);overflow:hidden;
   filter:drop-shadow(0 2px 6px rgba(0,0,0,.28));
 }
 .cmCardName{font-family:var(--fb);font-size:var(--fs-lg);font-weight:700;color:var(--tx);display:flex;align-items:center;gap:var(--sp-3);flex-wrap:wrap;}
@@ -653,7 +653,7 @@ html[data-theme="offwhite"] #cmChatPanel{--cmAmberInk:#9A6A08;}
 .cmFriendAvatar{
   width:46px;height:46px;border-radius:50%;flex-shrink:0;
   overflow:hidden;display:flex;align-items:center;justify-content:center;
-  font-size:var(--fs-3xl);
+  font-size:22px;
 }
 .cmFriendName{font-family:var(--fb);font-size:var(--fs-lg);font-weight:700;display:flex;align-items:center;gap:var(--sp-3);}
 .cmFriendStatus{font-family:var(--fm);font-size:var(--fs-2xs);letter-spacing:var(--ls-wide);display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-1);}

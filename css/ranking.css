@@ -231,7 +231,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--fd);
-  font-size: var(--fs-2xl);
+  font-size: 21px;
   font-weight: 700;
   color: var(--ps);
   flex-shrink: 0;

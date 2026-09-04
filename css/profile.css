@@ -512,7 +512,7 @@ a.pfMenuItem{text-decoration:none;}
   width:88px;height:88px;border-radius:50%;position:relative;overflow:hidden;
   display:flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,#3B82F6,#1E293B);
-  color:#fff;font-family:var(--fd);font-size:var(--fs-4xl);font-weight:700;
+  color:#fff;font-family:var(--fd);font-size:32px;font-weight:700;
   border:4px solid var(--vbg);box-shadow:0 4px 16px rgba(0,0,0,.4);
 }
 .pfEditAvatarBtn{position:absolute;bottom:-2px;right:-2px;width:28px;height:28px;}

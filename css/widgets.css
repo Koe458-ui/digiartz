@@ -480,7 +480,7 @@ html.thmFade #themePage{
   width:44px;height:44px;padding:0;
   display:flex;align-items:center;justify-content:center;
   border:none;border-radius:12px;cursor:pointer;background:none;
-  font-size:var(--fs-2xl);line-height:var(--lh-flat);
+  font-size:20px;line-height:var(--lh-flat);
   color:rgba(255,255,255,.88);
   text-shadow:0 1px 4px rgba(0,0,0,.75);
   transition:color .18s,transform .15s;
@@ -499,7 +499,7 @@ html.thmFade #themePage{
 }
 .albNewIco{
   width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:var(--fs-2xl);line-height:var(--lh-flat);color:var(--pb);
+  font-size:22px;line-height:var(--lh-flat);color:var(--pb);
   border:1px solid color-mix(in srgb,var(--tc) 26%,transparent);
 }
 .albNewLbl{font-family:var(--fm);font-size:var(--fs-3xs);letter-spacing:var(--ls-widest);color:var(--txd);}

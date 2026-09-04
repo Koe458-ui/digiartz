@@ -645,7 +645,7 @@ html[data-theme="offwhite"]{
 .vwAv{
   width:54px;height:54px;border-radius:50%;flex:0 0 auto;cursor:pointer;
   background:linear-gradient(135deg,var(--pg),var(--pgd));
-  color:var(--text-on-accent);font-family:var(--fd);font-weight:700;font-size:var(--fs-2xl);
+  color:var(--text-on-accent);font-family:var(--fd);font-weight:700;font-size:19px;
   display:flex;align-items:center;justify-content:center;overflow:hidden;
 }
 .vwWho{flex:1 1 auto;min-width:0;cursor:pointer;}

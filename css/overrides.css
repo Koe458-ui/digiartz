@@ -96,7 +96,7 @@
     margin:.4rem 0 clamp(1.8rem,2.6vw,2.4rem);
     gap:var(--sp-6);
   }
-  .hpList li{ font-size:var(--fs-xl); line-height:var(--lh-normal); }
+  .hpList li{ font-size:var(--fs-lg); line-height:var(--lh-normal); }
   .hpCta{ grid-column:2; grid-row:2; justify-self:start; }
 }
 

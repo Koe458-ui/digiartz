@@ -36,7 +36,7 @@
 .hpHead em{font-style:normal;color:var(--brand-red);}
 
 .hpList{list-style:none;margin:0 0 clamp(1.2rem,3.5vw,2rem);padding:0;display:flex;flex-direction:column;gap:clamp(.5rem,1.8vw,.7rem);}
-.hpList li{display:flex;align-items:flex-start;gap:var(--sp-4);font-family:var(--fb);font-size:var(--fs-lg);line-height:var(--lh-normal);color:var(--txd);}
+.hpList li{display:flex;align-items:flex-start;gap:var(--sp-4);font-family:var(--fb);font-size:var(--fs-md);line-height:var(--lh-normal);color:var(--txd);}
 .hpTick{
   flex-shrink:0;width:20px;height:20px;margin-top:var(--sp-1);border-radius:50%;
   background:color-mix(in srgb,var(--pg) 18%,transparent);
@@ -45,10 +45,13 @@
 .hpTick svg{width:11px;height:11px;stroke:var(--pg);fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
 
 .hpCta{
-  display:inline-flex;align-items:center;gap:var(--sp-3);cursor:pointer;
-  border:0;border-radius:999px;padding:var(--sp-6) var(--sp-7);
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--sp-3);cursor:pointer;
+  /* the 46px floor only existed in the >=1280 block, so touch sizing was left to
+     padding alone on the devices that actually need it */
+  min-height:46px;
+  border:0;border-radius:999px;padding:var(--sp-5) var(--sp-7);
   background:var(--pg);color:var(--text-on-accent);
-  font-family:var(--fd);font-size:var(--fs-lg);font-weight:700;
+  font-family:var(--fd);font-size:var(--fs-md);font-weight:700;
   box-shadow:0 8px 22px color-mix(in srgb,var(--pg) 32%,transparent);
   transition:filter .2s;
 }

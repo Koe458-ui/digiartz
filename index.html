@@ -128,7 +128,7 @@
   })();
   </script>
   <link rel="stylesheet" href="/css/base.css?v=41">
-  <link rel="stylesheet" href="/css/hero.css?v=141">
+  <link rel="stylesheet" href="/css/hero.css?v=142">
   <link rel="stylesheet" href="/css/viewer.css?v=52">
   <link rel="stylesheet" href="/css/community.css?v=40">
   <link rel="stylesheet" href="/css/connect.css?v=16">
@@ -139,7 +139,7 @@
   <link rel="stylesheet" href="/css/panels.css?v=33">
   <link rel="stylesheet" href="/css/upload.css?v=26">
   <link rel="stylesheet" href="/css/widgets.css?v=33">
-  <link rel="stylesheet" href="/css/overrides.css?v=57">
+  <link rel="stylesheet" href="/css/overrides.css?v=58">
   <link rel="stylesheet" href="/css/select.css?v=5">
  </head>
  <body>
@@ -385,25 +385,29 @@
         </button>
       </div>
     </div>
-    <div class="ftRail" id="ftRail" role="tablist" aria-label="Feed boards">
-      <button type="button" class="ftTab" id="ftTab-following" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="following">
-        <span class="ftLbl">Following</span>
-      </button>
-      <button type="button" class="ftTab on" id="ftTab-trending" role="tab" aria-selected="true" aria-controls="awGrid" data-feed="trending">
-        <span class="ftLbl">Trending</span>
-      </button>
-      <button type="button" class="ftTab" id="ftTab-new" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="new">
-        <span class="ftLbl">New arrival</span>
-      </button>
-      <button type="button" class="ftTab" id="ftTab-weekly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="weekly">
-        <span class="ftLbl">Weekly hits</span>
-      </button>
-      <button type="button" class="ftTab" id="ftTab-monthly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="monthly">
-        <span class="ftLbl">Monthly hits</span>
-      </button>
-      <button type="button" class="ftTab" id="ftTab-artists" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="artists">
-        <span class="ftLbl">Artists</span>
-      </button>
+    <div class="ftWrap" id="ftWrap">
+      <button type="button" class="ftNav ftPrev" data-ftnav="-1" aria-label="Scroll boards left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 19-7-7 7-7"/></svg></button>
+      <div class="ftRail" id="ftRail" role="tablist" aria-label="Feed boards">
+        <button type="button" class="ftTab" id="ftTab-following" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="following">
+          <span class="ftLbl">Following</span>
+        </button>
+        <button type="button" class="ftTab on" id="ftTab-trending" role="tab" aria-selected="true" aria-controls="awGrid" data-feed="trending">
+          <span class="ftLbl">Trending</span>
+        </button>
+        <button type="button" class="ftTab" id="ftTab-new" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="new">
+          <span class="ftLbl">New arrival</span>
+        </button>
+        <button type="button" class="ftTab" id="ftTab-weekly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="weekly">
+          <span class="ftLbl">Weekly hits</span>
+        </button>
+        <button type="button" class="ftTab" id="ftTab-monthly" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="monthly">
+          <span class="ftLbl">Monthly hits</span>
+        </button>
+        <button type="button" class="ftTab" id="ftTab-artists" role="tab" aria-selected="false" aria-controls="awGrid" data-feed="artists">
+          <span class="ftLbl">Artists</span>
+        </button>
+      </div>
+      <button type="button" class="ftNav ftNext" data-ftnav="1" aria-label="Scroll boards right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
     </div>
     </div>
     <div class="awGrid" id="hsResults" role="region" aria-label="Search results" hidden></div>
@@ -2016,7 +2020,7 @@
   <script defer src="/js/mywork.js?v=30"></script>
   <script defer src="/js/startup.js?v=12"></script>
   <script defer src="/js/search.js?v=26"></script>
-  <script defer src="/js/feed.js?v=13"></script>
+  <script defer src="/js/feed.js?v=14"></script>
   <script defer src="/js/herosearch.js?v=8"></script>
 
  <div id="rippleHost"></div>

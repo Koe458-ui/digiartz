@@ -249,12 +249,41 @@
     to = Math.max(0, Math.min(to, rail.scrollWidth - rail.clientWidth));
     var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
     if(rail.scrollTo) rail.scrollTo({ left: to, behavior: still ? 'auto' : 'smooth' });
-    else rail.scrollLeft = to;
+    else { rail.scrollLeft = to; ftEnds(rail); }
+  }
+
+  // The rail scrolls on every screen, so the arrows that scroll it are on every
+  // screen too: enabled while there is room to travel that way, dimmed at the end.
+  function ftEnds(rail){
+    var wrap = rail.parentNode;
+    var prev = wrap.querySelector('.ftPrev');
+    var next = wrap.querySelector('.ftNext');
+    var max  = rail.scrollWidth - rail.clientWidth;
+    if(prev) prev.disabled = rail.scrollLeft <= 1;
+    if(next) next.disabled = rail.scrollLeft >= max - 1;
   }
 
   (function(){
     var rail = document.getElementById('ftRail');
     if(!rail) return;
+    var wrap = rail.parentNode;
+    var queued = false;
+    function sync(){
+      if(queued) return;
+      queued = true;
+      requestAnimationFrame(function(){ queued = false; ftEnds(rail); });
+    }
+    rail.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync);
+    if(window.ResizeObserver) new ResizeObserver(sync).observe(rail);
+    wrap.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('[data-ftnav]') : null;
+      if(!b || b.disabled) return;
+      var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+      var by = rail.clientWidth * 0.8 * (+b.getAttribute('data-ftnav') < 0 ? -1 : 1);
+      if(rail.scrollBy) rail.scrollBy({ left: by, behavior: still ? 'auto' : 'smooth' });
+      else rail.scrollLeft += by;
+    });
     rail.addEventListener('click', function(e){
       var btn = e.target.closest ? e.target.closest('.ftTab') : null;
       if(btn) ftSelect(btn.getAttribute('data-feed'));
@@ -274,6 +303,7 @@
     for(var i = 0; i < tabs.length; i++){
       tabs[i].tabIndex = tabs[i].classList.contains('on') ? 0 : -1;
     }
+    ftEnds(rail);
   })();
 
   // Following is the one tab whose contents can change without the gallery

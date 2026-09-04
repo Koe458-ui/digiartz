@@ -312,7 +312,7 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 
 .dzIcon:focus-visible,.dzMenuItem:focus-visible,.dzRow:focus-visible,
 .lmClose:focus-visible,.fgTopBtn:focus-visible,.fgCatChip:focus-visible,
-.fgCatNav:focus-visible,.ftTab:focus-visible,.atCard:focus-visible,
+.fgCatNav:focus-visible,.ftTab:focus-visible,.ftNav:focus-visible,.atCard:focus-visible,
 .dzWlGuideMail:focus-visible,.dzClInfoBtn:focus-visible,
 .pfTopBtn:focus-visible,.pfActBtn:focus-visible,.pfSrchChip:focus-visible,
 .pfMenuItem:focus-visible,.loConfirmBtn:focus-visible,
@@ -439,7 +439,7 @@ input[type=range].cropZoom::-moz-range-thumb{width:22px;height:22px;}
 
 @media (forced-colors:active){
   .dzIcon,.fgTopBtn,.subPgX,.cmBack,.fltPX,.upPopX,
-  .ftTab,.fgCatChip,.pfSrchChip{
+  .ftTab,.ftNav,.fgCatChip,.pfSrchChip{
     border:1px solid ButtonBorder;
     forced-color-adjust:none;
     background:ButtonFace;color:ButtonText;

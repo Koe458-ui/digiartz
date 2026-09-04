@@ -50,7 +50,8 @@
    outside the top bar that face appears. It needs the tracking back at zero: the
    headline's -.035em is drawn for a grotesque and jams a joined script. */
 .hpHead em,
-.fgHeadLead .fgHi{
+.fgHeadLead .fgHi,
+.srchHead .fgHi{
   font-style:normal;color:var(--brand-red);
   font-family:var(--fsig);font-weight:400;
   letter-spacing:0;

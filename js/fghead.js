@@ -273,6 +273,9 @@
     ends(rail);
   }
 
+  // The search page builds a rail of the same chips, so it takes the same
+  // watcher rather than growing a second copy of the arrow and drag logic.
+  window.dzRailWatch       = railWatch;
   window.fgHeadBuild       = fgHeadBuild;
   window.fgHeadSearch      = fgHeadSearch;
   window.fgHeadSearchClear = fgHeadSearchClear;

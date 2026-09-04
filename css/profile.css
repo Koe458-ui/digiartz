@@ -310,6 +310,45 @@ html[data-theme="offwhite"] .pfBrand--youtube{--brand:#D40000;}
   -webkit-tap-highlight-color:transparent;
 }
 .pfSrchChip.on{background:var(--pdim);border-color:var(--pg);color:var(--tx);}
+/* The gallery search page opens on a question rather than a bare field: a
+   small head in the section-head pattern, the sentence under it, then the
+   field, then one rail of everything you could narrow to. Small on purpose —
+   the field is what the page is for, and a section-sized headline would push
+   it under the fold on a phone. */
+.srchLead{
+  padding:clamp(1.2rem,4vw,2.2rem) var(--pfPad) 0;
+  text-align:center;
+}
+.srchHead{
+  margin:0;
+  font-family:var(--fd);font-weight:800;
+  font-size:clamp(1.75rem,1.35rem + 1.9vw,2.75rem);
+  line-height:var(--lh-tight);letter-spacing:var(--ls-tighter);
+  color:var(--tx);
+  text-wrap:balance;
+}
+.srchSub{
+  margin:var(--sp-4) auto 0;max-width:36ch;
+  font-family:var(--fb);font-size:var(--fs-md);
+  line-height:var(--lh-normal);color:var(--txd);
+  text-wrap:pretty;
+}
+.srchLead .tgSearch{
+  width:min(100%,34rem);
+  margin:clamp(1rem,3vw,1.5rem) auto 0;
+}
+/* .fgCatWrap carries no padding of its own — under a section head the .fgHead
+   around it already pads to the shell. There is no such wrapper here, so this
+   rail pads itself, and the arrows pin to the same inset. */
+.fgCatWrap.srchRail{
+  --ftPad:var(--pfPad);
+  padding:0 var(--ftPad);
+  margin-top:clamp(.6rem,2vw,1rem);
+}
+/* The script word sits mid-sentence here rather than at the end of the line,
+   and its exit stroke overhangs the glyph box, so the next word needs the gap
+   given back. */
+.srchHead .fgHi{margin-right:.14em;}
 .pfSrchBdy{padding:0 0 var(--sp-8);}
 .pfSrchNote{
   padding:var(--sp-8) var(--pfPad);text-align:center;

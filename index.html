@@ -128,12 +128,12 @@
   })();
   </script>
   <link rel="stylesheet" href="/css/base.css?v=44">
-  <link rel="stylesheet" href="/css/hero.css?v=148">
+  <link rel="stylesheet" href="/css/hero.css?v=149">
   <link rel="stylesheet" href="/css/viewer.css?v=52">
   <link rel="stylesheet" href="/css/community.css?v=40">
   <link rel="stylesheet" href="/css/connect.css?v=16">
   <link rel="stylesheet" href="/css/ranking.css?v=18">
-  <link rel="stylesheet" href="/css/profile.css?v=39">
+  <link rel="stylesheet" href="/css/profile.css?v=40">
   <link rel="stylesheet" href="/css/admin.css?v=13">
   <link rel="stylesheet" href="/css/auth.css?v=9">
   <link rel="stylesheet" href="/css/panels.css?v=34">
@@ -2008,7 +2008,7 @@
   <script defer src="/js/app-core.js?v=58"></script>
   <script defer src="/js/protect.js?v=4"></script>
   <script defer src="/js/gallery.js?v=111"></script>
-  <script defer src="/js/fghead.js?v=9"></script>
+  <script defer src="/js/fghead.js?v=10"></script>
   <script defer src="/js/auth.js?v=31"></script>
   <script defer src="/js/follow.js?v=2"></script>
   <script defer src="/js/profile.js?v=28"></script>
@@ -2019,7 +2019,7 @@
   <script defer src="/js/pfedit.js?v=25"></script>
   <script defer src="/js/mywork.js?v=30"></script>
   <script defer src="/js/startup.js?v=12"></script>
-  <script defer src="/js/search.js?v=26"></script>
+  <script defer src="/js/search.js?v=27"></script>
   <script defer src="/js/feed.js?v=16"></script>
   <script defer src="/js/herosearch.js?v=8"></script>
 
@@ -2056,11 +2056,15 @@
   <div class="lgBdy" id="lgBody"></div>
 </div>
 
-<div id="fgSearchPage" role="dialog" aria-modal="true" aria-label="Search the gallery">
+<div id="fgSearchPage" role="dialog" aria-modal="true" aria-labelledby="fgSrchHead">
   <div class="pfSrchHdr">
     <button class="pfTopBtn" type="button" onclick="closeFgSearch()" aria-label="Close search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 19 8 12l7-7"/></svg>
     </button>
+  </div>
+  <div class="srchLead">
+    <h2 class="srchHead" id="fgSrchHead">What are you <em class="fgHi">looking</em> for?</h2>
+    <p class="srchSub">Search artwork, artists, blogs, and more.</p>
     <div class="tgSearch" id="fgSrchWrap">
       <svg class="tgSearchIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input type="search" class="tgSearchIn" id="fgSrchIn" placeholder="Search artworks, artists, listings…"
@@ -2069,13 +2073,37 @@
       <button type="button" class="tgSearchClear" onclick="fgSearchClear()" aria-label="Clear search">✕</button>
     </div>
   </div>
-  <div class="pfSrchScopes" id="fgSrchScopes" role="tablist" aria-label="Limit search to a section">
-    <button class="pfSrchChip on" role="tab" aria-selected="true"  type="button" onclick="fgSearchScope('all')">All</button>
-    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('artwork')">Artworks</button>
-    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('artist')">Artists</button>
-    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('marketplace')">Market</button>
-    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('blog')">Blog</button>
-    <button class="pfSrchChip"    role="tab" aria-selected="false" type="button" onclick="fgSearchScope('resources')">Resources</button>
+  <div class="fgCatWrap srchRail">
+    <button type="button" class="fgCatNav fgCatPrev" data-fgnav="-1" aria-label="Scroll filters left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 19-7-7 7-7"/></svg></button>
+    <div class="fgCatRail" id="fgSrchScopes" role="tablist" aria-label="Limit search to a section">
+      <button class="fgCatChip on" role="tab" aria-selected="true" type="button" onclick="fgSearchScope('all')">All</button>
+      <button class="fgCatChip" role="tab" aria-selected="false" type="button" onclick="fgSearchScope('artwork')">Artworks</button>
+      <button class="fgCatChip" role="tab" aria-selected="false" type="button" onclick="fgSearchScope('artist')">Artists</button>
+      <button class="fgCatChip" role="tab" aria-selected="false" type="button" onclick="fgSearchScope('marketplace')">Market</button>
+      <button class="fgCatChip" role="tab" aria-selected="false" type="button" onclick="fgSearchScope('blog')">Blog</button>
+      <button class="fgCatChip" role="tab" aria-selected="false" type="button" onclick="fgSearchScope('resources')">Resources</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="artwork" data-q="Characters">Characters</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="artwork" data-q="Anime">Anime</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="artwork" data-q="Sketches">Sketches</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="artwork" data-q="Landscapes">Landscapes</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="artwork" data-q="Concept art">Concept art</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="marketplace" data-q="Prints">Prints</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="marketplace" data-q="Brushes">Brushes</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="marketplace" data-q="UI kits">UI kits</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="marketplace" data-q="3D models">3D models</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="marketplace" data-q="Commissions">Commissions</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="blog" data-q="Tutorials">Tutorials</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="blog" data-q="Interviews">Interviews</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="blog" data-q="Reviews">Reviews</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="blog" data-q="Events">Events</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="blog" data-q="Challenges">Challenges</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="resources" data-q="Textures">Textures</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="resources" data-q="Fonts">Fonts</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="resources" data-q="PSD files">PSD files</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="resources" data-q="Mockups">Mockups</button>
+      <button class="fgCatChip srchSug" type="button" data-scope="resources" data-q="Colour palettes">Colour palettes</button>
+    </div>
+    <button type="button" class="fgCatNav fgCatNext" data-fgnav="1" aria-label="Scroll filters right"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
   </div>
   <div class="pfSrchBdy">
     <div class="pfSrchNote" id="fgSrchNote">Type to search the gallery.</div>

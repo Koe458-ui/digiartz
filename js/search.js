@@ -37,6 +37,34 @@
   function fgSearchInput(v){ window.dzSearchUI.input(FG_SRCH_UI, v); }
   function fgSearchScope(scope){ window.dzSearchUI.scope(FG_SRCH_UI, scope); }
 
+  // After the five scopes the rail carries a handful of categories from each
+  // section. They are not a seventh scope — they fill the field and run, which
+  // is what a reader tapping "Sketches" on a search page is asking for. The
+  // scope chips keep their place at the head of the rail, so paintScopes, which
+  // walks the rail by position, still lands on the right ones.
+  (function(){
+    var rail = document.getElementById('fgSrchScopes');
+    if(!rail) return;
+    if(typeof window.dzRailWatch === 'function') window.dzRailWatch(rail);
+    rail.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('[data-q]') : null;
+      if(!b) return;
+      var q  = b.getAttribute('data-q') || '';
+      var sc = b.getAttribute('data-scope');
+      // Each one belongs to a section, so it takes the reader there as well as
+      // filling the field — otherwise "Sketches" tapped under the Artists scope
+      // searches artists for it and finds nothing. Set directly rather than
+      // through scope(), which would run the old query on the way past.
+      if(sc && FG_SRCH_UI.st.scope !== sc){
+        FG_SRCH_UI.st.scope = sc;
+        window.dzSearchUI.paintScopes(FG_SRCH_UI);
+      }
+      var input = document.getElementById('fgSrchIn');
+      if(input){ input.value = q; try{ input.focus(); }catch(err){} }
+      window.dzSearchUI.input(FG_SRCH_UI, q);
+    });
+  })();
+
   function fgSearchArtworks(q){
     var all = (typeof window.galleryImages === 'function') ? window.galleryImages() : null;
     if(!all) return [];

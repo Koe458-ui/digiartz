@@ -32,7 +32,7 @@ const SHELL_URLS = [
   '/apple-touch-icon.png?v=4',
   '/icon-192.png?v=4',
 
-  '/css/base.css?v=43',
+  '/css/base.css?v=44',
   '/css/hero.css?v=147',
   '/css/viewer.css?v=52',
   '/css/community.css?v=40',
@@ -44,7 +44,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=34',
   '/css/upload.css?v=26',
   '/css/widgets.css?v=33',
-  '/css/overrides.css?v=61',
+  '/css/overrides.css?v=62',
   '/css/select.css?v=5',
   '/css/analytics.css?v=17',
 

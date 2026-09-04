@@ -29,6 +29,10 @@
      work rather than a label for it. Both kept off --fd so neither can leak
      into headings. */
   --fw:'Syne','Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  /* Every panel header. Inter is drawn for exactly this — short labels at UI
+     sizes, read at a glance — and its even widths let one size sit true in
+     bars of different heights. Kept off --fd so the body copy is unaffected. */
+  --fn:'Inter','Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --fsig:'Kaushan Script','Syne','Open Sans',-apple-system,BlinkMacSystemFont,cursive;
   /* Kaushan ships one weight and it is lighter than the 800-weight grotesque it
      replaced, so everywhere the script appears it is inked by a stroke rather

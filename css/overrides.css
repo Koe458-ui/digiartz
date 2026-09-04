@@ -182,22 +182,27 @@
 .secT,
 .subPgTitle{ color:var(--pg); }
 
-/* Every panel's header wears the signature — the same brush face as the
-   wordmark. It has to come with two other changes or it is unreadable: the
-   tracking these titles carry is drawn for a grotesque and pulls a joined
-   script apart, and the titles are set in caps, which a script has no business
-   in. So the tracking goes to zero and the caps come down to sentence case.
-   Done here rather than in the markup because half these titles are written by
-   JS (FG_TITLE, the community header, album and legal names) and would each
-   need their own change to stay in step. Lives in overrides because the rules
-   it beats are spread across hero, panels and widgets. */
+/* Every panel header is one thing: Inter, one weight, one size, one colour,
+   sitting on one baseline. The script is the brand's, not the navigation's —
+   it stays on the wordmark and the hero headline and comes no further.
+
+   The caps these titles carry in the markup come down to sentence case here
+   rather than there, because half of them are written by JS (FG_TITLE, the
+   ranking board name, the legal document name) and would each need their own
+   change to stay in step.
+
+   Lives in overrides because the rules it beats are spread across hero,
+   panels and widgets. */
 .fgTopTitle,.pfTopTitle,.upTopTitle,
 #frdPage .subPgTitle,
 .subPgTitle{
-  font-family:var(--fsig);font-weight:400;
-  letter-spacing:0;
+  font-family:var(--fn);font-weight:600;
+  letter-spacing:-.01em;
   text-transform:lowercase;
-  -webkit-text-stroke:var(--sigInk) currentColor;
+  /* An explicit line-height is what makes the row align: the bars are flex
+     with align-items:center, so the title centres on its line box, and a box
+     left to the font's own metrics differs from bar to bar. */
+  line-height:1.25;
   /* ::first-letter needs a block box, and a span in a flex row is not one
      everywhere; inline-block makes it one without changing the row. */
   display:inline-block;
@@ -212,11 +217,15 @@
 /* One size and one colour for the lot. These titles used to be set at three
    sizes in three files — the panel bars at --fs-xl, the sub-pages at --fs-sm,
    Friends at its own — and in two colours, which read as a dimmer heading on
-   the sub-pages than on the panels. A script sits smaller on the line than the
-   grotesque it replaces, so the shared size is a step up from any of them. */
+   the sub-pages than on the panels. The size is its own clamp rather than a
+   step on the type scale: 18px on the narrowest phone up to 22px, so it holds
+   a 3.5rem bar at every width without a breakpoint of its own. */
 .fgTopTitle,.pfTopTitle,.upTopTitle,
 #frdPage .subPgTitle,
-.subPgTitle{font-size:var(--fs-2xl);color:var(--tx);}
+.subPgTitle{
+  font-size:clamp(1.125rem,1.02rem + .32vw,1.375rem);
+  color:var(--tx);
+}
 
 .subPgHeadline h2{ color:var(--upTitle,var(--pg)); }
 

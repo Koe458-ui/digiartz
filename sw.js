@@ -33,10 +33,10 @@ const SHELL_URLS = [
   '/icon-192.png?v=4',
 
   '/css/base.css?v=45',
-  '/css/hero.css?v=151',
+  '/css/hero.css?v=152',
   '/css/viewer.css?v=52',
   '/css/community.css?v=40',
-  '/css/connect.css?v=17',
+  '/css/connect.css?v=18',
   '/css/ranking.css?v=18',
   '/css/profile.css?v=41',
   '/css/admin.css?v=13',
@@ -44,7 +44,7 @@ const SHELL_URLS = [
   '/css/panels.css?v=34',
   '/css/upload.css?v=26',
   '/css/widgets.css?v=34',
-  '/css/overrides.css?v=64',
+  '/css/overrides.css?v=65',
   '/css/select.css?v=5',
   '/css/analytics.css?v=17',
 

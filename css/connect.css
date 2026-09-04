@@ -94,6 +94,9 @@ footer.siteFooter {
   margin: 0;
   display: flex;
   flex-direction: column;
+  /* Without this the links stretch to the column's width, and the underline —
+     which spans the link — runs the full column rather than the word. */
+  align-items: flex-start;
   gap: var(--sp-1);
 }
 
@@ -113,7 +116,6 @@ footer.siteFooter {
   position: relative;
   transition: color .22s ease;
   text-align: left;
-  line-height: var(--lh-snug);
 }
 .ftColLink::after {
   content: '';

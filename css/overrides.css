@@ -439,17 +439,18 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   .fgHeadFlt{width:44px;height:44px;}
 
   .dzLink,
-  .ftColLink,
   .pfSrchChip,
   .cmiSegBtn,
   .cmiMini,
   .albActBtn,
   .tgSearchIn{min-height:44px;}
 
-  /* min-height already guarantees the 44px target; the padding on top of it,
-     and the gap between one 44px row and the next, only bought dead space. */
-  .ftColLink{display:flex;align-items:center;}
-  .ftColList{gap:0;}
+  /* A 44px row for a 15px link is mostly empty, and six of them stacked read
+     as a gap-toothed list. The link is its own height now and takes its touch
+     area from an overlay instead — inset to exactly the row's pitch, so the
+     targets tile without overlapping each other. */
+  .ftColLink{display:inline-flex;align-items:center;}
+  .ftColLink::before{content:'';position:absolute;inset:-2px -10px;}
   /* the wordmark is the home link: de-leading it left the text 32px tall, so the
      hit area is restored explicitly rather than by padding it back out */
   .dzBrand{min-height:44px;align-items:center;}

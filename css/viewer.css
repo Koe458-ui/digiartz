@@ -791,6 +791,7 @@ html[data-theme="offwhite"]{
   }
 }
 
+/* One rule stops the sideways drag inside a dialog: overflow-x on the frame.
    And it is said on the frames and on what scrolls, and on nothing else.
    Every box between a finger and the scroller — the picture pane, the
    notes, the notes' own scroller — is left with no overflow of its own at

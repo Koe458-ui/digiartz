@@ -102,9 +102,15 @@
     if(!currentUser || String(art.user_id)!==String(currentUser.id)){ showToast('You can only delete your own artwork'); return; }
     if(!confirm('Delete this artwork? This cannot be undone.')) return;
     try{
-      if(art.storage_path) await s3Delete(BUCKET,art.storage_path);
+      // The row goes first. Taking the file out ahead of it meant a delete that
+      // the database refused left an artwork on the site with its picture gone,
+      // and no way back. A file left behind by a failed sweep is only a file.
       const{error}=await sb.from('artworks').delete().eq('id',id);
       if(error) throw error;
+      if(art.storage_path){
+        try{ await s3Delete(BUCKET,art.storage_path); }
+        catch(sweep){ console.warn('artwork file not removed:', (sweep && sweep.message) || sweep); }
+      }
       if(typeof window.dzArtworkChanged === 'function'){
         await window.dzArtworkChanged(id, { userId: art.user_id, images: [art.image_url] });
       }
@@ -808,7 +814,7 @@ function hideCommentThumbnail(){
     img.onload = function(){
       URL.revokeObjectURL(url);
       var side = Math.min(img.naturalWidth, img.naturalHeight);
-      if(side < 64){ showToast('That image is too small — 128×128 or larger'); return; }
+      if(side < 64){ showToast('That image is too small — 64×64 or larger'); return; }
       var sx = (img.naturalWidth  - side) / 2;
       var sy = (img.naturalHeight - side) / 2;
       var cv = document.createElement('canvas');
@@ -1294,6 +1300,8 @@ function hideCommentThumbnail(){
   var cpOffset = 0;
   var CP_INITIAL_LOAD = function(){ return 25; };
   var CP_LOAD_STEP = 25;
+  // whether the channel holds messages older than the ones fetched
+  var cpHasMore = false;
   var cpLoadingOlder = false;
   var cpPoll = null;
   var CP_POLL_MS = 5000;
@@ -1465,7 +1473,8 @@ function hideCommentThumbnail(){
 
     function cpTriggerRefresh(){
       if(_cpRefreshing) return;
-      if(cpOffset >= cpComments.length) return;
+      // more to reveal from what is loaded, or more still on the server
+      if(cpOffset >= cpComments.length && !cpHasMore) return;
       _cpRefreshing = true;
       var wrap = document.getElementById('cpRefreshWrap');
       if(wrap) wrap.classList.add('visible');
@@ -1572,13 +1581,11 @@ function hideCommentThumbnail(){
     if(!body) return;
     body.innerHTML = '';
 
-    var myArt    = (images || []).filter(function(a){ return a.user_id === currentUser.id; });
-    var myComics = (comics || []).filter(function(c){ return c.user_id === currentUser.id; });
-    var items = myArt.map(function(a){
-      return { url:a.image_url, name:a.name || 'Untitled' };
-    }).concat(myComics.map(function(c){
-      return { url:c.cover_image_url, name:(c.title || 'Untitled') + ' (Comic)' };
-    }));
+    // `comics` was a second list here and no longer exists anywhere on the page,
+    // so reading it threw and the picker never opened at all.
+    var items = (images || [])
+      .filter(function(a){ return a.user_id === currentUser.id; })
+      .map(function(a){ return { url:a.image_url, name:a.name || 'Untitled' }; });
 
     if(items.length === 0){
       if(empty) empty.style.display = 'flex';
@@ -1652,13 +1659,22 @@ function hideCommentThumbnail(){
         emptyEl.innerHTML = '<div class="cpEIco">◎</div><div>LOADING…</div>';
         emptyEl.style.display = 'flex';
       }
+      // Only as far back as the reader has actually scrolled, newest first and
+      // turned around. It used to ask for the whole channel, ascending and with
+      // no limit, on open and again on every five-second poll — so a busy room
+      // moved its entire history over the wire twelve times a minute, and once
+      // past the server's row cap the oldest page is what came back rather than
+      // the newest.
+      var want = Math.max(cpOffset, CP_INITIAL_LOAD()) + CP_LOAD_STEP;
       var result = await sb.from('comments')
         .select('*')
         .eq('channel', forChannel)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false })
+        .limit(want);
       if(result.error) throw result.error;
       if(cpCurrentChannel !== forChannel) return;
-      var rows = result.data || [];
+      var rows = (result.data || []).slice().reverse();
+      cpHasMore = (result.data || []).length >= want;
       cpComments = rows.map(function(row){
         var displayName = row.username || 'User';
         return {
@@ -1690,7 +1706,7 @@ function hideCommentThumbnail(){
       var cachedCp = cpSavedMessages(cpCurrentChannel);
       if(cachedCp && cachedCp.length){
         cpComments = cachedCp;
-        cpHasMore = false;
+        cpHasMore = false;   // a saved copy is all there is offline
         cpRender();
         showToast('Offline \u2014 showing saved messages');
         return;

@@ -16,6 +16,7 @@
       steps: { ratelimit:{state:'',detail:''}, duplicate:{state:'',detail:''}, ai:{state:'',detail:''}, moderation:{state:'',detail:''} },
       mod: { artwork:'', artworkSub:'', safety:'', safetySub:'', quality:'', qualitySub:'' },
       uploadedPaths: [],
+      landed: false,
       failReason: null,
       deferred: false
     };
@@ -233,6 +234,11 @@
 
       const{data:rows,error:de}=await sb.from('artworks').insert(artRow).select();
       if(de) throw de;
+      // The artwork is in the table now. Anything that fails after this — an
+      // album link, a media row — leaves a live artwork behind, so the sweep in
+      // the catch must not take its picture away with it. The list itself stays,
+      // because the media rows below are written from it.
+      job.landed = true;
 
       var _newRow = rows && rows[0];
       if(_newRow && job.albums && job.albums.length) await albAttach(_newRow.id, job.albums);
@@ -284,9 +290,11 @@
       }, 1600);
       showToast('\u201C'+(job.name||'Artwork')+'\u201D is live');
     }catch(err){
-      for(var d=0; d<job.uploadedPaths.length; d++){
-        try{ await s3Delete(BUCKET, job.uploadedPaths[d]); }
-        catch(e){ console.error('upq cleanup:', e.message); }
+      if(!job.landed){
+        for(var d=0; d<job.uploadedPaths.length; d++){
+          try{ await s3Delete(BUCKET, job.uploadedPaths[d]); }
+          catch(e){ console.error('upq cleanup:', e.message); }
+        }
       }
       job.stage='failed';
       if(err && err.upqCheckFail){

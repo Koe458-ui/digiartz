@@ -4,7 +4,11 @@ import * as resizeMod from "npm:@jsquash/resize@2.1.0";
 
 const resize: any = (resizeMod as any).default ?? resizeMod;
 
-const SECRET = "b6aa13661e183d9c0964e796460dce0217956b254c30e163";
+// The gate on this endpoint is a shared secret, so it is read from the
+// function's environment rather than written here: a literal in the repository
+// is known to everyone who can read the repository, which is not a secret.
+// With BACKFILL_SECRET unset the endpoint answers nothing at all.
+const SECRET = Deno.env.get("BACKFILL_SECRET") ?? "";
 
 const WIDTH = 600;
 const QUALITY = 52;
@@ -17,6 +21,7 @@ const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { "content-type": "application/json" } });
 
 function secretOk(given: string): boolean {
+  if (!SECRET) return false;
   const a = new TextEncoder().encode(given);
   const b = new TextEncoder().encode(SECRET);
   if (a.length !== b.length) return false;
@@ -45,6 +50,7 @@ async function walk(sb: any, bucket: string, prefix = ""): Promise<string[]> {
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
+  if (!SECRET) return json({ error: "backfill secret not configured" }, 503);
   if (!secretOk(req.headers.get("x-backfill-secret") ?? "")) {
     return json({ error: "forbidden" }, 403);
   }

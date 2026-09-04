@@ -315,7 +315,6 @@
 
   window.faqToggle = function(btn){
     var item   = btn.closest('.faqItem');
-    var panel  = document.getElementById(btn.getAttribute('aria-controls'));
     var icon   = btn.querySelector('.faqIcon');
     var isOpen = item.classList.contains('faq--open');
 
@@ -324,7 +323,6 @@
       section.querySelectorAll('.faqItem.faq--open').forEach(function(openItem){
         if(openItem === item) return;
         var ob  = openItem.querySelector('.faqQ');
-        var op  = openItem.querySelector('.faqA');
         var oi  = openItem.querySelector('.faqIcon');
         openItem.classList.remove('faq--open');
         if(ob) ob.setAttribute('aria-expanded','false');

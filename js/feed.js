@@ -61,9 +61,14 @@
       return p === undefined || (p && p.follower_count === undefined);
     });
     if(!missing.length || !sb){ done(); return; }
+    // A query that fails resolves with data:null rather than rejecting, so the
+    // error is read off the reply. Marking every id null there would cache
+    // "no such profile" for artists that exist, and the cards would stay blank
+    // for the rest of the session.
     sb.from('profiles').select(window.DZ_ARTIST_COLS ||
       'id,username,display_name,avatar_url,banner_url,bio,follower_count').in('id', missing)
       .then(function(res){
+        if(res && res.error){ done(); return; }
         ((res && res.data) || []).forEach(function(p){ if(p && p.id) dzArtistCache[p.id] = p; });
         missing.forEach(function(u){ if(dzArtistCache[u] === undefined) dzArtistCache[u] = null; });
         done();
@@ -115,9 +120,16 @@
     var missing = ids.filter(function(u){ return u && dzArtStats[u] === undefined; });
     if(!missing.length || !sb){ done(); return; }
     missing.forEach(function(u){ dzArtStats[u] = null; });
+    var giveUp = function(){
+      missing.forEach(function(u){ if(dzArtStats[u] === null) delete dzArtStats[u]; });
+      done();
+    };
     sb.from('artworks').select('user_id,like_count')
       .in('user_id', missing).eq('status', 'approved').eq('visibility', 'published')
       .then(function(res){
+        // data:null with an error is how a failed query arrives; taking it as an
+        // empty answer would pin every one of these artists at 0 for the session
+        if(res && res.error){ giveUp(); return; }
         missing.forEach(function(u){ dzArtStats[u] = { art: 0, likes: 0 }; });
         ((res && res.data) || []).forEach(function(r){
           var st = r && dzArtStats[r.user_id];
@@ -126,10 +138,7 @@
           st.likes += (+r.like_count || 0);
         });
         done();
-      }, function(){
-        missing.forEach(function(u){ if(dzArtStats[u] === null) delete dzArtStats[u]; });
-        done();
-      });
+      }, giveUp);
   }
 
   function feedArtistTally(uid){
@@ -375,7 +384,10 @@
       var item = awRList[i], uid = null;
       if(artists){ frag.appendChild(buildArtistCard(item)); uid = item; }
       else frag.appendChild(buildAwCard(item, i < 4));
-      if(uid && dzArtistCache[uid] === undefined && wanted.indexOf(uid) === -1) wanted.push(uid);
+      // every artist on the board is asked for, cached profile or not: the
+      // totals are a separate fetch, and a profile warmed by a hover elsewhere
+      // would otherwise keep the card on the in-memory tally for good
+      if(uid && wanted.indexOf(uid) === -1) wanted.push(uid);
     }
     awRShown = end;
     if(awSent && awSent.el.parentNode === grid) grid.insertBefore(frag, awSent.el);

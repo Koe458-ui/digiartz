@@ -174,6 +174,10 @@
     try{
       let{data,error}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('username',username).maybeSingle();
       if(error) throw error;
+      // The edge resolves /profile/<name> case-insensitively, so a link that
+      // differs only in case renders a page here; without the same second look
+      // the panel opened and then closed itself with "Profile not found".
+      if(!data) data = await pfFindByName(username);
       if(!data && currentUser){
         var metaName = currentUser.user_metadata && currentUser.user_metadata.username;
         if(metaName && metaName.toLowerCase() === String(username).toLowerCase()){
@@ -191,6 +195,23 @@
       console.error('Error: '+e.message);
       if(!cachedRow && mySeq === pfOpenSeq) closeProfilePage();
     }
+  }
+
+  // % and _ are wildcards to LIKE, and a username may hold an underscore, so
+  // the name is escaped before it is used as a pattern and the row that comes
+  // back has to be the same name — not merely one the pattern matched.
+  async function pfFindByName(username){
+    var raw = String(username || '');
+    if(!raw || !/^[\w.\-]{1,40}$/.test(raw)) return null;
+    var pattern = raw.replace(/[\\%_]/g, '\\$&');
+    try{
+      const{data,error} = await sb.from('profiles').select(PF_PROFILE_COLS)
+        .ilike('username', pattern).limit(1);
+      if(error) return null;
+      var row = (data && data[0]) || null;
+      if(!row || String(row.username||'').toLowerCase() !== raw.toLowerCase()) return null;
+      return row;
+    }catch(e){ return null; }
   }
 
   function pfPaintTopBar(isOwner){
@@ -270,7 +291,7 @@
       pfRenderBio();
       pfRenderHeadBio();
       pfRenderConnect();
-      if(typeof pfPaintFollowLine === 'function') pfPaintFollowLine();
+      if(typeof pfPaintAudience === 'function') pfPaintAudience();
       pfResetTabRail();
       pfLoadTabRail();
       pfLoadStats();
@@ -395,11 +416,15 @@
   // the artist made, plus — for a visitor — a Likes or Bookmarks collection
   // they have chosen to make public. An owner reaches their own Likes and
   // Bookmarks from the menu, so an empty Albums tab is not their only way in.
+  //
+  // A visitor is counted the published rows only; the owner is counted what
+  // their own tabs render, drafts and hidden items included.
   async function pfSectionsWithContent(forId, isOwner){
     function count(q){
       return q.then(function(r){ return (r && !r.error && r.count) ? r.count : 0; },
                     function(){ return 0; });
     }
+    function pubOnly(q){ return isOwner ? q : q.eq('visibility', 'published'); }
     var art = sb.from('artworks').select('id', { count:'exact', head:true })
                 .eq('user_id', forId).eq('kind', ART_KIND_ART);
     if(!isOwner) art = art.eq('visibility', 'published');
@@ -414,12 +439,15 @@
           return (r && !r.error && Array.isArray(r.data))
             ? r.data.filter(function(a){ return a.is_public !== false; }).length : 0;
         }, function(){ return 0; }),
-      count(sb.from('resources').select('id', { count:'exact', head:true })
-              .eq('user_id', forId).eq('status', 'approved')),
-      count(sb.from('blog_posts').select('id', { count:'exact', head:true })
-              .eq('user_id', forId).eq('status', 'approved')),
-      count(sb.from('marketplace_items').select('id', { count:'exact', head:true })
-              .eq('user_id', forId).eq('status', 'approved')),
+      // the same question each tab asks: a draft is "kept, not listed" and a
+      // hidden item is reachable only by link, so neither belongs on a
+      // stranger's view of the portfolio nor in the count that raises its tab
+      count(pubOnly(sb.from('resources').select('id', { count:'exact', head:true })
+              .eq('user_id', forId).eq('status', 'approved'))),
+      count(pubOnly(sb.from('blog_posts').select('id', { count:'exact', head:true })
+              .eq('user_id', forId).eq('status', 'approved'))),
+      count(pubOnly(sb.from('marketplace_items').select('id', { count:'exact', head:true })
+              .eq('user_id', forId).eq('status', 'approved'))),
       isOwner ? Promise.resolve(false)
               : sb.from('profiles').select('likes_public,bookmarks_public')
                   .eq('id', forId).maybeSingle()
@@ -570,9 +598,15 @@
     if(empty) empty.style.display='none';
     host.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
     try{
-      const{data,error}=await sb.from(cfg.table)
+      // RLS hands a visitor every approved row whatever its visibility, so the
+      // draft and the hidden item have to be kept off a stranger's page here.
+      // The owner still sees their own, the way the artworks grid shows theirs.
+      var own = !!currentUser && String(currentUser.id) === forId;
+      var q = sb.from(cfg.table)
         .select(cfg.select())
-        .eq('user_id', pf.profile.id).eq('status','approved')
+        .eq('user_id', pf.profile.id).eq('status','approved');
+      if(!own) q = q.eq('visibility','published');
+      const{data,error}=await q
         .order('created_at',{ascending:false}).limit(60);
       if(error) throw error;
       if(!pfStillOn(forId)) return;

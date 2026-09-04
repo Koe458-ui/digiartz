@@ -178,8 +178,6 @@
   }
 }
 
-.subPgTitle{ color:var(--pg); }
-
 /* Every panel header is one thing: Inter, one weight, one size, one colour,
    sitting on one baseline. The script is the brand's, not the navigation's —
    it stays on the wordmark and the hero headline and comes no further.

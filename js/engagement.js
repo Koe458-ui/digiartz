@@ -53,13 +53,26 @@
     var m = /^\/artwork\/([^/]+)$/.exec(path || '');
     return m ? decodeURIComponent(m[1]) : null;
   }
-  var origPush = history.pushState.bind(history);
-  history.pushState = function (state, title, url) {
-    var out = origPush(state, title, url);
+  // Both writers count, not just pushState: the arrows inside the artwork
+  // modal move from one artwork to the next with replaceState, and those views
+  // went uncounted. registerView keeps its own six-hour map, so an address
+  // written twice is still one view.
+  function countAddress(url) {
     try {
       var id = idFromPath(typeof url === 'string' ? url : (url && url.pathname));
       if (id) registerView(id);
     } catch (e) {}
+  }
+  var origPush = history.pushState.bind(history);
+  history.pushState = function (state, title, url) {
+    var out = origPush(state, title, url);
+    countAddress(url);
+    return out;
+  };
+  var origReplace = history.replaceState.bind(history);
+  history.replaceState = function (state, title, url) {
+    var out = origReplace(state, title, url);
+    countAddress(url);
     return out;
   };
   document.addEventListener('DOMContentLoaded', function () {
@@ -85,10 +98,15 @@
       var l = await db().from('artwork_likes').select('artwork_id').eq('user_id', uid).limit(3000);
       var b = await db().from('artwork_bookmarks').select('artwork_id').eq('user_id', uid).limit(3000);
       if (!me() || String(me().id) !== String(uid)) return;
-      liked  = new Set((l.data || []).map(function (r) { return String(r.artwork_id); }));
-      marked = new Set((b.data || []).map(function (r) { return String(r.artwork_id); }));
+      // postgrest answers a failed read on the success side with data:null, so
+      // the error is read off the reply. A failure is not "you have liked
+      // nothing" — emptying the sets there would repaint every heart hollow.
+      if (l.error) throw l.error;
+      if (b.error) throw b.error;
+      liked  = new Set(l.data.map(function (r) { return String(r.artwork_id); }));
+      marked = new Set(b.data.map(function (r) { return String(r.artwork_id); }));
     } catch (e) {
-      liked.clear(); marked.clear();
+      // keep whatever is already known; clearSets() is what empties them
     }
     setsReady = true;
     paintSoon();

@@ -254,6 +254,9 @@
     var pr = await db().from('profiles')
       .select('id,username,avatar_url')
       .in('id', partners.map(function (p) { return p.id; }));
+    // a failed query resolves with data:null; without this the list would be
+    // cached with every name reduced to "Artist"
+    if (pr.error) throw pr.error;
     var byId = {};
     (pr.data || []).forEach(function (p) { byId[p.id] = p; });
     return { partners: partners, profiles: byId };
@@ -511,6 +514,17 @@
     }
   }
 
+  // a short, order-independent stamp for a set of ids, so a cache key can name
+  // the members of a list without carrying every uuid in it
+  function frIdsTag (ids) {
+    var h = 2166136261;
+    ids.slice().sort().join(',').split('').forEach(function (ch) {
+      h ^= ch.charCodeAt(0);
+      h = (h * 16777619) >>> 0;
+    });
+    return ids.length + '.' + h.toString(36);
+  }
+
   var frdLastFocus = null, frdSearchTimer = null;
   function frdStartChat (p) {
     closeFriendsPage();
@@ -556,7 +570,9 @@
       if (!allIds.length) { empty.style.display = ''; return; }
       var byId = {};
       var c = dmc();
-      var frpKey = c ? c.ukey('list', 'frprofiles', allIds.length) : null;
+      // keyed by who is in the list, not how many: swapping one friend for
+      // another kept the count the same and served the old names and faces
+      var frpKey = c ? c.ukey('list', 'frprofiles', frIdsTag(allIds)) : null;
       var frpLoad = async function () {
         var pr = await db().from('profiles')
           .select('id,username,avatar_url')

@@ -65,6 +65,16 @@
     });
   })();
 
+  // Every section query goes through here: postgrest-js resolves rather than
+  // rejects when a query fails, and an error read as an empty list would be
+  // rendered as "nothing matches" and then cached under the search key.
+  function fgSrchRows(key){
+    return function(r){
+      if(r && r.error) throw r.error;
+      return { key:key, rows:(r && r.data) || [] };
+    };
+  }
+
   function fgSearchArtworks(q){
     var all = (typeof window.galleryImages === 'function') ? window.galleryImages() : null;
     if(!all) return [];
@@ -106,7 +116,7 @@
               : 'id,user_id,title,description,category,tags,item_type,currency,file_ext,file_size,preview_url,license,delivery_days,created_at')
             .eq('status','approved').eq('visibility','published').ilike('title',pattern)
             .order('created_at',{ascending:false}).limit(30)
-            .then(function(r){ return {key:'marketplace', rows:(r&&r.data)||[]}; }));
+            .then(fgSrchRows('marketplace')));
         }
         if(want('blog')){
           jobs.push(sb.from('blog_posts')
@@ -114,7 +124,7 @@
                     'content_type,featured,published_at,created_at')
             .eq('status','approved').eq('visibility','published').ilike('title',pattern)
             .order('created_at',{ascending:false}).limit(30)
-            .then(function(r){ return {key:'blog', rows:(r&&r.data)||[]}; }));
+            .then(fgSrchRows('blog')));
         }
         if(want('resources')){
           jobs.push(sb.from('resources')
@@ -123,7 +133,7 @@
                     'featured,download_count,created_at')
             .eq('status','approved').eq('visibility','published').ilike('title',pattern)
             .order('created_at',{ascending:false}).limit(30)
-            .then(function(r){ return {key:'resources', rows:(r&&r.data)||[]}; }));
+            .then(fgSrchRows('resources')));
         }
         if(want('artist')){
           var who = fgArtistPattern(raw);
@@ -131,7 +141,7 @@
             .select(window.DZ_ARTIST_COLS || 'id,username,display_name,avatar_url,banner_url,bio,follower_count')
             .or('username.ilike.'+who+',display_name.ilike.'+who)
             .order('username',{ascending:true}).limit(24)
-            .then(function(r){ return {key:'artist', rows:(r&&r.data)||[]}; }));
+            .then(fgSrchRows('artist')));
         }
       }
       return jobs;

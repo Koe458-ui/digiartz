@@ -626,9 +626,16 @@
     openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), true, pf.galleryRows);
   }
 
+  // The tile counts the same work the grid under it lists: RLS hands a visitor
+  // every approved row whatever its visibility, so without this the line read
+  // "12 Artworks" over a grid of nine.
   async function pfLoadStats(){
     try{
-      const artC = await sb.from('artworks').select('id',{count:'exact',head:true}).eq('user_id',pf.profile.id).eq('kind',ART_KIND_ART);
+      var own = !!currentUser && String(currentUser.id) === String(pf.profile.id);
+      var q = sb.from('artworks').select('id',{count:'exact',head:true})
+                .eq('user_id',pf.profile.id).eq('kind',ART_KIND_ART);
+      if(!own) q = q.eq('visibility','published');
+      const artC = await q;
       window.pfSetArtCount(artC.count || 0);
     }catch(e){   }
   }
@@ -694,9 +701,12 @@
     var merit = (pf.profile.merit == null) ? 100 : (+pf.profile.merit);
 
     try{
-      var r = await sb.from('artworks')
+      var own = !!currentUser && String(currentUser.id) === String(forId);
+      var q = sb.from('artworks')
         .select('like_count,view_count,bookmark_count')
-        .eq('user_id', forId).limit(1000);
+        .eq('user_id', forId);
+      if(!own) q = q.eq('visibility','published');
+      var r = await q.limit(1000);
       if(!pf.profile || pf.profile.id !== forId) return;
       if(r.error) console.error('pfLoadHeadStats artworks:', r.error.message);
       (r.data || []).forEach(function(a){

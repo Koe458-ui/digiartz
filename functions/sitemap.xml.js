@@ -53,7 +53,9 @@ export async function onRequestGet(context) {
   let itemSets = ITEM_FEEDS.map(() => []);
   try {
     const all = await Promise.all([
-      sbGet('artworks?select=id,name,image_url,created_at&status=eq.approved&kind=eq.art&order=created_at.desc&limit=5000'),
+      // published only, like the three item feeds below and like the gallery
+      // itself: a draft or a link-only artwork does not belong in a sitemap
+      sbGet('artworks?select=id,name,image_url,created_at&status=eq.approved&visibility=eq.published&kind=eq.art&order=created_at.desc&limit=5000'),
       sbGet('profiles?select=username&limit=5000'),
       ...ITEM_FEEDS.map((f) => sbGet(`${f.q}&order=created_at.desc&limit=5000`)),
     ]);

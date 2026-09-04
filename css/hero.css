@@ -459,7 +459,7 @@
 .dzChipRow,
 .dzPayOptWays{display:flex;flex-wrap:wrap;gap:var(--sp-1);margin-top:var(--sp-1);}
 .dzChip{font-family:var(--fm);font-size:var(--fs-3xs);letter-spacing:var(--ls-wider);color:var(--txd);border:1px solid var(--bdr);border-radius:999px;padding:var(--sp-1) var(--sp-3);}
-.dzEmpty{text-align:center;padding:var(--sp-9) var(--sp-7);color:var(--txd);font-family:var(--fm);font-size:var(--fs-xs);letter-spacing:var(--ls-widest);}
+.dzEmpty{color:var(--txd);font-family:var(--fm);font-size:var(--fs-xs);letter-spacing:var(--ls-widest);}
 .dzBusy{text-align:center;padding:var(--sp-8);color:var(--txd);font-family:var(--fm);font-size:var(--fs-xs);letter-spacing:var(--ls-widest);}
 .dzBuy{margin-top:var(--sp-4);padding:var(--sp-3) var(--sp-5);border:0;border-radius:9px;background:var(--pg);color:var(--text-on-accent);font-family:var(--fm);font-size:var(--fs-2xs);font-weight:700;letter-spacing:var(--ls-widest);cursor:pointer;transition:filter .15s,transform .15s;}
 .dzBuy:active{transform:scale(.97);}

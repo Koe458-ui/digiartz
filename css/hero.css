@@ -848,72 +848,124 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 #artworks .ftRail::-webkit-scrollbar{display:none;}
 .ftTab{scroll-snap-align:center;}
 
-.atCard{cursor:default;}
+/* The artist card is a small profile: the banner across the top, the avatar
+   straddling its edge, then who they are, what they have made, and the two
+   things a reader can do about it. Text is deliberately a step under the
+   artwork cards' — a card this dense reads worse in large type. */
+.atCard{
+  /* Absolute, not percentages: the card's height is what its content makes it,
+     so a percentage height inside it has nothing to resolve against and the
+     banner and avatar collapse. */
+  --atBanH:96px;
+  --atAvSz:72px;
+  position:relative;cursor:default;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  background:var(--sur);
+  border:1px solid var(--bdr);border-radius:14px;
+  transition:border-color .2s ease,transform .2s ease;
+}
 .atCard.atReady:not(.atDead){cursor:pointer;}
-.atBody{
-  position:relative;
-  width:100%;aspect-ratio:1;box-sizing:border-box;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:var(--sp-2);padding:clamp(.6rem,5%,1.1rem);text-align:center;
+@media(hover:hover){
+  .atCard.atReady:not(.atDead):hover{border-color:var(--bdrh);transform:translateY(-2px);}
 }
-.atBg{
-  position:absolute;inset:0;z-index:0;
+.atBanner{
+  display:block;width:100%;height:var(--atBanH);flex:0 0 auto;
+  background:linear-gradient(135deg,
+    color-mix(in srgb,var(--pg) 16%,var(--sur2)),
+    var(--sur2));
   background-position:center;background-size:cover;background-repeat:no-repeat;
-  opacity:.6;
 }
-.atCard.atHasBg .atBody::after{
-  content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(180deg,
-    color-mix(in srgb,var(--sur) 30%,transparent) 0%,
-    color-mix(in srgb,var(--sur) 78%,transparent) 58%,
-    var(--sur) 100%);
+.atBody{
+  flex:1 1 auto;
+  display:flex;flex-direction:column;align-items:center;
+  gap:var(--sp-1);
+  padding:0 var(--sp-6) var(--sp-6);
+  text-align:center;
 }
-.atAv,.atName,.atUser,.atGo{position:relative;z-index:2;}
+/* The card is a flex column, so without this its rows shrink to nothing when
+   the grid gives it less height than its content wants. */
+.atBody > *{flex:0 0 auto;}
+/* Half over the banner, half below it. */
 .atAv{
-  width:clamp(44px,36%,84px);aspect-ratio:1;flex:0 0 auto;
+  width:var(--atAvSz);height:var(--atAvSz);flex:0 0 auto;
+  margin-top:calc(var(--atAvSz) / -2);
+  margin-bottom:var(--sp-3);
   border-radius:50%;overflow:hidden;
-  background:var(--sur2);border:1px solid var(--bdr);
+  background:var(--sur2);border:3px solid var(--sur);
   display:flex;align-items:center;justify-content:center;
-  font-family:var(--fm);font-size:clamp(var(--fs-md),4.5%,var(--fs-3xl));line-height:var(--lh-flat);color:var(--tx);
+  font-family:var(--fd);font-size:calc(var(--atAvSz) / 2.6);
+  line-height:var(--lh-flat);color:var(--tx);
 }
-.atUser{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.atAv img{width:100%;height:100%;object-fit:cover;display:block;}
 .atName{
-  max-width:100%;overflow:hidden;overflow-wrap:anywhere;
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
-  /* One break in the card, under the avatar; below it the name, the handle and
-     the button sit on one even rhythm. */
-  margin-top:var(--sp-3);
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   font-family:var(--fd);font-weight:700;
-  font-size:var(--fs-lg);color:var(--tx);line-height:var(--lh-snug);
+  font-size:var(--fs-md);line-height:var(--lh-snug);color:var(--tx);
 }
 .atUser{
-  font-family:var(--fm);font-size:var(--fs-sm);
-  /* Single-line label, so it takes the scale's label leading rather than the
-     body's — on 1.6 the handle sat in a 24px box under a 23px name. */
-  line-height:var(--lh-snug);
-  /* Equal gaps measured box to box are not equal gaps seen ink to ink: the
-     name's box carries 2.7px of leading below its letters and the button's
-     border has none, so the same 6px read as 9.4px above the handle and 7.5px
-     below it. This gives that difference back. */
-  margin-top:-2px;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:var(--fm);font-size:var(--fs-xs);
+  line-height:var(--lh-snug);letter-spacing:var(--ls-wide);color:var(--txd);
+}
+.atStats{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;margin-top:var(--sp-4);
+}
+.atStat{
+  flex:1 1 0;min-width:0;
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+}
+.atStat + .atStat{border-left:1px solid var(--bdr);}
+.atStatN{
+  font-family:var(--fd);font-weight:700;
+  font-size:var(--fs-sm);line-height:var(--lh-snug);color:var(--tx);
+}
+.atStatL{
+  font-family:var(--fm);font-size:var(--fs-3xs);
   letter-spacing:var(--ls-wide);color:var(--txd);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
 }
-.atGo{
-  margin-top:0;
-  display:inline-flex;align-items:center;
-  padding:var(--sp-2) var(--sp-5);border-radius:999px;
-  border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);
-  font-family:var(--fm);font-size:var(--fs-3xs);letter-spacing:var(--ls-wider);text-transform:uppercase;
-  transition:border-color .2s,background .2s;
+/* Two buttons, one width: the row is two equal tracks whatever the labels. */
+.atActs{
+  display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);
+  width:100%;margin-top:var(--sp-5);
 }
+.atBtn{
+  min-width:0;min-height:36px;padding:var(--sp-2) var(--sp-4);
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid var(--bdr);border-radius:999px;
+  background:var(--sur2);color:var(--tx);cursor:pointer;
+  font-family:var(--fb);font-size:var(--fs-xs);font-weight:600;
+  line-height:var(--lh-snug);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .18s,border-color .18s,color .18s;
+}
+.atBtn.on{border-color:var(--pg);background:var(--pdim);}
+.atBtn:disabled{opacity:.55;cursor:default;}
 @media(hover:hover){
-  .atCard.atReady:not(.atDead):hover .atGo,
-.dzClInfoBtn:hover{border-color:var(--pg);background:var(--pdim);}
+  .atBtn:not(:disabled):hover{border-color:var(--bdrh);}
 }
-.atCard.atDead .atGo{opacity:.4;}
+/* Nothing to follow or befriend on your own card. */
+.atCard.atMine .atActs{display:none;}
+
+/* The board of artists is not the grid of artworks: these cards are wide, so
+   one to a row on a phone, two on a tablet or a small desktop, three from a
+   large desktop up — at the 1600px shell cap that is a ~500px card, which is
+   where a banner and a two-button row still read. */
+/* Doubled up on purpose: awGrid--artists is one class, so on its own it ties
+   with .awGrid and loses to ranking.css, which is loaded later. */
+.awGrid.awGrid--artists{grid-template-columns:1fr;}
+@media(min-width:700px){
+  .awGrid.awGrid--artists{grid-template-columns:repeat(2,1fr);}
+  .atCard{--atBanH:112px;--atAvSz:84px;}
+}
+@media(min-width:1280px){ .awGrid.awGrid--artists{grid-template-columns:repeat(3,1fr);} }
+
 .atCard:not(.atReady) .atName{width:54%;height:.8em;border-radius:4px;background:var(--sur2);}
 .atCard:not(.atReady) .atUser{width:36%;height:.7em;border-radius:4px;background:var(--sur2);}
-.atCard:not(.atReady) .atGo{opacity:.35;}
+.atCard:not(.atReady) .atActs{opacity:.35;}
 
 @keyframes awSwapIn{
   from{opacity:0;transform:translateY(8px);}
@@ -929,7 +981,7 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   #artworks .ftWrap{--ftPad:var(--sp-4);--ftNavW:34px;}
 }
 @media(prefers-reduced-motion:reduce){
-  .ftTab,.atGo,.ftNav{transition:none;}
+  .ftTab,.ftNav,.atCard,.atBtn{transition:none;}
   .atCard:not(.atReady) .atAv{animation:none;}
   .ftTab:active{transform:none;}
   #artworks .ftRail{scroll-behavior:auto;}

@@ -55,7 +55,7 @@
   function feedFetchArtists(ids, done){
     var missing = ids.filter(function(u){ return dzArtistCache[u] === undefined; });
     if(!missing.length || !sb){ done(); return; }
-    sb.from('profiles').select('id,username,display_name,avatar_url,banner_url,bio').in('id', missing)
+    sb.from('profiles').select('id,username,display_name,avatar_url,banner_url,bio,follower_count').in('id', missing)
       .then(function(res){
         ((res && res.data) || []).forEach(function(p){ if(p && p.id) dzArtistCache[p.id] = p; });
         missing.forEach(function(u){ if(dzArtistCache[u] === undefined) dzArtistCache[u] = null; });
@@ -63,24 +63,119 @@
       }, function(){ done(); });
   }
 
+  // The artist card is a small profile: the banner across the top, the avatar
+  // straddling its edge, then who they are, what they have made, and the two
+  // things a reader can do about it.
   function buildArtistCard(uid){
     var card = document.createElement('div');
     card.className = 'awCard atCard';
     card.setAttribute('data-uid', String(uid));
-
-    var body = document.createElement('div');
-    body.className = 'atBody';
-    body.innerHTML =
-      '<span class="atBg" aria-hidden="true"></span>' +
-      '<span class="atAv"><span class="atLtr" aria-hidden="true"></span></span>' +
-      '<span class="atName"></span>' +
-      '<span class="atUser"></span>' +
-      '<span class="atGo">View profile</span>';
-    card.appendChild(body);
+    card.innerHTML =
+      '<span class="atBanner" aria-hidden="true"></span>' +
+      '<div class="atBody">' +
+        '<span class="atAv"><span class="atLtr" aria-hidden="true"></span></span>' +
+        '<span class="atName"></span>' +
+        '<span class="atUser"></span>' +
+        '<div class="atStats">' +
+          '<span class="atStat"><b class="atStatN atStatFol">0</b><span class="atStatL">Followers</span></span>' +
+          '<span class="atStat"><b class="atStatN atStatArt">0</b><span class="atStatL">Artworks</span></span>' +
+          '<span class="atStat"><b class="atStatN atStatLike">0</b><span class="atStatL">Likes</span></span>' +
+        '</div>' +
+        '<div class="atActs">' +
+          '<button type="button" class="atBtn atBtnFrd"></button>' +
+          '<button type="button" class="atBtn atBtnFol"></button>' +
+        '</div>' +
+      '</div>';
 
     var p = dzArtistCache[uid];
     if(p !== undefined) paintArtistCard(card, p);
     return card;
+  }
+
+  function feedNum(n){
+    n = +n || 0;
+    if(window.dzFollow && window.dzFollow.fmt) return window.dzFollow.fmt(n);
+    return n >= 1000 ? (Math.round(n / 100) / 10) + 'k' : String(n);
+  }
+
+  // Artworks and likes come from the gallery already in memory rather than a
+  // query per card; followers come from the profile row, which is where the
+  // count lives.
+  function feedArtistTally(uid){
+    var list = filterHidden((awArtworksCache || []).slice());
+    var art = 0, likes = 0;
+    for(var i = 0; i < list.length; i++){
+      if(!list[i] || String(list[i].user_id) !== String(uid)) continue;
+      art++;
+      likes += (+list[i].likes || 0);
+    }
+    return { art: art, likes: likes };
+  }
+
+  var FRIEND_LABEL = { none:'Add friend', sent:'Requested', incoming:'Accept', friends:'Message' };
+
+  function feedPaintActions(card, p){
+    var id  = p && p.id ? String(p.id) : '';
+    var frd = card.querySelector('.atBtnFrd');
+    var fol = card.querySelector('.atBtnFol');
+    if(!id || !frd || !fol) return;
+
+    var mine = (typeof currentUser !== 'undefined' && currentUser && String(currentUser.id) === id);
+    card.classList.toggle('atMine', !!mine);
+
+    var st = (window.pfFriendBridge && window.pfFriendBridge.state)
+      ? String(window.pfFriendBridge.state(id) || 'none') : 'none';
+    frd.textContent = FRIEND_LABEL[st] || FRIEND_LABEL.none;
+    frd.dataset.frState = st;
+    frd.classList.toggle('on', st === 'friends');
+
+    var on = !!(window.dzFollow && window.dzFollow.is && window.dzFollow.is(id));
+    fol.textContent = on ? 'Following' : 'Follow';
+    fol.classList.toggle('on', on);
+  }
+
+  // The card opens the profile, so both buttons stop the click getting there.
+  function feedWireActions(card, p){
+    var id = p && p.id ? String(p.id) : '';
+    if(!id) return;
+    var frd = card.querySelector('.atBtnFrd');
+    var fol = card.querySelector('.atBtnFol');
+
+    if(fol) fol.onclick = function(e){
+      e.stopPropagation();
+      if(typeof currentUser === 'undefined' || !currentUser){
+        if(typeof showToast === 'function') showToast('Sign in to follow artists');
+        if(typeof openAuthMod === 'function') openAuthMod();
+        return;
+      }
+      if(!window.dzFollow) return;
+      var was = !!window.dzFollow.is(id);
+      fol.disabled = true;
+      Promise.resolve(window.dzFollow.set(id, !was)).then(function(){
+        feedPaintActions(card, p);
+      }, function(){}).then(function(){ fol.disabled = false; });
+    };
+
+    if(frd) frd.onclick = function(e){
+      e.stopPropagation();
+      if(typeof currentUser === 'undefined' || !currentUser){
+        if(typeof showToast === 'function') showToast('Sign in to add friends');
+        if(typeof openAuthMod === 'function') openAuthMod();
+        return;
+      }
+      var br = window.pfFriendBridge;
+      if(!br) return;
+      var st = frd.dataset.frState || 'none';
+      if(st === 'friends'){
+        br.chat({ id: id, username: p.username, avatar_url: p.avatar_url });
+        return;
+      }
+      frd.disabled = true;
+      var act = st === 'none' ? br.send(id) : (st === 'sent' ? br.cancel(id) : br.accept(id));
+      Promise.resolve(act).then(function(){ return br.load(); }, function(){})
+        .then(function(){ feedPaintActions(card, p); })
+        .then(function(){ frd.disabled = false; }, function(){ frd.disabled = false; });
+    };
   }
 
   function feedPaintAvatar(av, ltr, p, name){
@@ -112,12 +207,27 @@
     if(nm) nm.textContent = name;
     if(un) un.textContent = user ? '@' + user : '';
 
-    var bg = card.querySelector('.atBg');
-    if(bg && p && p.banner_url){
-      bg.style.backgroundImage = 'url("' + imgResize(p.banner_url, 600) + '")';
-      card.classList.add('atHasBg');
+    var bn = card.querySelector('.atBanner');
+    if(bn && p && p.banner_url){
+      bn.style.backgroundImage = 'url("' + imgResize(p.banner_url, 600) + '")';
     }
     feedPaintAvatar(av, ltr, p, name);
+
+    var t = feedArtistTally(p && p.id);
+    var set = function(sel, n){ var e = card.querySelector(sel); if(e) e.textContent = feedNum(n); };
+    set('.atStatFol', p && p.follower_count);
+    set('.atStatArt', t.art);
+    set('.atStatLike', t.likes);
+    var lbl = function(sel, n, s1, s2){
+      var b = card.querySelector(sel), e = b && b.nextElementSibling;
+      if(e) e.textContent = (+n === 1) ? s1 : s2;
+    };
+    lbl('.atStatFol',  p && p.follower_count, 'Follower', 'Followers');
+    lbl('.atStatArt',  t.art,   'Artwork', 'Artworks');
+    lbl('.atStatLike', t.likes, 'Like',    'Likes');
+
+    feedPaintActions(card, p);
+    feedWireActions(card, p);
 
     card.classList.add('atReady');
     if(user){
@@ -177,6 +287,8 @@
     } else {
       awRList = feedSort(src).slice(0, FEED_CAP);
     }
+
+    grid.classList.toggle('awGrid--artists', !!feedIsArtists());
 
     var keep = reset ? 0 : awRShown;
     awRShown = 0;

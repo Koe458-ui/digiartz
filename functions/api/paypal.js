@@ -1,6 +1,6 @@
 import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, sbService } from '../lib/sb.js';
 import { pp } from '../lib/paypal.js';
-import { fromPriceCents, toValue, ppFee } from '../lib/money.js';
+import { fromPriceCents, toValue, toMinor, ppFee } from '../lib/money.js';
 import {
   memberCurrency, subscriptionAmount, marketplaceItem, alreadyPaid, resolvePromo,
   PLAN_TIERS, PLAN_LABEL, applySubscription, recordEarning
@@ -166,7 +166,7 @@ export async function onRequestPost({ env, request }) {
 
       await recordEarning(env, 'paypal', row, {
         txn: capture.id,
-        amount: Math.round(parseFloat(paidAmount.value) * 100),
+        amount: toMinor(paidAmount.value, row.currency),
         currency: paidAmount.currency_code,
         fee: ppFee(capture, row.currency),
       });

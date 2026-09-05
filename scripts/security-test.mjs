@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
-import { limitFor } from '../functions/lib/ratelimit.js';
+import { limitFor, actorKey } from '../functions/lib/ratelimit.js';
 import { sameOrigin, allowedHost, storedFileName, storedFileNameAscii } from '../functions/lib/http.js';
+import { toMinor, toValue, ppFee } from '../functions/lib/money.js';
 
 let failed = 0;
 function check(name, got, want) {
@@ -22,6 +23,22 @@ for (const r of routes) truthy(`rate limit covers ${r}`, limitFor(r));
 check('webhook rzp exempt',    limitFor('/api/rzp-webhook'), null);
 check('webhook paypal exempt', limitFor('/api/paypal-webhook'), null);
 check('most specific prefix wins', limitFor('/api/download').bucket, '/api/download');
+
+{
+  const from = (headers) => ({ headers: new Headers(headers) });
+  const ip = { 'CF-Connecting-IP': '203.0.113.9' };
+
+  check('the bucket is the connecting address', actorKey(from(ip)), 'ip:203.0.113.9');
+  check('a rotating bearer cannot mint a fresh bucket',
+        actorKey(from({ ...ip, Authorization: 'Bearer ' + 'a'.repeat(40) })),
+        actorKey(from({ ...ip, Authorization: 'Bearer ' + 'b'.repeat(40) })));
+  check('a bearer cannot escape the address bucket',
+        actorKey(from({ ...ip, Authorization: 'Bearer ' + 'a'.repeat(40) })), 'ip:203.0.113.9');
+  check('X-Forwarded-For is read when Cloudflare has not spoken',
+        actorKey(from({ 'X-Forwarded-For': '198.51.100.4, 203.0.113.1' })), 'ip:198.51.100.4');
+  check('no address at all still shares one bucket', actorKey(from({})), 'anon');
+  falsy('no address does not mean no limit', actorKey(from({})) === '');
+}
 
 const req = (headers) => ({ url: 'https://digiartz.net/api/download', headers: new Headers(headers) });
 
@@ -48,6 +65,26 @@ falsy('userinfo trick refused',     allowedHost('https://tmqzqlrpjpydiftlrzmj.su
 falsy('file: refused',              allowedHost('file:///etc/passwd', SB));
 falsy('garbage refused',            allowedHost('not a url', SB));
 
+{
+  check('a decimal currency comes back in cents', toMinor('12.34', 'USD'), 1234);
+  check('a whole amount still comes back in cents', toMinor('12', 'EUR'), 1200);
+  check('a zero-decimal currency has no cents', toMinor('1000', 'JPY'), 1000);
+  check('and is not multiplied by a hundred', toMinor('1000', 'TWD'), 1000);
+  check('nor is the Hungarian forint', toMinor('4500', 'HUF'), 4500);
+  check('nonsense is zero, not NaN', toMinor('not a number', 'USD'), 0);
+  check('missing is zero', toMinor(undefined, 'USD'), 0);
+
+  for (const cur of ['USD', 'INR', 'JPY', 'HUF', 'TWD', 'GBP']) {
+    check(`${cur} survives the round trip`, toMinor(toValue(2500, cur), cur), 2500);
+  }
+
+  const fee = (v, code, cur) =>
+    ppFee({ seller_receivable_breakdown: { paypal_fee: { value: v, currency_code: code } } }, cur);
+  check('the PayPal fee follows the same scale', fee('0.59', 'USD', 'USD'), 59);
+  check('and the yen fee is not inflated either', fee('45', 'JPY', 'JPY'), 45);
+  check('a fee in another currency is not counted', fee('0.59', 'EUR', 'USD'), 0);
+}
+
 check('path separators stripped', storedFileName('../../etc/passwd'), '....etcpasswd');
 check('quote stripped from the ascii form', storedFileNameAscii('a"; x="y'), 'a; x=y');
 check('non-ascii folded in the ascii form', storedFileNameAscii('naïve.png'), 'na_ve.png');
@@ -70,6 +107,25 @@ for (const f of ['download', 'market-download', 'resource-download', 'moderate-u
 {
   const src = readFileSync('functions/api/paypal.js', 'utf8');
   truthy('capture select includes user_id', /select=id,user_id,kind,plan,item_id/.test(src));
+}
+
+for (const f of ['functions/api/paypal.js', 'functions/api/paypal-webhook.js']) {
+  const src = readFileSync(f, 'utf8');
+  falsy(`${f} does not scale a captured amount by hand`,
+        /parseFloat\([^)]*\)\s*\*\s*100/.test(src));
+  truthy(`${f} converts through toMinor`, /toMinor\(paidAmount\.value/.test(src));
+}
+
+{
+  const src = readFileSync('functions/api/paypal-webhook.js', 'utf8');
+  falsy('a failed payout does not sweep every paid_out earning back',
+        /status=eq\.paid_out',\s*\{\s*\n?\s*method: 'PATCH'/.test(src));
+  truthy('it reopens the request once and only then returns earnings',
+         /if \(!\(Array\.isArray\(reopened\) && reopened\.length\)\) return 'already reopened'/.test(src));
+  truthy('it returns only enough to cover the request',
+         /let left = owed;[\s\S]{0,200}if \(left <= 0\) break;/.test(src));
+  truthy('and credits the ledger for what went back',
+         /p_type: 'adjustment', p_direction: 'credit'/.test(src));
 }
 
 {

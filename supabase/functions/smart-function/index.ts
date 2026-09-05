@@ -127,7 +127,24 @@ Deno.serve(async (req) => {
 
   const objKey = path.replace(/^koe-media\//, "");
 
+  // Every path the client builds is "<kind>/<uid>/<file>", and storage RLS holds
+  // both buckets to a folder named for auth.uid(). This says the same thing here
+  // so a request for someone else's prefix is refused before a signed URL is
+  // minted for it, rather than relying on the storage layer alone.
+  let staff: boolean | null = null;
+  const ownsPath = async () => {
+    const seg = objKey.split("/");
+    if (seg.length >= 3 && seg[1] === user.id) return true;
+    if (staff === null) {
+      const { data: prof } = await supa.from("profiles").select("role").eq("id", user.id).single();
+      staff = !!prof && ["admin", "dev"].includes(prof.role ?? "");
+    }
+    return staff;
+  };
+
   if (body.action === "upload") {
+    if (!(await ownsPath())) return json({ error: "not your folder" }, 403);
+
     const ct    = String(body.contentType || "");
     const size  = Number(body.size);
     const asset = ASSET_PREFIX.test(path);
@@ -194,8 +211,10 @@ Deno.serve(async (req) => {
       } else {
         await sign(PUBLIC_BUCKET, objKey, "file");
       }
-    } catch (e) {
-      return json({ error: String((e as Error).message || e) }, 500);
+    } catch (_e) {
+      // The storage error can name the policy that refused; the caller gets the
+      // outcome, not the reason.
+      return json({ error: "could not prepare the upload" }, 500);
     }
 
     return json({
@@ -211,13 +230,7 @@ Deno.serve(async (req) => {
   }
 
   if (body.action === "delete") {
-    const seg = objKey.split("/");
-    const pathOwner = seg.length >= 3 ? seg[1] : null;
-
-    const { data: prof } = await supa.from("profiles").select("role").eq("id", user.id).single();
-    const isAdmin = !!prof && ["admin", "dev"].includes(prof.role ?? "");
-    const allowed = isAdmin || (!!pathOwner && pathOwner === user.id);
-    if (!allowed) return json({ error: "not your object" }, 403);
+    if (!(await ownsPath())) return json({ error: "not your object" }, 403);
 
     const svc = serviceClient();
     if (!svc) return json({ error: "storage remover not configured" }, 500);

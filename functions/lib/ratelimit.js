@@ -29,18 +29,14 @@ export function limitFor(pathname) {
   return best ? { bucket: best[0], limit: best[1] } : null;
 }
 
-async function actorKey(request) {
-  const auth = request.headers.get('Authorization') || '';
-  const token = auth.replace(/^Bearer\s+/i, '').trim();
-  if (token && token.length > 20) {
-    try {
-      const digest = await crypto.subtle.digest(
-        'SHA-256', new TextEncoder().encode(token));
-      const hex = [...new Uint8Array(digest)]
-        .map((b) => b.toString(16).padStart(2, '0')).join('');
-      return 'u:' + hex.slice(0, 16);
-    } catch {   }
-  }
+// The bucket is keyed on the connecting address, never on the bearer token.
+// Nothing at the edge verifies a token's signature, so a token-derived key is
+// attacker-chosen: sending a fresh random Bearer on every request would mint a
+// fresh bucket each time and the limit would never bind. The address is the one
+// identifier the caller cannot rotate at will. Per-member fairness is enforced
+// further in, by the handlers that limit on user.id after Supabase has actually
+// verified the token.
+export function actorKey(request) {
   const ip = request.headers.get('CF-Connecting-IP')
           || request.headers.get('X-Real-IP')
           || (request.headers.get('X-Forwarded-For') || '').split(',')[0].trim();
@@ -51,7 +47,7 @@ export async function underEdgeLimit(env, request, pathname) {
   const rule = limitFor(pathname);
   if (!rule) return true;
 
-  const actor = await actorKey(request);
+  const actor = actorKey(request);
   return underLimit(env, 'edge:' + rule.bucket + ':' + actor, rule.limit, 60);
 }
 

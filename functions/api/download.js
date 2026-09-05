@@ -1,5 +1,5 @@
 import { peekJwt, underLimit, SB_URL_FALLBACK, SB_ANON_FALLBACK, SB_SIZE_RE } from '../lib/sb.js';
-import { UUID_RE, sameOrigin, allowedHost, json } from '../lib/http.js';
+import { UUID_RE, sameOrigin, allowedHost, json, downloadHeaders } from '../lib/http.js';
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -82,17 +82,11 @@ export async function onRequestPost(context) {
     if (!fileRes.ok || !fileRes.body) return json({ error: 'The file could not be fetched.' }, 502);
 
     const type = fileRes.headers.get('content-type') || 'application/octet-stream';
-    const headers = new Headers({
-      'Content-Type': type,
-      'Content-Disposition': `attachment; filename="${asciiName(out.name, src, type)}"; ` +
-                             `filename*=UTF-8''${encodeURIComponent(niceName(out.name, src, type))}`,
-      'Cache-Control': 'no-store',
-      'X-Content-Type-Options': 'nosniff',
-      'X-Dz-Remaining': String(gate.remaining ?? ''),
-      'X-Dz-Limit': String(gate.limit ?? ''),
-      'X-Dz-Tier': String(gate.tier || ''),
-      'Access-Control-Expose-Headers': 'X-Dz-Remaining, X-Dz-Limit, X-Dz-Tier'
-    });
+    const headers = downloadHeaders(niceName(out.name, src, type), type);
+    headers.set('X-Dz-Remaining', String(gate.remaining ?? ''));
+    headers.set('X-Dz-Limit', String(gate.limit ?? ''));
+    headers.set('X-Dz-Tier', String(gate.tier || ''));
+    headers.set('Access-Control-Expose-Headers', 'X-Dz-Remaining, X-Dz-Limit, X-Dz-Tier');
     return new Response(fileRes.body, { status: 200, headers });
   } catch (err) {
     return json({ error: 'Download failed — try again.' }, 500);
@@ -123,7 +117,4 @@ function safePath(src) {
 function niceName(name, src, type) {
   const base = String(name || 'artwork').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 60);
   return `${base || 'artwork'}.${extFor(src, type)}`;
-}
-function asciiName(name, src, type) {
-  return niceName(name, src, type).replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
 }

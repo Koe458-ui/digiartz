@@ -1,9 +1,9 @@
-import { sbUrl, sbSvc, sbService } from '../lib/sb.js';
+import { sbUrl, sbSvc, sbService, ledger } from '../lib/sb.js';
 import { pp } from '../lib/paypal.js';
 import {
   PLAN_TIERS, applySubscription, revokeSubscription, recordEarning
 } from '../lib/billing.js';
-import { ppFee, toValue } from '../lib/money.js';
+import { ppFee, toValue, toMinor } from '../lib/money.js';
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { 'content-type': 'application/json' } });
@@ -50,7 +50,7 @@ async function fulfil(env, orderId, capture) {
 
   await recordEarning(env, 'paypal', row, {
     txn: capture && capture.id,
-    amount: Math.round(parseFloat(paidAmount.value) * 100),
+    amount: toMinor(paidAmount.value, row.currency),
     currency: paidAmount.currency_code,
     fee: ppFee(capture, row.currency),
   });
@@ -187,14 +187,65 @@ async function payoutItem(env, type, resource) {
     'PAYMENTS.PAYOUTS-ITEM.REFUNDED': 'This payout was refunded back to us',
   }[type] || 'This payout did not complete';
 
-  await sbService(env, '/payout_requests?id=eq.' + id + '&status=in.(processing,paid)', {
-    method: 'PATCH',
-    body: JSON.stringify({ status: 'approved', review_note: note, paid_at: null }),
-  });
-  await sbService(env,
-    '/marketplace_earnings?seller_id=eq.' + req.user_id +
-    '&currency=eq.' + req.currency + '&status=eq.paid_out', {
-    method: 'PATCH', body: JSON.stringify({ status: 'available' }),
-  }).catch(() => {});
+  const reopened = await sbService(env,
+    '/payout_requests?id=eq.' + id + '&status=in.(processing,paid)', {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'approved', review_note: note, paid_at: null }),
+    });
+
+  // Only the first delivery of this event reopens the request; PayPal retries,
+  // and a second pass must not put the same earnings back a second time.
+  if (!(Array.isArray(reopened) && reopened.length)) return 'already reopened';
+
+  await returnEarnings(env, req).catch(() => {});
   return 'returned to approved';
+}
+
+// Give back exactly what this payout took, and no more.
+//
+// Earnings carry no link to the request that retired them, so the set is
+// reconstructed the way `admin-send` built it: it retires the oldest available
+// earnings until the amount is covered, which makes the rows this request took
+// the newest of the seller's paid_out rows. Walking newest-first and stopping
+// once the amount is covered returns those and leaves earlier payouts alone --
+// reverting every paid_out row, as this used to, would resurrect balances the
+// seller has already been paid and let them be withdrawn twice.
+async function returnEarnings(env, req) {
+  const owed = Number(req.amount) || 0;
+  if (owed <= 0) return;
+
+  const rows = await sbService(env,
+    '/marketplace_earnings?seller_id=eq.' + req.user_id +
+    '&currency=eq.' + encodeURIComponent(req.currency) +
+    '&status=eq.paid_out&select=id,net_amount&order=created_at.desc');
+
+  const give = [];
+  let left = owed;
+  for (const e of rows || []) {
+    if (left <= 0) break;
+    give.push(e.id);
+    left -= Number(e.net_amount || 0);
+  }
+  if (!give.length) return;
+
+  const back = await sbService(env,
+    '/marketplace_earnings?status=eq.paid_out&id=in.(' + give.join(',') + ')', {
+      method: 'PATCH', body: JSON.stringify({ status: 'available' }),
+    });
+
+  // Sending the payout wrote a payout_debit. Putting the earnings back without
+  // the matching credit would leave dz_reconcile seeing more balance than the
+  // ledger accounts for, which freezes the seller's withdrawals over a failure
+  // that was PayPal's, not theirs. Credit exactly what went back.
+  const returned = (Array.isArray(back) ? back : [])
+    .reduce((n, e) => n + (Number(e.net_amount) || 0), 0);
+  if (returned <= 0) return;
+
+  await ledger(env, {
+    p_user: req.user_id, p_type: 'adjustment', p_direction: 'credit',
+    p_amount: returned, p_currency: req.currency,
+    p_source: 'paypal',
+    p_ref_table: 'payout_requests', p_ref_id: req.id,
+    p_note: 'payout returned unsent',
+  });
 }

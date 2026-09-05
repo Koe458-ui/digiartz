@@ -558,6 +558,10 @@
   }
 
   function watchNav() {
+    // buildShell() runs on every open, so the observer from the last one is
+    // dropped first — otherwise each visit leaves another live observer behind,
+    // the way anListStop() already retires the list's.
+    if (state.navIo) { try { state.navIo.disconnect(); } catch (e) {} state.navIo = null; }
     if (!window.IntersectionObserver) return;
     var nav = $('anNav');
     if (!nav) return;
@@ -571,6 +575,7 @@
         });
       });
     }, { rootMargin: '-120px 0px -70% 0px', threshold: 0 });
+    state.navIo = io;
     sectionsFor(state.scope).forEach(function (s) {
       var t = $('anSec_' + s.id);
       if (t) io.observe(t);
@@ -1848,6 +1853,7 @@
     if (!pg) return;
     var lp = $('anListPage');
     if (lp && lp.parentNode) { anListStop(); clearTimeout(anListGone); lp.parentNode.removeChild(lp); }
+    if (state.navIo) { try { state.navIo.disconnect(); } catch (e) {} state.navIo = null; }
     state.open = false;
     stopLive();
     pg.classList.remove('open');

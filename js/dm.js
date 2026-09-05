@@ -18,7 +18,11 @@
     if (diff < 10080)return Math.floor(diff / 1440) + 'd';
     return d.toLocaleDateString();
   }
-  var hhmm = window.dzHHMM, dayChip = window.dzDayChip;
+  // Looked up when they are called, not when this file runs: app-core.js
+  // defines them and loads after this one, so reading them here left both
+  // permanently undefined and every thread render threw into the catch below.
+  function hhmm (iso) { return window.dzHHMM ? window.dzHHMM(iso) : ''; }
+  function dayChip (d) { return window.dzDayChip ? window.dzDayChip(d) : ''; }
 
   var FR_MAX_FRIENDS = 200;
   window.FR_MAX_FRIENDS = FR_MAX_FRIENDS;
@@ -426,7 +430,17 @@
       var mode = dmLoadingOlder ? 'older' : (scrollToEnd ? 'open' : 'poll');
       dmLoadingOlder = false;
       dmPaint(rows, dmHasMore, mode, uid);
-    } catch (e) { dmLoadingOlder = false;   }
+    } catch (e) {
+      dmLoadingOlder = false;
+      console.error('dm thread:', (e && e.message) || e);
+      // Only the opening read says so on screen. A poll that fails behind an
+      // already-painted thread leaves what is there alone, and the thread used
+      // to sit on LOADING… for good because nothing here said anything at all.
+      var failed = scrollToEnd && $('dmBody');
+      if (failed && !failed.querySelector('.dmMsg')) {
+        failed.innerHTML = '<div class="dmSearchNote">COULDN\u2019T LOAD THIS CHAT — TRY AGAIN</div>';
+      }
+    }
   }
 
   function dmMaybeLoadOlder () {

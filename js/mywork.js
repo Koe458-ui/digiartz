@@ -1307,7 +1307,11 @@ function hideCommentThumbnail(){
   var CP_POLL_MS = 5000;
   var cpLastSig = '';
 
-  var cpHHMM = window.dzHHMM, cpDayChip = window.dzDayChip;
+  // Looked up when they are called. Reading them here works only while this
+  // file keeps loading after app-core.js, and dm.js already broke on exactly
+  // that when the order went the other way.
+  function cpHHMM (iso) { return window.dzHHMM ? window.dzHHMM(iso) : ''; }
+  function cpDayChip (d) { return window.dzDayChip ? window.dzDayChip(d) : ''; }
 
   var cpAuthors = {};
 

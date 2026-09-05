@@ -3196,7 +3196,10 @@
         headers:{ authorization:'Bearer '+session.access_token },
         cache:'no-store'
       });
-      if(!res.ok) return false;
+      // The edge answers this with JavaScript. Anything else — a routing miss
+      // that falls through to the SPA shell, an error page — is not a module,
+      // and injecting it would only raise a parse error nobody can act on.
+      if(!res.ok || !/javascript|ecmascript/i.test(res.headers.get('content-type') || '')) return false;
       await inject(await res.text());
       done = true;
       return true;

@@ -9,7 +9,6 @@
 @media(prefers-reduced-motion:reduce){ #profilePage{transition:none;} }
 
 #profilePage,#profilePage *,#setPage,#setPage *,
-#pfSearchPage,#pfSearchPage *,
 #albPage,#albPage *,#albViewPage,#albViewPage *{
   --bg:var(--vbg);--sur:var(--vsur);--sur2:var(--vsur2);
   --tx:var(--vtx);--txd:var(--vtxd);
@@ -289,13 +288,13 @@ html[data-theme="offwhite"] .pfBrand--linkedin{--brand:#0A66C2;}
 html[data-theme="light"] .pfBrand--youtube,
 html[data-theme="offwhite"] .pfBrand--youtube{--brand:#D40000;}
 
-#pfSearchPage,#fgSearchPage{
+#fgSearchPage{
   position:fixed;inset:0;z-index:530;background:var(--bg);color:var(--tx);
   overflow-y:auto;overflow-x:hidden;transform:translateX(100%);
   transition:transform .38s cubic-bezier(.22,1,.36,1);
 }
-#pfSearchPage.open,#fgSearchPage.open{transform:translateX(0);}
-@media(prefers-reduced-motion:reduce){ #pfSearchPage,#fgSearchPage{transition:none;} }
+#fgSearchPage.open{transform:translateX(0);}
+@media(prefers-reduced-motion:reduce){ #fgSearchPage{transition:none;} }
 .pfSrchHdr{
   position:sticky;top:0;z-index:4;
   display:flex;align-items:center;gap:var(--sp-3);

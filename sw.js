@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = 'v256';
+const CACHE_VERSION = 'v257';
 
 const STATIC = `dz-static-${CACHE_VERSION}`;
 const THUMB  = `dz-img-thumb-${CACHE_VERSION}`;
@@ -39,10 +39,10 @@ const SHELL_URLS = [
   '/css/connect.css?v=19',
   '/css/ranking.css?v=20',
   '/css/profile.css?v=44',
-  '/css/admin.css?v=13',
+  '/css/admin.css?v=14',
   '/css/auth.css?v=9',
   '/css/panels.css?v=35',
-  '/css/upload.css?v=26',
+  '/css/upload.css?v=27',
   '/css/widgets.css?v=35',
   '/css/overrides.css?v=69',
   '/css/select.css?v=5',
@@ -77,7 +77,7 @@ const SHELL_URLS = [
   '/js/upqueue.js?v=10',
   '/js/avatar.js?v=7',
   '/js/pfedit.js?v=26',
-  '/js/mywork.js?v=31',
+  '/js/mywork.js?v=32',
   '/js/startup.js?v=12',
   '/js/search.js?v=29',
   '/js/feed.js?v=22',
@@ -90,9 +90,9 @@ const SHELL_URLS = [
 
   '/js/analytics.js?v=22',
   '/js/hubs.js?v=5',
-  '/js/secview.js?v=7',
+  '/js/secview.js?v=8',
   '/js/engagement.js?v=12',
-  '/js/sections.js?v=141',
+  '/js/sections.js?v=142',
   '/js/heropitch.js?v=5',
   '/js/routes.js?v=4',
   '/js/topnav.js?v=12',

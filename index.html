@@ -134,14 +134,14 @@
   <link rel="stylesheet" href="/css/connect.css?v=19">
   <link rel="stylesheet" href="/css/ranking.css?v=20" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="/css/profile.css?v=44" media="print" onload="this.media='all'">
-  <link rel="stylesheet" href="/css/admin.css?v=13" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/css/admin.css?v=14" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="/css/auth.css?v=9" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="/css/panels.css?v=35">
-  <link rel="stylesheet" href="/css/upload.css?v=26" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/css/upload.css?v=27" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="/css/widgets.css?v=35">
   <link rel="stylesheet" href="/css/overrides.css?v=69">
   <link rel="stylesheet" href="/css/select.css?v=5">
-  <noscript><link rel="stylesheet" href="/css/viewer.css?v=53"><link rel="stylesheet" href="/css/community.css?v=41"><link rel="stylesheet" href="/css/ranking.css?v=20"><link rel="stylesheet" href="/css/profile.css?v=44"><link rel="stylesheet" href="/css/admin.css?v=13"><link rel="stylesheet" href="/css/auth.css?v=9"><link rel="stylesheet" href="/css/upload.css?v=26"></noscript>
+  <noscript><link rel="stylesheet" href="/css/viewer.css?v=53"><link rel="stylesheet" href="/css/community.css?v=41"><link rel="stylesheet" href="/css/ranking.css?v=20"><link rel="stylesheet" href="/css/profile.css?v=44"><link rel="stylesheet" href="/css/admin.css?v=14"><link rel="stylesheet" href="/css/auth.css?v=9"><link rel="stylesheet" href="/css/upload.css?v=27"></noscript>
  </head>
  <body>
 
@@ -734,13 +734,31 @@
     <div class="admBdy">
       <div class="pfTabs" role="tablist">
         <div class="pfTabGroup">
-          <button class="pfTab active" id="mwTabArt" role="tab" aria-selected="true" onclick="mwSwitchTab('art')">ARTWORK</button>
+          <button class="pfTab active" id="mwTab-art" role="tab" aria-selected="true" onclick="mwSwitchTab('art')">ARTWORK</button>
+          <button class="pfTab" id="mwTab-marketplace" role="tab" aria-selected="false" onclick="mwSwitchTab('marketplace')">MARKETPLACE</button>
+          <button class="pfTab" id="mwTab-blog" role="tab" aria-selected="false" onclick="mwSwitchTab('blog')">BLOG</button>
+          <button class="pfTab" id="mwTab-resources" role="tab" aria-selected="false" onclick="mwSwitchTab('resources')">RESOURCES</button>
         </div>
       </div>
 
-      <div class="pfPanel active" id="mwPanelArt">
-        <div class="pfGrid pfGridArt" id="mwArtGrid"></div>
-        <div class="pfEmpty" id="mwArtEmpty" style="display:none;">You haven't uploaded any artwork yet.</div>
+      <div class="pfPanel active" id="mwPanel-art">
+        <div class="pfGrid pfGridArt" id="mwGrid-art"></div>
+        <div class="pfEmpty" id="mwEmpty-art" style="display:none;">You haven't uploaded any artwork yet.</div>
+      </div>
+
+      <div class="pfPanel" id="mwPanel-marketplace">
+        <div class="pfGrid pfGridArt" id="mwGrid-marketplace"></div>
+        <div class="pfEmpty" id="mwEmpty-marketplace" style="display:none;">You haven't listed anything in the marketplace yet.</div>
+      </div>
+
+      <div class="pfPanel" id="mwPanel-blog">
+        <div class="pfGrid pfGridArt" id="mwGrid-blog"></div>
+        <div class="pfEmpty" id="mwEmpty-blog" style="display:none;">You haven't written any blog posts yet.</div>
+      </div>
+
+      <div class="pfPanel" id="mwPanel-resources">
+        <div class="pfGrid pfGridArt" id="mwGrid-resources"></div>
+        <div class="pfEmpty" id="mwEmpty-resources" style="display:none;">You haven't shared any resources yet.</div>
       </div>
 
     </div>
@@ -1940,7 +1958,7 @@
   <script defer src="/js/upqueue.js?v=10"></script>
   <script defer src="/js/avatar.js?v=7"></script>
   <script defer src="/js/pfedit.js?v=26"></script>
-  <script defer src="/js/mywork.js?v=31"></script>
+  <script defer src="/js/mywork.js?v=32"></script>
   <script defer src="/js/startup.js?v=12"></script>
   <script defer src="/js/search.js?v=29"></script>
   <script defer src="/js/feed.js?v=22"></script>
@@ -2332,7 +2350,7 @@
   <script defer src="/js/antrack.js?v=2"></script>
   <script defer src="/js/engagement.js?v=12"></script>
 
-  <script defer src="/js/sections.js?v=141"></script>
+  <script defer src="/js/sections.js?v=142"></script>
   <script defer src="/js/heropitch.js?v=5"></script>
   <script defer src="/js/routes.js?v=4"></script>
 

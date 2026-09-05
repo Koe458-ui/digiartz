@@ -752,6 +752,341 @@
                    jobs:'POST A JOB'};
   var upSec = 'artwork';
 
+  // ---- Editing a published resource, post or listing -------------------------
+  // The same form the section was uploaded with, minus everything that cannot move
+  // once it is live: the stored files and images, and the automatic SEO panel.
+  var dzEdit = null;
+  function dzEditing(sec){ return (dzEdit && dzEdit.sec === sec) ? dzEdit : null; }
+
+  var DZ_EDIT_LOCK = {
+    resources:   { file:1, preview:1 },
+    blog:        { body:1, cover:1 },
+    marketplace: { item_type:1, preview:1, gallery:1, files:1 }
+  };
+    // internal_notes is write-only -- authenticated may UPDATE it but never SELECT it,
+    // so an edit form has nothing to put in the box and saving it would wipe the note
+  var DZ_EDIT_DROP = { marketplace: { internal_notes:1 } };
+
+  var DZ_EDIT_HEAD = {
+    resources:   ['Edit Resource', 'Update the details for this resource.', 'EDIT RESOURCE'],
+    blog:        ['Edit Post',     'Update the details for this post.',     'EDIT POST'],
+    marketplace: ['Edit Listing',  'Update the details for this listing.',  'EDIT LISTING']
+  };
+  var DZ_EDIT_DONE = { resources:'Resource updated', blog:'Post updated', marketplace:'Listing updated' };
+
+  var DZ_LOCK_NOTE = {
+    file:     'The resource file stays as it was uploaded.',
+    preview:  'The preview image stays as it was uploaded.',
+    cover:    'The cover image stays as it was uploaded.',
+    body:     'The post itself stays as it was published.',
+    gallery:  'The extra preview images stay as they were uploaded.',
+    files:    'The files buyers receive stay as they were uploaded.',
+    item_type:'The listing type stays as published, because its files cannot be changed.'
+  };
+
+  function upGuideBtnShow(on){
+    var b = document.getElementById('upGuideBtn');
+    if(b) b.style.display = on ? '' : 'none';
+  }
+    // Editing sheds the two things that only belong to an upload: the guidelines
+    // button in the header, and the automatic panel that reads the file and the SEO
+    // fields off it. The artwork extras are built once and cached in their slots, so
+    // that panel is hidden rather than rebuilt.
+  function dzUpEditChrome(on){
+    upGuideBtnShow(!on);
+    var el = document.querySelector('#pfUpMod .upPopBody [data-fk="__auto"]');
+    if(el) el.style.display = on ? 'none' : '';
+  }
+
+  function dzLockThumb(url, alt){
+    if(!url) return '';
+    return '<span class="dzLockThumb"><img src="'+esc(getThumbnailUrl(url))+'" alt="'+esc(alt||'')+'" loading="lazy"></span>';
+  }
+  function dzLockValue(sec, fd, row){
+    row = row || {};
+    if(fd.k === 'preview'){
+      return { html: dzLockThumb(row.preview_url, 'Preview') || '<span class="dzLockTx">Preview image</span>',
+               value: row.preview_url || '' };
+    }
+    if(fd.k === 'cover'){
+      return { html: dzLockThumb(row.cover_url, 'Cover') || '<span class="dzLockTx">No cover image</span>',
+               value: row.cover_url || '' };
+    }
+    if(fd.k === 'file'){
+      var nm = row.file_name || 'Resource file';
+      var sz = row.file_size ? ' · ' + bytes(row.file_size) : '';
+      return { html:'<span class="dzLockTx">'+esc(nm + sz)+'</span>', value: nm };
+    }
+    if(fd.k === 'gallery'){
+      var gal = Array.isArray(row.gallery) ? row.gallery : [];
+      var pics = gal.slice(0, 8).map(function(g){ return dzLockThumb(g && g.url, ''); }).join('');
+      return { html: pics || '<span class="dzLockTx">No extra preview images</span>',
+               value: String(gal.length) };
+    }
+    if(fd.k === 'files'){
+      var c = Number(row.file_count) || 0;
+      var t = c ? (c + (c === 1 ? ' file' : ' files')) : (row.file_name || 'No files');
+      return { html:'<span class="dzLockTx">'+esc(t)+'</span>', value: row.file_name || '' };
+    }
+    if(fd.k === 'body'){
+      return { html:'<div class="dzLockBody">'+esc(row.body || '')+'</div>', value: row.body || '' };
+    }
+    if(fd.t === 'sel'){
+      var lab = '', o = fd.options || [];
+      for(var i=0;i<o.length;i++){ if(String(o[i][0]) === String(row[fd.k])){ lab = o[i][1]; break; } }
+      return { html:'<span class="dzLockTx">'+esc(lab || row[fd.k] || '—')+'</span>', value: row[fd.k] || '' };
+    }
+    return { html:'<span class="dzLockTx">'+esc(row[fd.k] || '—')+'</span>', value: row[fd.k] || '' };
+  }
+    // The hidden input keeps the field readable to val(), so the conditional fields
+    // and the length checks still see what the row actually holds
+  function dzLockedField(sec, fd, row){
+    var v = dzLockValue(sec, fd, row);
+    return fcard(fd.k, fd.t,
+      '<span class="upLbl">'+esc(fd.label)+' <span class="upOpt">locked</span></span>'+
+      '<div class="dzLocked">'+v.html+'</div>'+
+      '<div class="dzHint">'+esc(DZ_LOCK_NOTE[fd.k] || 'This cannot be changed after publishing.')+'</div>'+
+      '<input type="hidden" id="dz_'+sec+'_'+fd.k+'" value="'+esc(v.value == null ? '' : String(v.value))+'">',
+      ' dzFLock');
+  }
+
+  function dzYesNo(v){ return v ? 'yes' : 'no'; }
+  function dzCat1(v){ return (Array.isArray(v) ? v[0] : v) || ''; }
+  function dzLines(v){ return (Array.isArray(v) ? v : []).join('\n'); }
+  function dzCommas(v){ return (Array.isArray(v) ? v : []).join(','); }
+  function dzFromCents(c){ return (c == null) ? '' : String((Number(c) || 0) / 100); }
+
+  var DZ_EDIT_VALS = {
+    resources: function(r){
+      return {
+        title:r.title||'', summary:r.summary||'', description:r.description||'',
+        resource_type:r.resource_type||'', category:dzCat1(r.category), subcategory:r.subcategory||'',
+        license:r.license||'', commercial_use:dzYesNo(r.commercial_use),
+        attribution_required:dzYesNo(r.attribution_required),
+        modification_allowed:dzYesNo(r.modification_allowed),
+        software:r.software||'', compatible_software:dzLines(r.compatible_software),
+        compatible_versions:r.compatible_versions||'', whats_included:r.whats_included||'',
+        instructions:r.instructions||'', version:r.version||'',
+        external_links:dzLines(r.external_links), safety_notes:r.safety_notes||'',
+        visibility:r.visibility||'published', featured:!!r.featured
+      };
+    },
+    blog: function(r){
+      return {
+        title:r.title||'', excerpt:r.excerpt||'', category:dzCat1(r.category),
+        content_type:r.content_type||'Article',
+        related_artworks:dzCommas(r.related_artworks), related_items:dzCommas(r.related_items),
+        external_refs:dzLines(r.external_refs),
+        visibility:r.visibility||'published', featured:!!r.featured
+      };
+    },
+    marketplace: function(r){
+      return {
+        item_type:r.item_type||'digital', product_type:r.product_type||'',
+        title:r.title||'', summary:r.summary||'', description:r.description||'',
+        category:dzCat1(r.category), subcategory:r.subcategory||'',
+        buyer_gets:r.buyer_gets||'', file_format:r.file_format||'',
+        file_count:r.file_count == null ? '' : String(r.file_count),
+        file_size_mb:r.file_size_mb == null ? '' : String(r.file_size_mb),
+        dimensions:r.dimensions||'', software:r.software||'',
+        source_files_included:!!r.source_files_included,
+        license:r.license||'standard', commercial_use:dzYesNo(r.commercial_use),
+        personal_use:!!r.personal_use, modification_allowed:!!r.modification_allowed,
+        attribution_required:!!r.attribution_required,
+        price:dzFromCents(r.price_cents), currency:r.currency||dzPrefCurrency(),
+        sale_price:dzFromCents(r.sale_price_cents),
+        stock:r.stock == null ? '' : String(r.stock),
+        delivery_type:r.delivery_type||'instant',
+        delivery_days:r.delivery_days == null ? '' : String(r.delivery_days),
+        delivery_notes:r.delivery_notes||'', custom_requests:!!r.custom_requests,
+        revision_count:r.revision_count == null ? '' : String(r.revision_count),
+        support_period:r.support_period||'', refund_policy:r.refund_policy||'',
+        preview_watermark:!!r.preview_watermark, safety_notes:r.safety_notes||'',
+        seller_note:r.seller_note||'', apply_url:r.apply_url||'', apply_email:r.apply_email||'',
+        visibility:r.visibility||'published', featured:!!r.featured,
+        closing_date:String(r.closing_date||'').slice(0,10)
+      };
+    }
+  };
+
+  function dzEditReset(sec){
+    var old = S[sec];
+    if(old && old.urls) Object.keys(old.urls).forEach(function(k){ dzRevoke(old.urls[k]); });
+    S[sec] = {tags:[], files:{}, urls:{}};
+    dzAutoReset(sec);
+  }
+
+  function dzEditFill(sec, row){
+    var make = DZ_EDIT_VALS[sec];
+    if(!make) return;
+    var vals = make(row || {});
+    st(sec).tags = ((row && row.tags) || []).slice();
+    (FORMS[sec] ? FORMS[sec].fields : []).forEach(function(fd){
+      if(fd.t === 'tags' || fd.t === 'auto') return;
+      if(!(fd.k in vals)) return;
+      var el = document.getElementById('dz_'+sec+'_'+fd.k);
+      if(!el) return;
+      if(el.type === 'checkbox') el.checked = !!vals[fd.k];
+      else el.value = vals[fd.k] == null ? '' : String(vals[fd.k]);
+    });
+    dzSelSyncAll(sec);
+    renderTags(sec);
+    dzCountAll(sec);
+    upGrowAll();
+  }
+
+  function dzOpenEdit(sec, row){
+    if(!FORMS[sec] || !SEC[sec] || !row) return false;
+    if(!DZ_EDIT_VALS[sec]) return false;
+    dzEditReset(sec);
+    dzEdit = { sec:sec, id:row.id, row:row };
+    var idEl = document.getElementById('pfUpEditId');
+    if(idEl) idEl.value = String(row.id);
+    dzUpEditChrome(true);
+    upSwitchSection(sec, true);
+    var head = DZ_EDIT_HEAD[sec];
+    var h = document.getElementById('pfUpTitle');       if(h)   h.textContent = head[0];
+    var p = document.getElementById('pfUpSubtitle');    if(p)   p.textContent = head[1];
+    var nav = document.getElementById('pfUpNavTitle');  if(nav) nav.textContent = head[2];
+    dzEditFill(sec, row);
+    var mod = document.getElementById('pfUpMod');
+    if(mod) mod.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return true;
+  }
+
+  function dzEditClose(){
+    dzUpEditChrome(false);
+    if(!dzEdit) return;
+    var sec = dzEdit.sec;
+    dzEdit = null;
+    var idEl = document.getElementById('pfUpEditId');
+    if(idEl) idEl.value = '';
+    dzEditReset(sec);
+    var box = document.getElementById('upSecForms');
+    if(box) box.innerHTML = '';
+  }
+
+  function dzEditCancel(){
+    if(typeof closePfUpload === 'function'){ closePfUpload(); return; }
+    dzEditClose();
+  }
+
+  function dzEditPatch(sec, orig){
+    var row = {}, s = st(sec);
+    if(sec === 'resources'){
+      dzCopy(sec, row,
+        'title summary description whats_included resource_type:? category:[] ' +
+        'subcategory:? license:?personal commercial_use:y attribution_required:y ' +
+        'modification_allowed:Y software:? compatible_versions:? instructions:? ' +
+        'version:? safety_notes:? featured:b');
+      row.tags = s.tags;
+      row.compatible_software = dzRefList('dz_resources_compatible_software').slice(0, 10);
+      row.external_links = dzRefList('dz_resources_external_links').slice(0, 5);
+      row.visibility = val(sec,'visibility') || 'published';
+      row.seo_title = dzSeoTitle(val(sec,'title'));
+      row.seo_description = dzSeoDesc(val(sec,'summary'), val(sec,'description'));
+      return row;
+    }
+    if(sec === 'blog'){
+      dzCopy(sec, row, 'category:[] content_type:?Article featured:b');
+      row.title = val(sec,'title');
+      row.excerpt = val(sec,'excerpt');
+      row.tags = s.tags;
+      row.related_artworks = dzUuids(val(sec,'related_artworks'));
+      row.related_items = dzUuids(val(sec,'related_items'));
+      row.external_refs = dzRefList('dz_blog_external_refs').slice(0, 20);
+      row.visibility = val(sec,'visibility') || 'published';
+      row.seo_title = dzSeoTitle(row.title);
+      row.seo_description = dzSeoDesc(row.excerpt, (orig && orig.body) || '');
+      return row;
+    }
+
+    var type = val(sec,'item_type') || (orig && orig.item_type) || 'digital';
+    var isSvc = !!ITEM_SERVICE[type];
+
+    var mkPrice = parseFloat(val(sec,'price'));
+    if(!isFinite(mkPrice)) throw new Error('Add a price — enter 0 to list it free');
+    var mkCents = Math.round(mkPrice * 100);
+
+    var saleRaw = val(sec,'sale_price'), saleCents = null;
+    if(saleRaw !== ''){
+      var saleNum = parseFloat(saleRaw);
+      if(!isFinite(saleNum)) throw new Error('That sale price is not a number');
+      saleCents = Math.round(saleNum * 100);
+      if(saleCents >= mkCents) throw new Error('The sale price has to be below the price');
+    }
+
+    var mkUrl = dzWebUrl(val(sec,'apply_url')), mkMail = val(sec,'apply_email');
+    if(isSvc){
+      if(!mkUrl && !mkMail) throw new Error('A commission or service needs an application link or email');
+      if(mkMail && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mkMail)) throw new Error('That application email does not look right');
+      if(mkUrl && (mkUrl.length < 10 || mkUrl.length > 200)) throw new Error('The application link has to be 10–200 characters');
+    }
+
+    dzCopy(sec, row,
+      'title description summary buyer_gets file_format category:[] subcategory:? ' +
+      'product_type:? file_count:# file_size_mb:. dimensions:? software:? ' +
+      'source_files_included:b license:?standard commercial_use:Y personal_use:b ' +
+      'modification_allowed:b attribution_required:b stock:# delivery_type:?instant ' +
+      'delivery_notes:? custom_requests:b revision_count:# support_period:? ' +
+      'refund_policy:? preview_watermark:b safety_notes:? seller_note:? ' +
+      'visibility:?published featured:b closing_date:?');
+    row.tags = s.tags;
+    row.price_cents = mkCents;
+    row.sale_price_cents = saleCents;
+    row.currency = val(sec,'currency') || dzPrefCurrency();
+    row.delivery_days = isSvc ? dzInt(val(sec,'delivery_days')) : null;
+    row.apply_url  = isSvc ? (mkUrl  || null) : null;
+    row.apply_email = isSvc ? (mkMail || null) : null;
+    row.seo_title = dzSeoTitle(val(sec,'title'));
+    row.seo_description = dzSeoDesc(val(sec,'summary'), val(sec,'description'));
+    return row;
+  }
+
+  async function dzSaveEdit(sec){
+    var ed = dzEditing(sec);
+    if(!ed) return;
+    if(!sb){ showToast('Backend not configured'); return; }
+    if(!window.currentUser){
+      if(typeof pfGuestGate === 'function') pfGuestGate({preventDefault:function(){},stopPropagation:function(){}});
+      return;
+    }
+    var lock = DZ_EDIT_LOCK[sec] || {};
+    var miss = FORMS[sec].fields.filter(function(fd){
+      if(!fd.req || fd.t === 'auto' || dzIsFileType(fd.t) || lock[fd.k]) return false;
+      if(!dzCondShow(sec, fd)) return false;
+      var v = val(sec, fd.k);
+      if((fd.t === 'int' || fd.t === 'money') && v === '0') return false;
+      return !v;
+    });
+    if(miss.length){ dzFieldFail(sec, miss[0].k, 'Missing: ' + miss[0].label); return; }
+
+    var bad = dzLimits(sec);
+    if(bad){ dzFieldFail(sec, bad.k, bad.msg); return; }
+
+    var btn = document.getElementById('dzSubmit-'+sec);
+    if(btn){ btn.disabled = true; btn.textContent = 'Saving…'; }
+    try{
+      var patch = dzEditPatch(sec, ed.row);
+      var res = await sb.from(SEC[sec].table).update(patch)
+                  .eq('id', ed.id).eq('user_id', currentUser.id);
+      if(res && res.error) throw res.error;
+      Object.keys(patch).forEach(function(k){ ed.row[k] = patch[k]; });
+      dzLoaded[sec] = false;
+      var c = dzc();
+      if(c){ try{ await c.invalidateSection(sec, ed.id); }catch(e){} }
+      if(typeof window.mwSecChanged === 'function') window.mwSecChanged(sec);
+      showToast(DZ_EDIT_DONE[sec] || 'Saved');
+      dzEditCancel();
+    }catch(err){
+      showToast((err && err.message) ? err.message : 'Could not save your changes');
+    }finally{
+      if(btn){ btn.disabled = false; btn.textContent = '📤 Save Changes'; }
+    }
+  }
+
   var DZ_ZONE_SVG = '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>'+
     '<path d="m7 9 5-5 5 5"/><path d="M12 4v12"/>';
   function zoneIco(){
@@ -1115,8 +1450,26 @@
   }
 
   function buildForm(sec){
-    var f = FORMS[sec];
-    var fields = f.fields.map(function(fd){ return field(sec, fd); }).join('');
+    var f = FORMS[sec], ed = dzEditing(sec);
+    var drop = DZ_EDIT_DROP[sec] || {};
+    var fields = f.fields.filter(function(fd){
+      if(!ed) return true;
+      return fd.t !== 'auto' && !drop[fd.k];
+    }).map(function(fd){ return field(sec, fd); }).join('');
+
+    if(ed){
+      return ''+
+      '<div class="dzUpWrap dzUpWrap--edit">'+
+        '<div class="dzUpForm"><div class="upMain">'+
+          '<div class="upCard"><div class="upFieldsCol">'+ fields +'</div></div>'+
+          '<div class="upActions">'+
+            '<button type="button" class="upBtnSec" onclick="dzEditCancel()">\u2039 Back</button>'+
+            '<button type="button" class="upBtnPri" id="dzSubmit-'+sec+'" onclick="dzSaveEdit(\''+sec+'\')">\uD83D\uDCE4 Save Changes</button>'+
+          '</div>'+
+          '<p class="dzHint" style="margin-top:.9rem">Your changes go live as soon as you save. Files and images stay as they were uploaded.</p>'+
+        '</div></div>'+
+      '</div>';
+    }
 
     return ''+
     '<div class="dzUpWrap">'+
@@ -1340,6 +1693,8 @@
   }
 
   function field(sec, fd){
+    var ed = dzEditing(sec);
+    if(ed && (DZ_EDIT_LOCK[sec] || {})[fd.k]) return dzLockedField(sec, fd, ed.row);
     var id = 'dz_'+sec+'_'+fd.k;
     var lbl = labelFor(id, fd);
     var hint = fd.hint
@@ -1367,7 +1722,12 @@
              limitAttrs(fd)+' placeholder="'+esc(fd.ph||'')+'"></textarea>';
     } else if(fd.t === 'sel'){
       var want = fd.pref ? dzPrefCurrency() : (fd.def != null ? fd.def : null);
-      body = dzSelField(id, fd.options || [], want);
+      var sOpts = fd.options || [];
+        // Scheduling is an upload-time choice -- an edit has no schedule field to pair it with
+      if(ed && fd.k === 'visibility'){
+        sOpts = sOpts.filter(function(o){ return o[0] !== 'scheduled'; });
+      }
+      body = dzSelField(id, sOpts, want);
     } else if(fd.t === 'chk'){
       return fcard(fd.k, fd.t, '<label class="upCatOpt upFChk">'+
              '<input type="checkbox" id="'+id+'"> '+esc(fd.label)+'</label>'+hint, cond);
@@ -3073,9 +3433,25 @@
     var orig = window.openPfUpload;
     if(typeof orig !== 'function') return;
     window.openPfUpload = function(sec){
+      dzEditClose();
       var r = orig.apply(this, arguments);
       if(!SEC_COLOR[sec]) sec = 'artwork';
       try{ upSwitchSection(sec, sec === 'artwork'); }catch(e){}
+        // After the switch: on artwork the automatic panel is only in the DOM once
+        // dzArtExtras has filled its slot
+      dzUpEditChrome(false);
+      return r;
+    };
+  })();
+
+    // closePfUpload reads pfUpEditId to decide whether it was an edit, so the
+    // edit state is torn down after the original has had its look at it
+  (function(){
+    var orig = window.closePfUpload;
+    if(typeof orig !== 'function') return;
+    window.closePfUpload = function(){
+      var r = orig.apply(this, arguments);
+      dzEditClose();
       return r;
     };
   })();
@@ -3119,6 +3495,12 @@
   window.dzSeoDesc       = dzSeoDesc;
   window.dzSlugify       = slugify;
   window.dzSubmit        = dzSubmit;
+  window.dzOpenEdit      = dzOpenEdit;
+  window.dzSaveEdit      = dzSaveEdit;
+  window.dzEditCancel    = dzEditCancel;
+  window.dzEditClose     = dzEditClose;
+  window.upGuideBtnShow  = upGuideBtnShow;
+  window.dzUpEditChrome  = dzUpEditChrome;
   window.dzResetForm     = dzResetForm;
   window.dzTagKey        = dzTagKey;
   window.dzTagBlur       = dzTagBlur;

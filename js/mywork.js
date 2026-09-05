@@ -1,4 +1,36 @@
-  var mw = { art: [], tab: 'art' };
+  var MW_TABS = ['art', 'marketplace', 'blog', 'resources'];
+  var mw = { art: [], tab: 'art', rows: {}, loaded: {} };
+
+  var MW_SEC = {
+    marketplace: {
+      table:'marketplace_items', noun:'listing', done:'Listing removed', icon:'\u{1F6CD}',
+      media:[['marketplace_image','item_id'], ['marketplace_file','item_id']],
+      select:'id,user_id,title,summary,description,category,subcategory,tags,item_type,product_type,'+
+             'price_cents,sale_price_cents,currency,file_name,file_ext,file_size,file_format,file_count,'+
+             'file_size_mb,dimensions,software,source_files_included,preview_url,gallery,license,'+
+             'commercial_use,personal_use,modification_allowed,attribution_required,stock,delivery_type,'+
+             'delivery_days,delivery_notes,custom_requests,revision_count,support_period,refund_policy,'+
+             'preview_watermark,safety_notes,seller_note,apply_url,apply_email,buyer_gets,visibility,'+
+             'featured,closing_date,status,created_at'
+    },
+    blog: {
+      table:'blog_posts', noun:'post', done:'Post removed', icon:'\u{1F4DD}',
+      media:[['blog_image','post_id']],
+      paths:['cover_storage_path'],
+      select:'id,user_id,title,excerpt,body,cover_url,cover_storage_path,category,tags,content_type,'+
+             'related_artworks,related_items,external_refs,visibility,featured,status,created_at'
+    },
+    resources: {
+      table:'resources', noun:'resource', done:'Resource removed', icon:'\u{1F4E6}',
+      media:[['resources_image','resource_id'], ['resources_file','resource_id']],
+      paths:['preview_storage_path'],
+      select:'id,user_id,title,summary,description,resource_type,category,subcategory,tags,preview_url,'+
+             'preview_storage_path,file_name,file_ext,file_size,file_count,dimensions,license,'+
+             'commercial_use,attribution_required,modification_allowed,software,compatible_software,'+
+             'compatible_versions,whats_included,instructions,version,external_links,safety_notes,'+
+             'visibility,featured,status,created_at'
+    }
+  };
 
   function openMyWorkPage(){
     if(!currentUser){ showToast('Sign in first'); return; }
@@ -8,9 +40,14 @@
   }
   function closeMyWorkPage(){ dzPanelShut('pfMyWorkPage'); }
   function mwSwitchTab(tab){
+    if(MW_TABS.indexOf(tab) === -1) tab = 'art';
     mw.tab = tab;
-    document.getElementById('mwTabArt').classList.toggle('active', tab==='art');
-    document.getElementById('mwPanelArt').classList.toggle('active', tab==='art');
+    MW_TABS.forEach(function(t){
+      var b = document.getElementById('mwTab-'+t), p = document.getElementById('mwPanel-'+t);
+      if(b){ b.classList.toggle('active', t === tab); b.setAttribute('aria-selected', t === tab ? 'true' : 'false'); }
+      if(p) p.classList.toggle('active', t === tab);
+    });
+    if(tab !== 'art') mwLoadSec(tab);
   }
   async function mwLoadData(){
     if(!sb || !currentUser) return;
@@ -21,6 +58,27 @@
     }catch(e){ console.error('Error loading your work: '+e.message); mw.art=[]; }
     mwRenderArt();
   }
+
+  async function mwLoadSec(sec, force){
+    var cfg = MW_SEC[sec];
+    if(!cfg) return;
+    if(mw.loaded[sec] && !force){ mwRenderSec(sec); return; }
+    if(!sb || !currentUser){ mwRenderSec(sec); return; }
+    var grid = document.getElementById('mwGrid-'+sec);
+    if(grid && !mw.loaded[sec]) grid.innerHTML = '<div class="pfEmpty" style="grid-column:1/-1;">Loading…</div>';
+    try{
+      var res = await sb.from(cfg.table).select(cfg.select)
+                  .eq('user_id', currentUser.id).order('created_at',{ascending:false});
+      if(res && res.error) throw res.error;
+      mw.rows[sec] = (res && res.data) || [];
+      mw.loaded[sec] = true;
+    }catch(e){
+      console.error('Error loading your ' + cfg.noun + 's: ' + ((e && e.message) || e));
+      mw.rows[sec] = mw.rows[sec] || [];
+    }
+    mwRenderSec(sec);
+  }
+
   function mwCardHTML(row){
     var idStr = esc(String(row.id));
     var img = dzThumbAttrs(row.image_url);
@@ -40,11 +98,51 @@
     '</div>';
   }
   function mwRenderArt(){
-    var grid = document.getElementById('mwArtGrid'), empty = document.getElementById('mwArtEmpty');
+    var grid = document.getElementById('mwGrid-art'), empty = document.getElementById('mwEmpty-art');
     if(!grid) return;
     var qHtml = (typeof upq==='object' && currentUser) ? upqOwnQueueHTML() : '';
     grid.innerHTML = qHtml + mw.art.map(mwCardHTML).join('');
     empty.style.display = (mw.art.length || qHtml) ? 'none' : 'block';
+  }
+
+  function mwSecCardHTML(sec, row){
+    var cfg = MW_SEC[sec];
+    var idStr = esc(String(row.id));
+    var pic = row.preview_url || row.cover_url || '';
+    var title = esc(row.title || 'Untitled');
+    var thumb = pic
+      ? '<img class="admCardImg" '+dzThumbAttrs(pic)+' alt="'+title+'" loading="lazy">'
+      : '<span class="admCardNoImg" aria-hidden="true">'+cfg.icon+'</span>';
+    var bits = [];
+    if(row.created_at) bits.push(new Date(row.created_at).toLocaleDateString());
+    if(row.status && row.status !== 'approved') bits.push(String(row.status).toUpperCase());
+    else if(row.visibility && row.visibility !== 'published') bits.push(String(row.visibility).toUpperCase());
+    return '<div class="admCard" data-id="'+idStr+'">'+
+      '<div class="admCardThumb">'+thumb+'</div>'+
+      '<div class="admCardBody">'+
+        '<div class="admCardTitle">'+title+'</div>'+
+        '<div class="admCardMeta">'+esc(bits.join(' · '))+'</div>'+
+        '<div class="admCardActions">'+
+          '<button class="mwEditBtn" onclick="mwEditSec(\''+sec+'\',\''+idStr+'\',event)">✎ Edit</button>'+
+          '<button class="mwDeleteBtn" onclick="mwDeleteSec(\''+sec+'\',\''+idStr+'\',event)">✕ Delete</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+  function mwRenderSec(sec){
+    var grid = document.getElementById('mwGrid-'+sec), empty = document.getElementById('mwEmpty-'+sec);
+    if(!grid) return;
+    var rows = mw.rows[sec] || [];
+    grid.innerHTML = rows.map(function(r){ return mwSecCardHTML(sec, r); }).join('');
+    if(empty) empty.style.display = rows.length ? 'none' : 'block';
+  }
+    // sections.js calls this once an edit has saved, so the card behind the form catches up
+  function mwSecChanged(sec){ if(MW_SEC[sec]) mwRenderSec(sec); }
+
+  function mwAsk(noun, fn){
+    var q = 'Are you sure you want to delete this ' + noun + '?';
+    if(typeof window.dzConfirm === 'function'){ window.dzConfirm(q, '', 'Yes', fn, 'No'); return; }
+    if(confirm(q)) fn();
   }
 
   function mwEditArt(id, e){
@@ -54,7 +152,9 @@
     if(!currentUser || String(art.user_id)!==String(currentUser.id)){ showToast('You can only edit your own artwork'); return; }
     pf.upFile = null;
     pf.upThumbFocus = null;
+    if(typeof window.dzEditClose === 'function') window.dzEditClose();
     if(typeof upSwitchSection === 'function') upSwitchSection('artwork', true);
+    if(typeof window.dzUpEditChrome === 'function') window.dzUpEditChrome(true);
     document.getElementById('pfUpEditId').value = String(art.id);
     document.getElementById('pfUpTitle').textContent = 'Edit Artwork';
     document.getElementById('pfUpSubtitle').textContent = 'Update the details for this piece.';
@@ -95,12 +195,14 @@
     document.getElementById('pfUpBtn').textContent = '📤 Save Changes';
     document.getElementById('pfUpMod').classList.add('open');
   }
-  async function mwDeleteArt(id, e){
+  function mwDeleteArt(id, e){
     if(e) e.stopPropagation();
     var art = mw.art.find(function(r){ return String(r.id)===String(id); });
     if(!art){ return; }
     if(!currentUser || String(art.user_id)!==String(currentUser.id)){ showToast('You can only delete your own artwork'); return; }
-    if(!confirm('Delete this artwork? This cannot be undone.')) return;
+    mwAsk('artwork', function(){ mwDoDeleteArt(id, art); });
+  }
+  async function mwDoDeleteArt(id, art){
     try{
     // Row goes first. File-first meant a refused delete left an artwork with its picture gone. A stranded file is only a file
       const{error}=await sb.from('artworks').delete().eq('id',id);
@@ -126,6 +228,82 @@
       if(typeof window.dzGalleryStore === 'function') window.dzGalleryStore();
       showToast('Artwork removed');
     }catch(err){ console.error('Error: '+err.message); }
+  }
+
+  function mwSecRow(sec, id){
+    return (mw.rows[sec] || []).find(function(r){ return String(r.id) === String(id); });
+  }
+
+  function mwEditSec(sec, id, e){
+    if(e) e.stopPropagation();
+    var cfg = MW_SEC[sec];
+    if(!cfg) return;
+    var row = mwSecRow(sec, id);
+    if(!row){ showToast('That ' + cfg.noun + ' is no longer here'); return; }
+    if(!currentUser || String(row.user_id) !== String(currentUser.id)){
+      showToast('You can only edit your own ' + cfg.noun); return;
+    }
+    if(typeof window.dzOpenEdit !== 'function'){ showToast('Editing is not available right now'); return; }
+    window.dzOpenEdit(sec, row);
+  }
+
+  function mwDeleteSec(sec, id, e){
+    if(e) e.stopPropagation();
+    var cfg = MW_SEC[sec];
+    if(!cfg) return;
+    var row = mwSecRow(sec, id);
+    if(!row) return;
+    if(!currentUser || String(row.user_id) !== String(currentUser.id)){
+      showToast('You can only delete your own ' + cfg.noun); return;
+    }
+    mwAsk(cfg.noun, function(){ mwDoDeleteSec(sec, id, row); });
+  }
+
+    // Read the media rows before the parent goes, because deleting it cascades them away
+  async function mwSecFiles(sec, id, row){
+    var cfg = MW_SEC[sec], out = [];
+    (cfg.paths || []).forEach(function(k){
+      if(row[k]) out.push({ bucket: BUCKET, path: row[k] });
+    });
+    for(var i = 0; i < (cfg.media || []).length; i++){
+      var m = cfg.media[i];
+      try{
+        var res = await sb.from(m[0]).select('storage_bucket,storage_path').eq(m[1], id);
+        if(res && res.error) throw res.error;
+        ((res && res.data) || []).forEach(function(f){
+          if(f && f.storage_path) out.push({ bucket: f.storage_bucket || BUCKET, path: f.storage_path });
+        });
+      }catch(e){
+        console.warn('could not list ' + m[0] + ' for cleanup:', (e && e.message) || e);
+      }
+    }
+    if(Array.isArray(row.gallery)){
+      row.gallery.forEach(function(g){ if(g && g.path) out.push({ bucket: BUCKET, path: g.path }); });
+    }
+    return out;
+  }
+
+  async function mwDoDeleteSec(sec, id, row){
+    var cfg = MW_SEC[sec];
+    if(!sb){ showToast('Backend not configured'); return; }
+    try{
+      var files = await mwSecFiles(sec, id, row);
+        // Row goes first, same as artwork: a refused delete must not strip the files off a live listing
+      var del = await sb.from(cfg.table).delete().eq('id', id).eq('user_id', currentUser.id);
+      if(del && del.error) throw del.error;
+      for(var i = 0; i < files.length; i++){
+        try{ await s3Delete(files[i].bucket, files[i].path); }
+        catch(sweep){ console.warn(cfg.noun + ' file not removed:', (sweep && sweep.message) || sweep); }
+      }
+      mw.rows[sec] = (mw.rows[sec] || []).filter(function(r){ return String(r.id) !== String(id); });
+      mwRenderSec(sec);
+      if(typeof window.dzSecReset === 'function') window.dzSecReset(sec);
+      var c = (typeof window.dzCached === 'function') ? window.dzCached() : null;
+      if(c && c.invalidateSection){ try{ await c.invalidateSection(sec, id); }catch(e){} }
+      showToast(cfg.done);
+    }catch(err){
+      showToast((err && err.message) ? err.message : ('Could not delete that ' + cfg.noun));
+    }
   }
 
   var cpComments = [];

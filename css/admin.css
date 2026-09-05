@@ -159,3 +159,8 @@
 .notifMsg{font-family:var(--fb);font-size:var(--fs-sm);color:var(--txd);margin-top:var(--sp-1);line-height:var(--lh-normal);word-break:break-word;}
 .notifTime{font-family:var(--fm);font-size:var(--fs-3xs);letter-spacing:var(--ls-wider);color:var(--txd);opacity:.7;margin-top:var(--sp-2);}
 .notifDot{position:absolute;top:.9rem;right:.9rem;width:8px;height:8px;border-radius:50%;background:var(--pg);}
+
+.admCardNoImg{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:var(--fs-3xl);opacity:.5;background:var(--sur2);
+}

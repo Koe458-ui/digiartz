@@ -612,3 +612,25 @@ html[data-theme="offwhite"] .upGdPop *{
   .upGatePlans{grid-template-columns:minmax(0,1fr);max-width:280px;}
   .upQuotaWhen{margin-left:0;width:100%;}
 }
+
+/* Editing a published section: fields that cannot move, shown as they stand */
+.upField.dzFLock{opacity:.92;}
+.dzLocked{
+  display:flex;flex-wrap:wrap;gap:var(--sp-3);align-items:center;
+  margin-top:var(--sp-3);
+}
+.dzLockTx{
+  font-family:var(--fb);font-size:var(--fs-sm);color:var(--tx);
+  word-break:break-word;
+}
+.dzLockThumb{
+  width:64px;height:64px;border-radius:8px;overflow:hidden;flex:0 0 auto;
+  background:var(--sur2);border:1px solid var(--bdr);
+}
+.dzLockThumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.dzLockBody{
+  width:100%;max-height:190px;overflow:auto;white-space:pre-wrap;
+  background:var(--sur2);border:1px solid var(--bdr);border-radius:9px;
+  padding:var(--sp-4) var(--sp-5);
+  font-family:var(--fb);font-size:var(--fs-xs);line-height:1.6;color:rgba(var(--tx2-rgb),.8);
+}

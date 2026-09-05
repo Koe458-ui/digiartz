@@ -652,14 +652,18 @@
     box.querySelector('#vwCfmYes').onclick = function(){ window.dzConfirmYes(); };
     return box;
   }
-  window.dzConfirm = function(title, msg, yesLabel, fn){
+  window.dzConfirm = function(title, msg, yesLabel, fn, noLabel){
     var box = cfmBox();
     if(!box){ if(window.confirm(title)) fn(); return; }
     cfmFn = fn;
     document.getElementById('vwCfmT').textContent = title;
-    document.getElementById('vwCfmM').textContent = msg || '';
+    var mEl = document.getElementById('vwCfmM');
+    mEl.textContent = msg || '';
+    mEl.hidden = !msg;
     var y = document.getElementById('vwCfmYes');
     y.textContent = yesLabel || 'Delete';
+    var n = document.getElementById('vwCfmNo');
+    n.textContent = noLabel || 'Cancel';
     box.hidden = false;
     setTimeout(function(){ try{ document.getElementById('vwCfmNo').focus(); }catch(e){} }, 20);
   };

@@ -86,7 +86,8 @@
 
   if(!('inert' in HTMLElement.prototype)) return;
 
-  var watched = [];
+  var watched = [];   // has a class observer on it
+  var owned   = [];   // ours, so its inert state is ours to set
 
   function wake(el){
     var imgs = el.querySelectorAll('img[data-src]');
@@ -103,22 +104,44 @@
     el.inert = !open;
   }
 
+    // `open` is this app's own word for a shown panel, and data-dz-panel is how
+    // code that builds a panel after load says so. Between them they are the
+    // whole of what this may touch.
+  function mine(el){
+    return el.hasAttribute('data-dz-panel') || el.classList.contains('open');
+  }
+
+  function own(el){
+    if(owned.indexOf(el) === -1) owned.push(el);
+    apply(el);
+  }
+
   var classes = new MutationObserver(function(muts){
-    for(var i = 0; i < muts.length; i++) apply(muts[i].target);
+    for(var i = 0; i < muts.length; i++){
+      var el = muts[i].target;
+      if(owned.indexOf(el) !== -1) apply(el);
+      else if(mine(el)) own(el);
+    }
   });
 
-  function adopt(el){
+  function adopt(el, ours){
     if(!isPanel(el) || watched.indexOf(el) !== -1) return;
     watched.push(el);
-    apply(el);
+    if(ours || mine(el)) own(el);
     classes.observe(el, { attributes:true, attributeFilter:['class'] });
   }
 
+  // Everything the document shipped with is a panel of ours by construction.
   var kids = document.body.children;
-  for(var i = 0; i < kids.length; i++) adopt(kids[i]);
+  for(var i = 0; i < kids.length; i++) adopt(kids[i], true);
 
+  // Anything appended later may not be. Razorpay and PayPal both put a fixed,
+  // hidden container on the body, and inerting one is permanent: the only thing
+  // that clears inert is the `open` class, which no payment SDK will ever add.
+  // The checkout then paints and takes no click, tap or keystroke at all. So a
+  // late arrival waits until the app opens it, or says outright that it is ours.
   new MutationObserver(function(muts){
     for(var i = 0; i < muts.length; i++)
-      for(var j = 0; j < muts[i].addedNodes.length; j++) adopt(muts[i].addedNodes[j]);
+      for(var j = 0; j < muts[i].addedNodes.length; j++) adopt(muts[i].addedNodes[j], false);
   }).observe(document.body, { childList:true });
 })();

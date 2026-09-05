@@ -3,7 +3,7 @@
 
   var CHUNKS = {
     analytics: {
-      src: ['/js/analytics.js?v=22'],
+      src: ['/js/analytics.js?v=23'],
       css: ['/css/analytics.css?v=17'],
       api: ['openAnalyticsPage']
     },

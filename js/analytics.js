@@ -1635,6 +1635,10 @@
     pg.id = 'anListPage';
     pg.setAttribute('role', 'dialog');
     pg.setAttribute('aria-modal', 'true');
+      // Built after load, so boot.js cannot tell it from a payment SDK's
+      // overlay by looking. This says it is a panel of ours, and it goes back
+      // to being inert whenever it is closed.
+    pg.setAttribute('data-dz-panel', '');
     pg.style.cssText = 'position:fixed;inset:0;z-index:546;overflow-y:auto;' +
                        'background:var(--bg,#1A1A1F);color:var(--tx,#F3F3F8);';
 

@@ -55,7 +55,7 @@ const SHELL_URLS = [
   '/js/badwords.js?v=5',
   '/js/captcha.js?v=4',
 
-  '/js/boot.js?v=3',
+  '/js/boot.js?v=4',
   '/js/cache.js?v=4',
   '/js/ranking.js?v=9',
   '/js/community.js?v=10',
@@ -86,9 +86,9 @@ const SHELL_URLS = [
   '/js/legal-content.js?v=4',
   '/js/theme.js?v=10',
   '/js/antrack.js?v=2',
-  '/js/lazy.js?v=13',
+  '/js/lazy.js?v=14',
 
-  '/js/analytics.js?v=22',
+  '/js/analytics.js?v=23',
   '/js/hubs.js?v=5',
   '/js/secview.js?v=8',
   '/js/engagement.js?v=12',

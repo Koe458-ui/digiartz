@@ -57,7 +57,7 @@ export async function sbService(env, path, init = {}) {
     },
   });
   const body = await res.json().catch(() => null);
-  if (!res.ok) throw new Error('Database error (' + res.status + ')');
+  if (!res.ok) throw new Error('postgrest ' + (init.method || 'GET') + ' ' + path + ' -> ' + res.status);
   return body;
 }
 

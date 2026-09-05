@@ -1,3 +1,4 @@
+import { safeError } from '../lib/http.js';
 import { sbUrl, sbAnon, sbSvc, sbUser, sbRpc, underLimit, sbService, ledger } from '../lib/sb.js';
 import { toValue } from '../lib/money.js';
 import { pp } from '../lib/paypal.js';
@@ -21,7 +22,7 @@ const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,24}$/i;
 
 async function wallet(env, request, fn, args = {}) {
   const res = await sbRpc(env, fn, args, request);
-  if (!res.ok) throw new Error('Could not read your balance (' + res.status + ')');
+  if (!res.ok) throw new Error('wallet rpc ' + fn + ' returned ' + res.status);
   return res.body;
 }
 
@@ -512,7 +513,7 @@ export async function onRequestPost({ env, request }) {
           method: 'PATCH',
           body: JSON.stringify({
             status: 'approved',
-            review_note: String((err && err.message) || 'Send failed').slice(0, 500),
+            review_note: 'Not sent \u2014 the provider refused. See the edge log for its reason.',
           }),
         }).catch(() => {});
         if (retiredIds.length) {
@@ -522,12 +523,12 @@ export async function onRequestPost({ env, request }) {
             method: 'PATCH', body: JSON.stringify({ status: 'available' }),
           }).catch(() => {});
         }
-        return json({ error: (err && err.message) || 'Could not send the payout' }, 502);
+        return safeError(err, 'The payout could not be sent. It is back in the approved queue.', 502);
       }
     }
 
     return json({ error: 'Unknown action' }, 400);
   } catch (err) {
-    return json({ error: (err && err.message) || 'Payout service error' }, 500);
+    return safeError(err, 'The payout service is not answering \u2014 try again shortly.', 500);
   }
 }

@@ -1,3 +1,4 @@
+import { safeError } from '../lib/http.js';
 import { sbUrl, sbAnon, sbSvc, sbUser, underLimit, sbService, hmacMatches } from '../lib/sb.js';
 import { fromPriceCents } from '../lib/money.js';
 import {
@@ -154,6 +155,6 @@ export async function onRequestPost({ env, request }) {
 
     return json({ error: 'Unknown action' }, 400);
   } catch (err) {
-    return json({ error: (err && err.message) || 'Payment service error' }, 500);
+    return safeError(err, 'The payment could not be completed \u2014 try again.', 500);
   }
 }

@@ -1,3 +1,4 @@
+import { safeError } from '../lib/http.js';
 import { sbUrl, sbSvc, sbService, ledger } from '../lib/sb.js';
 import { pp } from '../lib/paypal.js';
 import {
@@ -146,7 +147,7 @@ export async function onRequestPost({ env, request }) {
 
     return json({ ok: true, skipped: type });
   } catch (err) {
-    return json({ error: (err && err.message) || 'handler failed' }, 500);
+    return safeError(err, 'handler failed', 500);
   }
 }
 

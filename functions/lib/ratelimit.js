@@ -10,6 +10,7 @@ const LIMITS = [
   ['/api/moderation',        30],
   ['/api/moderate-upload',   20],
   ['/api/ops',               30],
+  ['/api/csp-report',        30],
   ['/api/store',             60],
   ['/api/download',         120],
   ['/api/market-download',  120],

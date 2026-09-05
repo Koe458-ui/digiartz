@@ -106,6 +106,28 @@ for (const f of ['download', 'market-download', 'resource-download', 'moderate-u
   falsy(`${f}.js does not return String(err) to the caller`, /detail:\s*String\(err\)/.test(src));
 }
 
+// A thrown error came from Razorpay, PayPal, PostgREST or the runtime. None of
+// them write for our members, and their text describes our integration.
+for (const f of ['functions/api/rzp.js', 'functions/api/paypal.js', 'functions/api/payouts.js',
+                 'functions/api/rzp-webhook.js', 'functions/api/paypal-webhook.js']) {
+  const src = readFileSync(f, 'utf8');
+  falsy(`${f} never puts err.message in a response body`,
+        /json\(\s*\{\s*error:\s*\(?\s*err\s*&&\s*err\.message/.test(src));
+  falsy(`${f} never stores err.message where a member reads it`,
+        /review_note:\s*String\(\s*\(?\s*err/.test(src));
+  truthy(`${f} routes unexpected errors through safeError`, /\bsafeError\(/.test(src));
+}
+
+{
+  const http = readFileSync('functions/lib/http.js', 'utf8');
+  truthy('safeError logs the real error', /console\.error/.test(http));
+  truthy('safeError answers with the fixed message only', /json\(\{ error: message \}, status\)/.test(http));
+
+  const sb = readFileSync('functions/lib/sb.js', 'utf8');
+  falsy('sbService no longer names the status in a throwable shown to members',
+        /'Database error \(' \+ res\.status/.test(sb));
+}
+
 {
   const src = readFileSync('functions/api/paypal.js', 'utf8');
   truthy('capture select includes user_id', /select=id,user_id,kind,plan,item_id/.test(src));

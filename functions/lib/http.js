@@ -54,6 +54,23 @@ export function json(obj, status, extra) {
   });
 }
 
+// Anything thrown past a handler's own checks came from a provider, the
+// database or the runtime, and none of those write for our members. The
+// handlers return every message they author early -- "Amount must be between
+// ...", "Listing not found" -- so this is only ever reached by something
+// unexpected. It answers with one fixed sentence and puts the real error where
+// an operator can read it, which is the edge log, not the response body.
+//
+// Razorpay's "Order amount must be at least INR 1.00" and PayPal's
+// details[0].description are exactly the kind of text that reads like a helpful
+// hint and is really a description of our integration.
+export function safeError(err, message, status) {
+  try {
+    console.error('[dz] ' + message + ' :: ' + ((err && (err.stack || err.message)) || String(err)));
+  } catch {   }
+  return json({ error: message }, status);
+}
+
 export const notFound = () => new Response('Not found', {
   status: 404,
   headers: {

@@ -86,7 +86,7 @@ const SHELL_URLS = [
   '/js/legal-content.js?v=4',
   '/js/theme.js?v=10',
   '/js/antrack.js?v=2',
-  '/js/lazy.js?v=12',
+  '/js/lazy.js?v=13',
 
   '/js/analytics.js?v=22',
   '/js/hubs.js?v=5',

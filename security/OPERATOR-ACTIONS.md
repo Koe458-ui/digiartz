@@ -17,7 +17,8 @@ advise and gate nothing: a pull request with every check red can be merged, and
 history on the branch that becomes production can be rewritten.
 
 **Why not automated:** the GitHub MCP server exposes no branch-protection or
-repository-settings endpoint. Nothing in this session could set it.
+repository-settings endpoint. Every tool it offers was searched; there is no
+route to repository settings from here.
 
 **Do this:** Settings → Branches → Add branch ruleset, target `main`:
 
@@ -58,13 +59,12 @@ checked from the repository.
 
 ## 3. Storage quota — MEDIUM
 
-See `security/STORAGE-QUOTA.md`. Short version: every upload limit lives in
-`smart-function`, which a member can skip by talking to the storage API
-directly, and `storage.objects` is owned by `supabase_storage_admin` — the
-project's `postgres` role is not a member, so `CREATE TRIGGER` and
-`CREATE POLICY` on it both fail with `42501` from a migration. The function to
-call is written and can be applied normally; only the two policy edits need the
-Dashboard.
+See `security/STORAGE-QUOTA.md`, which now carries the evidence: trigger,
+policy, policy-alter and self-grant were each attempted against the live
+project and each refused by the same ownership check, with the storage schema
+re-read afterwards to confirm nothing was left behind. The quota function
+itself is `public` schema and applies normally; only the two policy edits need
+the Dashboard.
 
 ---
 

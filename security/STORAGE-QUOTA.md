@@ -43,9 +43,19 @@ select r.rolname from pg_auth_members m
 -- pg_read_all_data, pg_signal_backend, service_role, supabase_privileged_role
 ```
 
-So `CREATE TRIGGER` and `CREATE POLICY` on that table both fail with
-`42501: must be owner of table objects`, from a migration and from the SQL
-editor alike. The existing storage policies were created through the Dashboard,
+All three routes were tried against the live project and all three were
+refused:
+
+| attempt | result |
+|---|---|
+| `CREATE TRIGGER ... ON storage.objects` | `42501: must be owner of table objects` |
+| `CREATE POLICY ... ON storage.objects` | refused, same ownership check |
+| `ALTER POLICY storage_user_upload_own_folder ...` | refused, same ownership check |
+| `GRANT supabase_storage_admin TO postgres` | refused — `postgres` has CREATEROLE but no ADMIN OPTION on that role |
+
+Afterwards the storage schema was re-read to confirm nothing was left behind:
+12 policies and 2 triggers, exactly as before, and the upload policy's
+`WITH CHECK` byte-identical. The existing storage policies were created through the Dashboard,
 which holds the right credentials. That is a sound platform boundary and not
 something to work around.
 

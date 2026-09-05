@@ -12,7 +12,7 @@ to click or run.
 ## 1. Branch protection on `main` — HIGH
 
 `main` has none. No required review, no required status check, force-push not
-blocked — and `main` is what Cloudflare Pages deploys. So the eight CI jobs
+blocked — and `main` is what Cloudflare Pages deploys. So the ten CI jobs
 advise and gate nothing: a pull request with every check red can be merged, and
 history on the branch that becomes production can be rewritten.
 
@@ -25,8 +25,9 @@ route to repository settings from here.
 - Require a pull request before merging — **1 approval**, or 0 if you are
   routinely the only committer. Even at 0, the PR requirement is what makes the
   status checks below able to block.
-- Require status checks to pass. Add all eight: `precache`, `cachebust`,
-  `overlays`, `sections`, `cache`, `security`, `sql`, `syntax`.
+- Require status checks to pass. Add all ten: `precache`, `cachebust`,
+  `overlays`, `sections`, `cache`, `security`, `csp`, `sql`, `syntax`, and the
+  emitted-module step inside `syntax`.
 - Block force pushes.
 - Do **not** tick "Allow specified actors to bypass" for yourself. A rule you
   can walk past is a rule that will be walked past on the day it matters.
@@ -82,26 +83,34 @@ curl -sSI https://digiartz.net/ | grep -iE 'content-security-policy|strict-trans
 curl -sSI https://digiartz.net/api/store            # expect 401, no-store, nosniff
 curl -sSI https://digiartz.net/supabase/migrations/20260901000000_baseline.sql   # expect 404
 curl -sSI https://digiartz.net/security/SECURITY.md                              # expect 404
-curl -sSI https://digiartz.net/scripts/security-test.mjs                         # currently 200
+curl -sSI https://digiartz.net/scripts/security-test.mjs                         # expect 404
 curl -sS  -H 'Origin: https://evil.example' -I https://digiartz.net/api/download # expect no ACAO echo
 ```
 
-The two `[[path]].js` catch-alls should make `/supabase/*` and `/security/*`
-return 404 rather than serving the schema and these notes as files.
-`/scripts/*.mjs` has no such blocker and is currently served; harmless while the
-repository is public, worth a third catch-all if that ever changes.
+Three `[[path]].js` catch-alls should make `/supabase/*`, `/security/*` and
+`/scripts/*` return 404 rather than serving the schema, these notes and the
+check scripts as files.
+
+Once the site has taken real traffic for a few days, read the CSP reports —
+Cloudflare Pages → Functions → Logs, filter `[csp]`. Each line names the
+directive and what was blocked; `blocked=inline` means `'unsafe-inline'` is
+still load-bearing, `blocked=eval` means `'unsafe-eval'` is. Whichever does
+**not** appear can be deleted from the enforcing policy in `_headers`, and the
+corresponding assertion in `scripts/check-csp-hashes.mjs` deleted with it. If
+neither appears, both can go and the CSP becomes genuinely strict.
 
 ---
 
 ## Not doing, and why
 
-**Removing `'unsafe-inline'` / `'unsafe-eval'` from the CSP.** Both are real
-weaknesses. `'unsafe-inline'` cannot go until every inline `onclick=` in
-`index.html` does, which is a large refactor of working code, and a nonce is
-meaningless until then. `'unsafe-eval'` is most likely there for the Razorpay
-and PayPal SDKs; removing it blind breaks checkout for everyone and the audit
-environment cannot load either SDK to find out. Both want a staged test on a
-preview deployment, not a guess in a security pass.
+**Removing `'unsafe-inline'` / `'unsafe-eval'` from the enforcing CSP — yet.**
+Both are real weaknesses and neither can be removed on a guess: `'unsafe-eval'`
+is most likely wanted by the Razorpay or PayPal SDK, and breaking checkout to
+tidy a header is a poor trade. Rather than guess, the strict policy now ships
+beside the enforcing one as `Content-Security-Policy-Report-Only`, which
+enforces nothing and reports to `/api/csp-report`. Read the reports, then
+remove whichever relaxation the data says is unused. That is the one step
+still outstanding here, and it needs live traffic rather than a decision.
 
 **Making the repository private.** It is public, and that is a choice rather
 than a defect: no secret has ever been committed, and the security of this

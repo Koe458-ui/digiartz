@@ -43,7 +43,7 @@ select r.rolname from pg_auth_members m
 -- pg_read_all_data, pg_signal_backend, service_role, supabase_privileged_role
 ```
 
-All three routes were tried against the live project and all three were
+All four routes were tried against the live project and all four were
 refused:
 
 | attempt | result |
@@ -55,8 +55,10 @@ refused:
 
 Afterwards the storage schema was re-read to confirm nothing was left behind:
 12 policies and 2 triggers, exactly as before, and the upload policy's
-`WITH CHECK` byte-identical. The existing storage policies were created through the Dashboard,
-which holds the right credentials. That is a sound platform boundary and not
+`WITH CHECK` byte-identical.
+
+The existing storage policies were created through the Dashboard, which holds
+the right credentials. That is a sound platform boundary and not
 something to work around.
 
 ## How to apply it

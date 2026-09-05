@@ -74,6 +74,16 @@ jobs:
           node-version: '22'
       - run: node scripts/security-test.mjs
 
+  deferredcss:
+    name: no first-screen stylesheet has been pushed off the critical path
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/check-deferred-css.mjs
+
   csp:
     name: the report-only policy still names every inline script
     runs-on: ubuntu-latest

@@ -1,16 +1,11 @@
 -- Level 100 now costs 10,000 XP instead of 2,000.
 --
--- The shape of the climb is untouched: every threshold is exactly five times
--- what it was, so the same proportion of the journey sits between any two
--- levels as before. Only the scale moved.
+-- Shape of the climb is untouched: every threshold is exactly five times what it was. Only the scale moved.
 --
--- Nothing compensates the XP already earned, which is the point -- the levels
--- people hold are meant to come down. XP itself is derived (uploads*10 +
--- likes*2 + bookmarks*2 + comments), so there is nothing stored to migrate:
--- every level is recomputed from this array the next time it is read.
+-- Nothing compensates XP already earned — the point is that held levels come down. XP is derived
+-- (uploads*10 + likes*2 + bookmarks*2 + comments), so nothing is stored to migrate: levels recompute on next read.
 --
--- js/misc-core.js carries the same array for the progress bar and has to be
--- changed with this file, or the bar and the level will disagree.
+-- js/misc-core.js carries the same array for the progress bar and must change with this file, or the two disagree.
 
 CREATE OR REPLACE FUNCTION public.xp_level_thresholds()
 RETURNS integer[] LANGUAGE sql IMMUTABLE AS $function$

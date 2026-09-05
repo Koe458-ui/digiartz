@@ -116,9 +116,7 @@
         me.upqCheckFail = true; throw me;
       }
       if(mod.deferred){
-        // The moderator could not be reached. The artwork is kept and uploaded,
-        // and the database holds it as pending because no approval token came
-        // back with it. Nothing here reads as a failure.
+          // Moderator unreachable. Artwork is kept and uploaded, held pending because no approval token came back
         job.deferred = true;
         job.steps.moderation.state='';  job.steps.moderation.detail='';
         job.mod.artwork=''; job.mod.artworkSub='';
@@ -189,10 +187,8 @@
         : null;
       var _mature = (mod.rating === 'MATURE') || !!x.declared_mature;
 
-      // A scheduled artwork is published later by publish_due_scheduled_uploads,
-      // which writes it straight in as approved — so an unreviewed one would go
-      // live unreviewed. Nothing is queued down that path; the artist is asked
-      // to publish now, which does queue, or to schedule once review is back.
+        // publish_due_scheduled_uploads writes a scheduled artwork in as approved, so an unreviewed one would go live
+        // unreviewed. Nothing is queued down that path: publish now, which does queue, or schedule once review is back.
       if(job.publishAt && job.deferred){
         var sf = new Error('Moderation is temporarily unavailable, so this cannot be scheduled right now. Publish it now and it will be reviewed automatically as soon as moderation is back, or try scheduling again shortly.');
         sf.upqCheckFail = true; throw sf;
@@ -234,10 +230,8 @@
 
       const{data:rows,error:de}=await sb.from('artworks').insert(artRow).select();
       if(de) throw de;
-      // The artwork is in the table now. Anything that fails after this — an
-      // album link, a media row — leaves a live artwork behind, so the sweep in
-      // the catch must not take its picture away with it. The list itself stays,
-      // because the media rows below are written from it.
+        // Artwork is in the table. Anything failing after this leaves a live artwork behind, so the sweep must not take
+        // its picture. The list stays, because the media rows below are written from it.
       job.landed = true;
 
       var _newRow = rows && rows[0];
@@ -262,8 +256,7 @@
       var row = rows && rows[0];
 
       if(job.deferred){
-        // It is not on the site yet, so it does not join the galleries, and the
-        // card stays put — tapping it is how the artist finds out why.
+          // Not on the site yet, so it does not join the galleries, and the card stays put — tapping it says why.
         if(typeof window.dzModQueueKick === 'function') window.dzModQueueKick();
         showToast('\u201C'+(job.name||'Artwork')+'\u201D is in review');
         return;
@@ -350,8 +343,7 @@
     var held = !!j.deferred;
     title.textContent = failed ? 'VERIFICATION FAILED' : 'VERIFICATION STATUS';
     var order = ['checking','uploading','finalizing','live'];
-    // A held upload has finished transferring — it is only the review that has
-    // not run — so it reads as past the transfer, and short of publish.
+      // A held upload has finished transferring — only the review has not run — so it reads past transfer, short of publish.
     var si = order.indexOf(j.stage==='queued' ? 'live' : j.stage);
     var transferState = j.stage==='uploading' ? 'run' : (si>1 ? 'pass' : '');
     var publishState  = j.stage==='finalizing' ? 'run' : (j.stage==='live' ? 'pass' : '');
@@ -396,10 +388,9 @@
     body.innerHTML = html;
   }
 
-  // Drains the queue that an outage leaves behind. Each tick asks the server for
-  // ONE artwork — the one uploaded earliest — so the moderator is never handed a
-  // batch, and the order artists uploaded in is the order they are reviewed in.
-  // Any signed-in visitor turns the handle, which is what makes it automatic.
+    // Drains the queue an outage leaves behind. Each tick asks for ONE artwork — the earliest uploaded — so the
+    // moderator is never handed a batch, and artists are reviewed in the order they uploaded. Any signed-in visitor
+    // turns the handle, which is what makes it automatic.
   var modq = { timer: null, busy: false, idleTries: 0 };
 
   function modqSoon(ms){
@@ -411,8 +402,7 @@
     modq.timer = null;
     if(modq.busy) return;
     if(typeof currentUser === 'undefined' || !currentUser){
-      // Signed out, or auth has not settled yet. Look again a couple of times,
-      // then leave it to the next upload or page load.
+        // Signed out, or auth has not settled. Look again a couple of times, then leave it to the next upload or load.
       if(++modq.idleTries <= 3) modqSoon(30000);
       return;
     }
@@ -430,7 +420,7 @@
       else if(out.down)        modqSoon(60000);     // still down; the queue keeps its order
       else if(out.more)        modqSoon(7000);      // more waiting — next one along
       else if(out.processed)   modqSoon(15000);     // that was the last one; confirm
-      // Nothing pending: stop until the next upload or page load.
+        // nothing pending: stop until the next upload or page load
     }catch(e){
       modqSoon(120000);
     }finally{

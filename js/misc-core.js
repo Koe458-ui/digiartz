@@ -54,9 +54,7 @@
 
 (function () {
   'use strict';
-  // The same ladder public.xp_level_thresholds() returns, for the progress bar.
-  // The two are read together — a level from the database against a bar drawn
-  // here — so they have to be changed together.
+    // The same ladder public.xp_level_thresholds() returns — read together, so they must change together
   var XP_TOTALS = [0,40,80,120,160,205,250,295,340,390,440,490,540,595,650,705,760,820,880,940,
     1000,1065,1130,1195,1260,1330,1400,1470,1540,1615,1690,1765,1840,1920,2000,2080,2160,2245,2330,2415,
     2500,2590,2680,2770,2860,2955,3050,3145,3240,3340,3440,3540,3640,3745,3850,3955,4060,4170,4280,4390,

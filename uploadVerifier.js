@@ -6,10 +6,9 @@
     rateDay:       40,
     scanBytes:     524288,
     aiApiEnabled:  false,
-    // Duplicates are informational only — see dupCheck.
+      // duplicates are informational only — see dupCheck
     reportDuplicates: true,
-    // AI art is not accepted on DigiArtz, so a generator's own marker left in the
-    // file metadata stops the upload.
+      // AI art is not accepted here, so a generator's own marker left in the file metadata stops the upload.
     blockAiMetadata: true
   };
 
@@ -62,14 +61,11 @@
     return d;
   }
 
-  // The IPTC code Photoshop writes when a generative edit was applied to work a
-  // person made, as opposed to a wholly generated image. It contains the plain
-  // AI code as a substring, so it has to be masked before the blocking pass or
-  // every generative-fill touch-up reads as a fully generated image.
+    // IPTC code Photoshop writes for a generative edit on work a person made, not a wholly generated image. It contains
+    // the plain AI code as a substring, so it must be masked or every generative-fill touch-up reads as fully generated.
   var COMPOSITE_AI = 'compositewithtrainedalgorithmicmedia';
 
-  // Blocking signatures. Each one is a generator writing its own name or its own
-  // parameters into the file — evidence a person does not produce by accident.
+    // Blocking signatures: a generator writing its own name or parameters into the file — not produced by accident
   var STRONG_SIGS = [
     { k: 'negative prompt',        label: 'SD prompt params' },
     { k: 'denoising strength',     label: 'SD params' },
@@ -89,19 +85,14 @@
     { k: 'openai.com',             label: 'OpenAI' },
     { k: 'leonardo.ai',            label: 'Leonardo.Ai' },
     { k: 'stability.ai',           label: 'Stability AI' },
-    // The one C2PA assertion that actually means "made by a model" outright. The
-    // composite form, which means a generative edit on someone's own work, is
-    // masked out before this runs — see scanMeta.
+      // The one C2PA assertion meaning "made by a model". The composite form is masked out before this; see scanMeta
     { k: 'trainedalgorithmicmedia',label: 'C2PA AI credential' }
   ];
 
-  // Noted in the audit trail, never blocking — Gemini decides these on the image.
-  // They read as AI markers but fire on innocent files just as readily:
-  // Photoshop and Lightroom write a C2PA manifest for ordinary human edits, and
-  // the loose phrases match an artist's own "not AI generated" tag.
+    // Audit trail only, never blocking — Gemini decides these on the image. Photoshop and Lightroom write a C2PA
+    // manifest for ordinary human edits, and the loose phrases match an artist's own "not AI generated" tag.
   var SOFT_SIGS = [
-    // Photoshop stamps these on a hand-painted file that had one generative-fill
-    // cleanup, so the marker does not say how much of the piece is a person's.
+      // Photoshop stamps these on a hand-painted file with one generative-fill cleanup, so it says nothing about how much
     { k: 'adobe firefly',          label: 'Adobe Firefly' },
     { k: 'firefly generative',     label: 'Adobe Firefly' },
     { k: COMPOSITE_AI,             label: 'C2PA partial-AI credential' },
@@ -209,7 +200,7 @@
     return found;
   }
 
-  // Public surface: the blocking hits only, so callers keep the array they expect.
+    // public surface: blocking hits only, so callers keep the array they expect
   async function scanAIMeta(file) {
     return (await scanMeta(file)).strong;
   }
@@ -232,10 +223,8 @@
     return { block: false, detail: n10 + '/' + CONFIG.rate10min + ' in 10 min' };
   }
 
-  // Duplicates do not stop an upload. An artist may post the same drawing two or
-  // three times — a variant, a redraw, a re-export — and that is allowed here.
-  // We still compute the hash so it can be stored, and still report what we saw,
-  // but the verdict never turns on it.
+    // Duplicates do not stop an upload: a variant, a redraw, a re-export are all allowed. The hash is still computed
+    // and reported, but the verdict never turns on it.
   async function dupCheck(sb, phash) {
     if (!phash) return { block: false, flag: false, detail: 'skipped' };
     if (!CONFIG.reportDuplicates) return { block: false, flag: false, detail: 'duplicates allowed' };
@@ -285,8 +274,7 @@
     }
     if (hits.length)
       return { flag: true, detail: 'AI markers in file metadata: ' + list(hits), soft: soft };
-    // Soft markers alone are not enough — they fire on ordinary edited files, so
-    // they are recorded and the image goes on to the moderator to be judged.
+      // Soft markers alone are not enough — they fire on ordinary edited files, so the image goes to the moderator
     if (soft.length)
       return { flag: false, detail: 'Inconclusive markers, left to the moderator: ' + list(soft), soft: soft };
     return { flag: false, detail: 'no AI metadata', soft: soft };

@@ -145,9 +145,7 @@
   function sparkline(values, hex) {
     var W = 120, H = 34, P = 2;
     var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'none', 'aria-hidden': 'true' });
-    // An account with nothing behind it yet gets an empty series, and one bad
-    // row makes every number NaN — the fill path read pts[-1] and threw, taking
-    // the whole overview down with it.
+      // Empty series on a new account, and one bad row makes every number NaN — the fill path read pts[-1] and threw
     var nums = (Array.isArray(values) ? values : []).map(function (v) {
       var n = Number(v);
       return isFinite(n) ? n : 0;
@@ -558,9 +556,7 @@
   }
 
   function watchNav() {
-    // buildShell() runs on every open, so the observer from the last one is
-    // dropped first — otherwise each visit leaves another live observer behind,
-    // the way anListStop() already retires the list's.
+      // buildShell() runs on every open, so the last observer is dropped first, the way anListStop() retires the list's
     if (state.navIo) { try { state.navIo.disconnect(); } catch (e) {} state.navIo = null; }
     if (!window.IntersectionObserver) return;
     var nav = $('anNav');
@@ -624,9 +620,7 @@
 
     var cache = window.dzCached ? window.dzCached() : null;
     var key = cache ? cache.ukey('analytics', sc, d + 'd') : null;
-    // named apart from load(): it used to be called `load` too, and the retry at
-    // the foot of this function reached the inner one — four RPCs whose answers
-    // went nowhere, and a refresh that never repainted
+      // named apart from load(): it was `load` too, and the retry below reached the inner one — four RPCs going nowhere
     var fetchAll = function () {
       return Promise.all([
         c.rpc('dz_analytics_overview', { p_days: d, p_scope: sc }),
@@ -1299,8 +1293,7 @@
     b.appendChild(g);
   }
 
-  // The two audience lists. Newest edge first, the first CARD_ROWS shown and the
-  // rest a tap away, so a long list does not push the rest of the section down.
+    // Two audience lists. Newest first, CARD_ROWS shown and the rest a tap away, so a long list does not push the section down
   function peopleCard(host, title, list, emptyMsg) {
     var body = cardBody(host, title,
       { note: list.length >= 100 ? 'MOST RECENT 100' : (list.length ? full(list.length) : '') });

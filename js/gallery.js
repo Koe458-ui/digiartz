@@ -973,9 +973,7 @@
           headers: { authorization: 'Bearer ' + session.access_token },
           cache: 'no-store'
         }).then(function(res){
-          // JavaScript or nothing: a routing miss that falls through to the SPA
-          // shell still answers 200, and injecting that HTML only raises a parse
-          // error that no onerror handler ever sees.
+          // JavaScript or nothing: a routing miss falls to the SPA shell with a 200, and a bad blob script never fires onerror
           var ct = res.headers.get('content-type') || '';
           return (res.ok && /javascript|ecmascript/i.test(ct)) ? res.text() : null;
         }).then(function(code){

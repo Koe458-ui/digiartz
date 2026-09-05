@@ -4,9 +4,7 @@
   function feedIsArtists(){ return feedTab === 'artists'; }
   function feedIsFollowing(){ return feedTab === 'following'; }
 
-  // Every category on the site is a board on the rail, addressed as cat:<slug>.
-  // "others" is left off: it is where an upload lands when nobody picked a
-  // category, so a board of it is a board of the unsorted.
+    // Every category is a board, addressed cat:<slug>. "others" is off — a board of the uncategorised is a board of the unsorted
   function feedCatOf(tab){
     var t = tab === undefined ? feedTab : tab;
     return String(t || '').indexOf('cat:') === 0 ? t.slice(4) : null;
@@ -20,9 +18,7 @@
 
   function feedFollowApi(){ return window.dzFollow || null; }
 
-  // The whole approved gallery is already in memory, so "artwork from artists I
-  // follow" is a filter over it rather than another query. Newest first: the
-  // point of the tab is what has landed since the reader was last here.
+    // Gallery is already in memory, so "artwork from artists I follow" is a filter, not a query. Newest first
   function feedFollowingOf(list){
     var f = feedFollowApi();
     if(!f || !f.ready()) return [];
@@ -53,18 +49,13 @@
   }
 
   function feedFetchArtists(ids, done){
-    // A row cached by one of the other fetches may predate follower_count, so a
-    // present-but-incomplete entry counts as missing. null means "no such
-    // profile" and is left alone.
+      // A row cached by another fetch may predate follower_count, so present-but-incomplete counts as missing
     var missing = ids.filter(function(u){
       var p = dzArtistCache[u];
       return p === undefined || (p && p.follower_count === undefined);
     });
     if(!missing.length || !sb){ done(); return; }
-    // A query that fails resolves with data:null rather than rejecting, so the
-    // error is read off the reply. Marking every id null there would cache
-    // "no such profile" for artists that exist, and the cards would stay blank
-    // for the rest of the session.
+      // A failed query resolves with data:null. Marking every id null caches "no such profile" for artists that exist
     sb.from('profiles').select(window.DZ_ARTIST_COLS ||
       'id,username,display_name,avatar_url,banner_url,bio,follower_count').in('id', missing)
       .then(function(res){
@@ -75,9 +66,7 @@
       }, function(){ done(); });
   }
 
-  // The artist card is a small profile: the banner across the top, the avatar
-  // straddling its edge, then who they are, what they have made, and the two
-  // things a reader can do about it.
+    // Artist card = small profile: banner, avatar straddling its edge, who they are, what they made, what you can do.
   function buildArtistCard(uid){
     var card = document.createElement('div');
     card.className = 'awCard atCard';
@@ -110,10 +99,7 @@
     return n >= 1000 ? (Math.round(n / 100) / 10) + 'k' : String(n);
   }
 
-  // An artist's totals are their whole published body of work, not the part of
-  // it this feed happens to have loaded — a search result for someone with no
-  // art in the current gallery would otherwise read 0. One query for the batch
-  // rather than one per card; the in-memory count stands in until it lands.
+    // Totals are the artist's whole published body, not what this feed loaded. One query per batch; the memory count stands in
   var dzArtStats = {};
 
   function feedFetchArtStats(ids, done){
@@ -127,8 +113,7 @@
     sb.from('artworks').select('user_id,like_count')
       .in('user_id', missing).eq('status', 'approved').eq('visibility', 'published')
       .then(function(res){
-        // data:null with an error is how a failed query arrives; taking it as an
-        // empty answer would pin every one of these artists at 0 for the session
+          // data:null + error is how a failed query arrives; reading it as empty pins these artists at 0 for the session
         if(res && res.error){ giveUp(); return; }
         missing.forEach(function(u){ dzArtStats[u] = { art: 0, likes: 0 }; });
         ((res && res.data) || []).forEach(function(r){
@@ -155,10 +140,7 @@
   }
 
   var FRIEND_LABEL = { none:'Add friend', sent:'Requested', incoming:'Accept', friends:'Message' };
-  // frState also answers blocked_by_me and blocked_me. Neither has an action on
-  // a card, and the profile page hides its button for them, so this does too —
-  // without it a blocked account read "Add friend" and pressing it would have
-  // tried to accept a request that is not there.
+    // frState also answers blocked_by_me/blocked_me, neither of which has a card action — "Add friend" accepted a request that is not there
   function feedFriendBlocked(st){ return st === 'blocked_by_me' || st === 'blocked_me' || st === 'blocked'; }
 
   function feedPaintActions(card, p){
@@ -176,7 +158,7 @@
     frd.textContent = FRIEND_LABEL[st] || FRIEND_LABEL.none;
     frd.dataset.frState = st;
     frd.classList.toggle('on', st === 'friends');
-    // one button left in the row should still fill it
+      // one button left in the row should still fill it
     card.classList.toggle('atOneAct', frd.hidden);
 
     var on = !!(window.dzFollow && window.dzFollow.is && window.dzFollow.is(id));
@@ -184,7 +166,7 @@
     fol.classList.toggle('on', on);
   }
 
-  // The card opens the profile, so both buttons stop the click getting there.
+    // card opens the profile, so both buttons stop the click getting there
   function feedWireActions(card, p){
     var id = p && p.id ? String(p.id) : '';
     if(!id) return;
@@ -260,8 +242,7 @@
 
     var bn = card.querySelector('.atBanner');
     if(bn && p && p.banner_url){
-      // A banner spans the card and is seen at up to 3x on a phone: ask for the
-      // 1000px webp rather than the 600, so it is sharp rather than upscaled.
+        // banner spans the card and is seen at up to 3x on a phone: ask for the 1000px webp, not the 600, or it upscales
       bn.style.backgroundImage = 'url("' + imgResize(p.banner_url, 1000) + '")';
     }
     feedPaintAvatar(av, ltr, p, name);
@@ -302,8 +283,7 @@
     uids.forEach(function(uid){
       var sel = (window.CSS && CSS.escape) ? CSS.escape(uid) : String(uid).replace(/["\\]/g, '\\$&');
       var q = '.atCard[data-uid="' + sel + '"]';
-      // one pass over the document catches the feed board, the search page and
-      // the hero search alike, without painting a card in #awGrid twice
+        // one pass over the document catches feed board, search page and hero search alike, without painting a card twice
       var cards = Array.prototype.slice.call(document.querySelectorAll(q));
       cards.forEach(function(card){
         if(onlyUnpainted && card.classList.contains('atReady')) return;
@@ -384,9 +364,7 @@
       var item = awRList[i], uid = null;
       if(artists){ frag.appendChild(buildArtistCard(item)); uid = item; }
       else frag.appendChild(buildAwCard(item, i < 4));
-      // every artist on the board is asked for, cached profile or not: the
-      // totals are a separate fetch, and a profile warmed by a hover elsewhere
-      // would otherwise keep the card on the in-memory tally for good
+        // every artist is asked for, cached or not: totals are a separate fetch, and a hover-warmed profile would pin the card to the in-memory tally
       if(uid && wanted.indexOf(uid) === -1) wanted.push(uid);
     }
     awRShown = end;
@@ -447,8 +425,7 @@
     else { rail.scrollLeft = to; ftEnds(rail); }
   }
 
-  // The rail scrolls on every screen, so the arrows that scroll it are on every
-  // screen too: enabled while there is room to travel that way, dimmed at the end.
+    // Rail scrolls on every screen, so its arrows are too: enabled while there is room to travel, dimmed at the end.
   function ftEnds(rail){
     var wrap = rail.parentNode;
     var prev = wrap.querySelector('.ftPrev');
@@ -458,10 +435,7 @@
     if(next) next.disabled = rail.scrollLeft >= max - 1;
   }
 
-  // The six boards are in the markup because they are the same six on every
-  // load; the categories are built here from the one list the rest of the site
-  // filters by, so a category added there arrives on the rail with no second
-  // edit to keep in step.
+    // Six boards are in the markup; categories build from the list the rest of the site filters by, so adding one needs no second edit
   function ftBuildCats(rail){
     if(typeof SITE_CATEGORIES === 'undefined' || !SITE_CATEGORIES.length) return;
     var frag = document.createDocumentFragment();
@@ -527,8 +501,7 @@
     ftEnds(rail);
   })();
 
-  // Following is the one tab whose contents can change without the gallery
-  // changing: a follow taken anywhere on the site belongs in it straight away.
+    // Following is the one tab whose contents change without the gallery changing: a follow taken anywhere belongs in it now.
   function feedFollowRepaint(){
     if(!feedIsFollowing()) return;
     renderAwGrid(awArtworksCache, true);

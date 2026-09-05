@@ -1,13 +1,8 @@
 (function () {
   'use strict';
 
-  // The follow graph, held once for the signed-in reader.
-  //
-  // Every surface that shows a Follow button — the profile header, the author
-  // card on an artwork, the Following feed — reads the same set from here, so a
-  // follow in one place repaints the others without another round trip. The set
-  // is the reader's own row set: who they follow. A follower count belongs to
-  // the profile row and is read from there.
+    // The follow graph, held once for the signed-in reader, so a follow in one place repaints every other Follow button.
+    // A follower count belongs to the profile row and is read from there.
 
   var MAX_FOLLOWING = 2000;
 
@@ -39,8 +34,7 @@
     return map;
   }
 
-  // Resolves once the set is known. Repeat calls while one load is out share it;
-  // afterwards it is a no-op unless force is set.
+    // Resolves once the set is known. Repeat calls during a load share it; afterwards a no-op unless force is set.
   function load (force) {
     if (!db() || !me()) { set = {}; return Promise.resolve(set); }
     if (set && !force) return Promise.resolve(set);
@@ -81,8 +75,7 @@
     return true;
   }
 
-  // Writes the edge and keeps the local set honest. Returns the state it landed
-  // on, so a caller that painted optimistically can correct itself.
+    // Writes the edge and keeps the local set honest. Returns the state it landed on, so an optimistic caller can correct.
   async function setFollowing (id, want) {
     id = String(id || '');
     if (!id || !db()) return isFollowing(id);
@@ -100,7 +93,7 @@
     if (want && atCap()) return false;
 
     busy[id] = true;
-    // paint now, correct below if the write does not land
+      // paint now, correct below if the write does not land
     if (want) set[id] = new Date().toISOString(); else delete set[id];
     emit(id, want);
 

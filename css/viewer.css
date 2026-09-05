@@ -791,14 +791,8 @@ html[data-theme="offwhite"]{
   }
 }
 
-/* One rule stops the sideways drag inside a dialog: overflow-x on the frame.
-   And it is said on the frames and on what scrolls, and on nothing else.
-   Every box between a finger and the scroller — the picture pane, the
-   notes, the notes' own scroller — is left with no overflow of its own at
-   all, which is the state #avAuthorCard was always in and the reason the
-   card was the one place on a phone a drag still worked. From 900px the
-   pane and the notes are the scrollers, so they say hidden there
-   themselves, beside the overflow-y that makes them scroll. */
+  /* One rule stops the sideways drag in a dialog: overflow-x on the frame and on what scrolls, nothing else — the state
+     #avAuthorCard was in, and why a drag worked there. From 900px the pane and notes scroll, so they say hidden themselves */
 #artModal,#artModal .avBox,#artModal .avBody,
 #dzView,#dzView .dzvBody{
   overflow-x:clip;

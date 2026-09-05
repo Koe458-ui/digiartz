@@ -1,10 +1,4 @@
-/* ---------------------------------------------------------------------------
-   Hero. Editorial layout: one left-aligned column, a headline that carries the
-   whole fold, a single line of prose under it, then a solid primary action with
-   a quiet text link beside it. The tabs above stay — they are the mechanism the
-   whole section runs on — but they are set as plain text with an underline on
-   the active one, so nothing competes with the headline for first read.
-   ------------------------------------------------------------------------- */
+/* Hero. Editorial: one left column, a headline carrying the fold, one line of prose, a solid action and a quiet link */
 #heroPitch{
   position:relative;
   background:var(--bg);
@@ -14,15 +8,12 @@
 }
 .hpInner{max-width:min(100%,1280px);margin:0;}
 
-/* The headline is the fold. Tight leading and tracking so the mass reads as one
-   block; text-wrap:balance keeps the rag from stranding a single word. */
+  /* The headline is the fold. Tight leading and tracking; text-wrap:balance keeps the rag from stranding a word */
 .hpHead,
 .fgHeadLead{
   margin:0 0 clamp(1rem,2.4vw,1.75rem);
   font-family:var(--fd);font-weight:800;
-  /* 68px on a small phone up to 112px on a wide screen. The floor is high on
-     purpose: this headline is the fold, and it is meant to read as a poster
-     rather than a paragraph at every width. */
+    /* 68px small phone to 112px wide. High floor on purpose: this headline is the fold, and reads as a poster */
   font-size:clamp(4.25rem,3.5rem + 3.75vw,7rem);
   line-height:1.02;
   letter-spacing:-.035em;
@@ -30,25 +21,16 @@
   text-wrap:balance;
   max-width:18ch;
 }
-/* Narrow measure on phones so the headline breaks into short stacked lines
-   rather than running the full width. ch scales with the font, so this stays
-   proportional as the clamp grows. */
-/* One size curve runs the whole range — 72px on a 320 phone up to 96px — so the
-   phone and desktop rules can never step apart. Only the measure changes here:
-   9ch stacks it four lines deep on a phone, 18ch lets it open out above. */
+  /* Narrow measure on phones so the headline stacks. ch scales with the font, so it stays proportional as the clamp grows */
+  /* One size curve, 72px at 320 to 96px, so phone and desktop cannot step apart. Only the measure changes: 9ch / 18ch */
 @media(max-width:767px){
   .hpHead,.fgHeadLead{max-width:9ch;text-wrap:initial;}
 }
-/* Above the stack the headline is only two lines, so the binding constraint is
-   "Create & Inspire." fitting the measure — which leaves far more room than the
-   phone curve could use. It gets its own, steeper ramp: 84px at the breakpoint,
-   where the shared curve also lands, up to 152px. */
+  /* Two lines above the stack, so the constraint is "Create & Inspire." fitting the measure. Own ramp: 84px to 152px */
 @media(min-width:768px){
   .hpHead,.fgHeadLead{font-size:clamp(5.25rem,.5rem + 9.6vw,9.5rem);}
 }
-/* The two verbs carry the wordmark's script, in the brand red — the only place
-   outside the top bar that face appears. It needs the tracking back at zero: the
-   headline's -.035em is drawn for a grotesque and jams a joined script. */
+  /* Two verbs in the wordmark script, brand red — only place outside the top bar. Tracking to zero: -.035em jams a script */
 .hpHead em,
 .fgHeadLead .fgHi,
 .srchHead .fgHi{
@@ -99,8 +81,7 @@
 @media(hover:hover){.hpAlt:hover{gap:var(--sp-5);opacity:.72;}}
 .hpAlt:focus-visible{outline:2px solid var(--pb);outline-offset:4px;border-radius:4px;}
 
-/* Short landscape (phone on its side): the fold is ~350px tall, so the headline
-   has to give up most of its size and the prose steps aside entirely. */
+  /* short landscape (phone on its side): fold is ~350px, so the headline gives up size and the prose steps aside */
 @media(max-height:500px) and (orientation:landscape){
   #heroPitch{padding-top:calc(var(--dzTopOff) + var(--sp-5));padding-bottom:var(--sp-6);}
   .hpSub,.fgHeadDesc{display:none;}
@@ -113,9 +94,7 @@
 }
 .srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 
-/* Sits at body level, outside the wrapper that pads for the fixed header, so it
-   needs its own top offset or the message renders behind the nav. Sentence-case
-   copy also takes normal tracking — .16em is for uppercase micro-labels. */
+  /* Body level, outside the header-padding wrapper, so it needs its own top offset or it renders behind the nav */
 #sBanner{margin-top:var(--dzTopOff);background:color-mix(in srgb,var(--tc) 12%,transparent);border:1px solid var(--pg);padding:var(--sp-5) var(--sp-7);text-align:center;font-family:var(--fb);font-size:var(--fs-sm);letter-spacing:var(--ls-normal);color:var(--ps);line-height:var(--lh-body);display:none;}
 #sBanner.show{display:block;}
 #sBanner a{color:var(--pb);}
@@ -262,14 +241,9 @@
   padding:clamp(1.4rem,4vw,2.4rem) var(--fgPad) 0;
   text-align:center;
 }
-/* The hero sets the size of both of these; all the section head does is centre
-   them, which is the one way it differs. */
+  /* hero sets the size of both; the section head only centres them, which is the one difference */
 .fgHeadLead{margin-left:auto;margin-right:auto;}
-/* Except on the narrowest phone, where the hero's curve is one the section head
-   cannot use: "marketplace" is a single word half again as long as anything in
-   the hero headline, and a word cannot wrap. It runs 22px past a 320 viewport
-   at the shared size, so below 360 the lead is sized off the viewport instead
-   and the longest word fits by construction. */
+  /* "marketplace" is longer than any hero headline and cannot wrap. Below 360 the lead sizes off the viewport instead */
 @media(max-width:359px){
   .fgHeadLead{font-size:19vw;}
 }
@@ -372,8 +346,7 @@
 .fgCatRail.fgDrag{cursor:grabbing;scroll-behavior:auto;}
 .fgCatRail.fgDrag .fgCatChip{pointer-events:none;user-select:none;-webkit-user-select:none;}
 
-/* One board, one look: the hero feed rail and every section's category rail
-   are the same text-only pill, and the same pair of arrows over each end. */
+  /* one board, one look: hero feed rail and every section rail are the same text pill and the same pair of arrows */
 .ftTab,.fgCatChip{
   flex:0 0 auto;
   display:inline-flex;align-items:center;
@@ -408,8 +381,7 @@
 }
 .ftNav:disabled,.fgCatNav:disabled{opacity:.32;cursor:default;}
 
-/* The arrows sit over the rail, so each one gets a short run of page colour
-   under it — a tab scrolling past fades out rather than butting into it. */
+  /* arrows sit over the rail, each with a short run of page colour under it so a tab fades out rather than butts in */
 #artworks .ftWrap::before,#artworks .ftWrap::after,
 .fgCatWrap::before,.fgCatWrap::after{
   content:'';position:absolute;top:0;bottom:0;z-index:1;
@@ -846,14 +818,9 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 #artworks .ftRail::-webkit-scrollbar{display:none;}
 .ftTab{scroll-snap-align:center;}
 
-/* The artist card is a small profile: the banner across the top, the avatar
-   straddling its edge, then who they are, what they have made, and the two
-   things a reader can do about it. Text is deliberately a step under the
-   artwork cards' — a card this dense reads worse in large type. */
+  /* Artist card = small profile. Text one step under the artwork cards' — a card this dense reads worse large */
 .atCard{
-  /* Absolute, not percentages: the card's height is what its content makes it,
-     so a percentage height inside it has nothing to resolve against and the
-     banner and avatar collapse. */
+  /* Absolute, not percentages: card height is its content, so a percentage collapses banner and avatar */
   --atBanH:96px;
   --atAvSz:72px;
   position:relative;cursor:default;
@@ -862,12 +829,7 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   background:var(--sur);
   transition:border-color .2s ease,transform .2s ease;
 }
-/* Doubled up to beat .awCard, which sets border:0 and radius:4px and is loaded
-   after this file. These cards sit 3px apart on a ground barely lighter than
-   their own fill, so without a line of their own they run together. Mixing a
-   little of the text colour into the border token darkens the line on the two
-   paper themes and lightens it on charcoal — one rule, right in all three, and
-   still 1px and light. */
+  /* Doubled to beat .awCard (border:0, radius:4px, loaded later). Text colour mixed into the border reads right on all three themes */
 .awCard.atCard{
   border:1px solid color-mix(in srgb,var(--bdr) 82%,var(--tx) 18%);
   border-radius:14px;
@@ -885,7 +847,7 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
     color-mix(in srgb,var(--pg) 16%,var(--sur2)),
     var(--sur2));
   background-position:center;background-size:cover;background-repeat:no-repeat;
-  /* Nothing over the banner: no scrim, no blur, no filter. */
+    /* nothing over the banner: no scrim, no blur, no filter */
   filter:none;
 }
 .atBody{
@@ -895,10 +857,9 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   padding:0 var(--sp-6) var(--sp-6);
   text-align:center;
 }
-/* The card is a flex column, so without this its rows shrink to nothing when
-   the grid gives it less height than its content wants. */
+  /* flex column: without this the rows shrink to nothing when the grid gives less height than the content wants */
 .atBody > *{flex:0 0 auto;}
-/* Half over the banner, half below it. */
+  /* half over the banner, half below */
 .atAv{
   width:var(--atAvSz);height:var(--atAvSz);flex:0 0 auto;
   margin-top:calc(var(--atAvSz) / -2);
@@ -938,7 +899,7 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   letter-spacing:var(--ls-wide);color:var(--txd);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
 }
-/* Two buttons, one width: the row is two equal tracks whatever the labels. */
+  /* two buttons, one width: two equal tracks whatever the labels */
 .atActs{
   display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3);
   width:100%;margin-top:var(--sp-5);
@@ -959,20 +920,14 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 @media(hover:hover){
   .atBtn:not(:disabled):hover{border-color:var(--bdrh);}
 }
-/* Nothing to follow or befriend on your own card. */
+  /* nothing to follow or befriend on your own card */
 .atCard.atMine .atActs{display:none;}
-/* A blocked account has no friend action, so Follow takes the whole row. */
+  /* blocked account has no friend action, so Follow takes the row */
 .atCard.atOneAct .atActs{grid-template-columns:1fr;}
 .atBtn[hidden]{display:none;}
 
-/* The board of artists is not the grid of artworks: these cards are wide, so
-   one to a row on a phone, two on a tablet or a small desktop, three from a
-   large desktop up — at the 1600px shell cap that is a ~500px card, which is
-   where a banner and a two-button row still read. */
-/* Keyed off the cards rather than the caller: the feed board, the search page
-   and the hero search all draw artist cards into a .awGrid, and any future one
-   will too. The explicit class stays for browsers without :has(). Both are two
-   classes deep on purpose — one is not enough to beat ranking.css. */
+  /* Artist cards are wide: one per row on phone, two on tablet, three from large up — ~500px at the 1600px cap */
+  /* Keyed off the cards, not the caller. Explicit class for browsers without :has(). Two deep, to beat ranking.css */
 .awGrid:has(.atCard),
 .awGrid.awGrid--artists{grid-template-columns:1fr;}
 @media(min-width:700px){
@@ -985,9 +940,7 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
   .awGrid.awGrid--artists{grid-template-columns:repeat(3,1fr);}
 }
 
-/* The bars stand in for a line of text, so they are as tall as that line —
-   at .8em and .7em the card was 16px shorter before it painted and jumped when
-   it did. --lh-snug is what both of them are set in. */
+  /* Bars stand in for a line of text, so they match its height — at .8em/.7em the card was 16px short, then jumped */
 .atCard:not(.atReady) .atName,
 .atCard:not(.atReady) .atUser{
   height:var(--lh-snug);height:1.3em;
@@ -995,9 +948,7 @@ html[data-theme="offwhite"] .tgSearch.hsBar{
 }
 .atCard:not(.atReady) .atName{width:54%;}
 .atCard:not(.atReady) .atUser{width:36%;}
-/* Before the profile lands the card knows nothing, and "0 Followers" is a lie
-   rather than a placeholder — the buttons have no labels yet either. Hidden
-   rather than removed, so the card does not change height when it paints. */
+  /* Before the profile lands, "0 Followers" is a lie, not a placeholder. Hidden not removed, so height does not jump */
 .atCard:not(.atReady) .atStats,
 .atCard:not(.atReady) .atActs{visibility:hidden;}
 

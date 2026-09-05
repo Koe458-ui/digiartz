@@ -102,9 +102,7 @@
     if(!currentUser || String(art.user_id)!==String(currentUser.id)){ showToast('You can only delete your own artwork'); return; }
     if(!confirm('Delete this artwork? This cannot be undone.')) return;
     try{
-      // The row goes first. Taking the file out ahead of it meant a delete that
-      // the database refused left an artwork on the site with its picture gone,
-      // and no way back. A file left behind by a failed sweep is only a file.
+    // Row goes first. File-first meant a refused delete left an artwork with its picture gone. A stranded file is only a file
       const{error}=await sb.from('artworks').delete().eq('id',id);
       if(error) throw error;
       if(art.storage_path){
@@ -1300,16 +1298,14 @@ function hideCommentThumbnail(){
   var cpOffset = 0;
   var CP_INITIAL_LOAD = function(){ return 25; };
   var CP_LOAD_STEP = 25;
-  // whether the channel holds messages older than the ones fetched
+    // whether the channel holds messages older than the ones fetched
   var cpHasMore = false;
   var cpLoadingOlder = false;
   var cpPoll = null;
   var CP_POLL_MS = 5000;
   var cpLastSig = '';
 
-  // Looked up when they are called. Reading them here works only while this
-  // file keeps loading after app-core.js, and dm.js already broke on exactly
-  // that when the order went the other way.
+    // Looked up when called. Reading them here works only while this file loads after app-core.js; dm.js broke on that
   function cpHHMM (iso) { return window.dzHHMM ? window.dzHHMM(iso) : ''; }
   function cpDayChip (d) { return window.dzDayChip ? window.dzDayChip(d) : ''; }
 
@@ -1477,7 +1473,7 @@ function hideCommentThumbnail(){
 
     function cpTriggerRefresh(){
       if(_cpRefreshing) return;
-      // more to reveal from what is loaded, or more still on the server
+        // more to reveal from what is loaded, or more still on the server
       if(cpOffset >= cpComments.length && !cpHasMore) return;
       _cpRefreshing = true;
       var wrap = document.getElementById('cpRefreshWrap');
@@ -1585,8 +1581,7 @@ function hideCommentThumbnail(){
     if(!body) return;
     body.innerHTML = '';
 
-    // `comics` was a second list here and no longer exists anywhere on the page,
-    // so reading it threw and the picker never opened at all.
+      // `comics` was a second list and exists nowhere now, so reading it threw and the picker never opened
     var items = (images || [])
       .filter(function(a){ return a.user_id === currentUser.id; })
       .map(function(a){ return { url:a.image_url, name:a.name || 'Untitled' }; });
@@ -1663,12 +1658,7 @@ function hideCommentThumbnail(){
         emptyEl.innerHTML = '<div class="cpEIco">◎</div><div>LOADING…</div>';
         emptyEl.style.display = 'flex';
       }
-      // Only as far back as the reader has actually scrolled, newest first and
-      // turned around. It used to ask for the whole channel, ascending and with
-      // no limit, on open and again on every five-second poll — so a busy room
-      // moved its entire history over the wire twelve times a minute, and once
-      // past the server's row cap the oldest page is what came back rather than
-      // the newest.
+        // Only as far back as the reader scrolled. It used to ask for the whole channel every five seconds, and past the row cap returned the OLDEST page
       var want = Math.max(cpOffset, CP_INITIAL_LOAD()) + CP_LOAD_STEP;
       var result = await sb.from('comments')
         .select('*')

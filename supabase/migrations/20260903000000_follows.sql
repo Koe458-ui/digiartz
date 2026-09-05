@@ -1,16 +1,10 @@
 -- Follows: the artist -> audience edge the site was missing.
 --
--- The relationship was already here under another name. public.profile_creds was
--- a directed, unique (giver, receiver) edge with a counter cached on the profile
--- — a follower graph wearing the word "cred". So this renames it rather than
--- building a second graph beside it: every existing cred becomes a follow, the
--- counter becomes follower_count, and a following_count joins it. Renames keep
--- the rows, the indexes, the foreign keys and the policies; only the function
--- bodies that spelled the old names out have to be re-emitted, which is most of
--- the length below.
+-- The relationship was already here under another name: public.profile_creds was a directed unique (giver, receiver)
+-- edge with a counter cached on the profile — a follower graph wearing the word "cred". So: rename, not a second graph.
+-- Renames keep rows, indexes, foreign keys and policies; only function bodies that spelled the old names are re-emitted.
 --
--- On top of the rename: a notification when someone follows you, and the
--- follower/following facts and lists the analytics page reads.
+-- Plus: a notification when someone follows you, and the follower/following facts and lists analytics reads.
 
 set check_function_bodies = off;
 
@@ -35,8 +29,7 @@ create table if not exists public.follows (
 
 alter table public.follows enable row level security;
 
--- constraints keep their old names through a rename; give them the new one so
--- the next reader is not sent looking for a cred table
+-- constraints keep their old names through a rename; give them the new one so the next reader is not sent looking
 do $$
 begin
   if exists (select 1 from pg_constraint where conname = 'profile_creds_pkey' and conrelid = 'public.follows'::regclass) then
@@ -68,8 +61,7 @@ begin
   end if;
 end $$;
 
--- a feed reads "the newest work from the people I follow", a profile reads
--- "who follows this artist"; one index each
+-- a feed reads "newest work from people I follow", a profile reads "who follows this artist" — one index each
 create index if not exists follows_follower_idx  on public.follows (follower_id, created_at desc);
 create index if not exists follows_following_idx on public.follows (following_id, created_at desc);
 
@@ -118,7 +110,7 @@ create trigger trg_follows_count after insert or delete on public.follows
 
 drop function if exists public.sync_profile_cred_count();
 
--- the counters stay the trigger's to write, exactly as the cred one was
+-- counters stay the trigger's to write, exactly as the cred one was
 CREATE OR REPLACE FUNCTION public.guard_profile_update() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
 DECLARE
@@ -170,9 +162,8 @@ begin
   return new;
 end $function$;
 
--- Both counters are caches of the same table. Recount once, so a partly applied
--- history cannot leave a profile claiming an audience it does not have. The
--- guard above hands the counters to the trigger, so this write says who it is.
+-- Both counters cache the same table. Recount once, so a partly applied history cannot leave a profile claiming an
+-- audience it does not have.
 select set_config('app.allow_follow_count_write', '1', false);
 
 with n as (
@@ -193,28 +184,21 @@ select set_config('app.allow_follow_count_write', '0', false);
 
 -- ------------------------------------------------------ transition shims ---
 
--- A rename is only safe if both names answer while the two versions overlap.
--- A visitor already carrying the pre-follow bundle keeps asking profiles for
--- cred_received_count and keeps writing to profile_creds, and the service
--- worker holds that bundle for a while after the new one ships. PostgREST
--- answers an unknown column with a 400, and the old profile page treats that
--- as fatal and closes itself -- so the old names keep working here until those
--- clients are gone.
+-- A rename is only safe while both names answer. A visitor on the pre-follow bundle still asks for cred_received_count,
+-- and the service worker holds that bundle a while. PostgREST answers an unknown column with a 400, and the old profile
+-- page treats that as fatal and closes itself — so the old names keep working until those clients are gone.
 --
--- Both are drop-on-sight once the site has been on the follow bundle for a
--- release: the new bundle references neither.
+-- Both drop-on-sight once the site has been on the follow bundle for a release: the new bundle references neither.
 
--- read-only, and impossible to write: a generated column rejects an INSERT
--- that names it, so the counter stays the trigger's alone
+-- read-only and impossible to write: a generated column rejects an INSERT naming it, so the counter stays the trigger's
 alter table public.profiles
   add column if not exists cred_received_count integer
   generated always as (follower_count) stored;
 
 grant select (cred_received_count) on public.profiles to anon, authenticated;
 
--- the old Cred button reads and writes this by its old column names. A simple
--- view over one table is auto-updatable, and security_invoker keeps the row
--- policies on follows in force rather than the view owner's rights.
+-- old Cred button reads/writes the old column names. A view over one table is auto-updatable, and security_invoker
+-- keeps the follows row policies in force rather than the view owner's rights.
 create or replace view public.profile_creds
   with (security_invoker = true) as
   select f.id,
@@ -238,8 +222,7 @@ create policy follows_insert_own on public.follows for insert to authenticated
   with check (follower_id = auth.uid() and follower_id <> following_id);
 create policy follows_delete_own on public.follows for delete to authenticated
   using (follower_id = auth.uid());
--- both ends of an edge you are on: "am I following them", "who follows me",
--- "who do I follow". Someone else's follower list stays a count on the profile.
+-- both ends of an edge you are on. Someone else's follower list stays a count on the profile.
 create policy follows_select_mine on public.follows for select to authenticated
   using (follower_id = auth.uid() or following_id = auth.uid());
 
@@ -303,10 +286,8 @@ grant execute on function public.dz_notify_follow(), public.sync_follow_counts()
 
 -- ------------------------------------------------- the last of the cred ---
 
--- Nothing writes a 'cred' analytics event any more. The old rows say the same
--- thing a follow says, so they are renamed rather than dropped -- except where
--- a follow for that reader, artist and day is already recorded, which the
--- once-per-day unique index would refuse.
+-- Nothing writes 'cred' now. Old rows say what a follow says, so rename — except where a follow for that
+-- reader/artist/day exists, which the once-per-day unique index would refuse.
 delete from public.analytics_events a
  where a.event = 'cred'
    and exists (
@@ -327,10 +308,7 @@ alter table public.analytics_events add constraint an_ev_event CHECK ((event = A
   'download'::text, 'comment'::text, 'share'::text, 'profile_view'::text,
   'search_impression'::text, 'search_click'::text, 'follow'::text, 'unfollow'::text])));
 
--- and the tracker stops accepting the word. The branch that went with it
--- anonymised the actor and hashed the viewer key, so that a cred could not be
--- traced back to who gave it; a follow is not anonymous and has no successor
--- to that branch.
+-- and the tracker stops accepting the word. Its old branch hashed the viewer key so a cred could not be traced back.
 CREATE OR REPLACE FUNCTION public.dz_analytics_track(p_event text, p_subject uuid DEFAULT NULL::uuid, p_scope text DEFAULT 'artwork'::text, p_owner uuid DEFAULT NULL::uuid, p_source text DEFAULT NULL::text, p_ref text DEFAULT NULL::text, p_device text DEFAULT NULL::text, p_country text DEFAULT NULL::text, p_term text DEFAULT NULL::text, p_anon_key text DEFAULT NULL::text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
   v_key    text;
@@ -355,14 +333,11 @@ begin
 
   if not public.dz_rate_ok('an:' || v_key, 240, 60) then return; end if;
 
-  -- 'resources' is what the section is called in the interface and 'resource'
-  -- is what every table has always stored. One spelling from here down.
+    -- 'resources' = interface name, 'resource' = what every table stores. One spelling from here down.
   v_scope := lower(coalesce(p_scope, 'artwork'));
   if v_scope = 'resources' then v_scope := 'resource'; end if;
 
-  -- Who this lands on. Each kind answers from its own table, and only a row
-  -- the public can actually reach counts — a draft nobody can open cannot
-  -- have been liked from outside.
+    -- Who this lands on. Each kind answers from its own table; only publicly reachable rows count.
   if p_subject is not null and v_scope = 'artwork' then
     select a.user_id into v_owner from public.artworks a
      where a.id = p_subject and a.status = 'approved';
@@ -408,10 +383,7 @@ begin
     v_scope := 'artwork';
   end if;
 
-  -- A follow, unlike the cred it replaces, is not anonymous: the artist is
-  -- shown who followed them, so this row carries its actor like every other.
-  -- The old branch blanked the actor and hashed the key precisely because a
-  -- cred was meant to be untraceable.
+    -- A follow is not anonymous (cred was): the artist is shown who followed, so this row carries its actor.
   v_actor := auth.uid();
 
   insert into public.analytics_events
@@ -425,8 +397,7 @@ end $function$;
 
 -- ------------------------------------------------------------- rankings ---
 
--- the cred column of the score set becomes followers, which is a change of
--- return type: the two readers go first, then the set itself
+-- cred column of the score set becomes followers = return type change: readers first, then the set
 drop function if exists public.get_rank_board(text, integer, integer);
 drop function if exists public.get_rank_me(text);
 drop function if exists public.rank_scores();
@@ -527,8 +498,7 @@ grant execute on function public.get_rank_board(board text, lim integer, off int
 
 -- ------------------------------------------------------------ analytics ---
 
--- Same function as before, with the account block now reporting followers and
--- following -- including the two lists the Account section shows.
+-- same function, account block now reports followers/following + the two lists the Account section shows
 
 CREATE OR REPLACE FUNCTION public.dz_analytics_activity(p_days integer DEFAULT 30, p_scope text DEFAULT 'artwork'::text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare

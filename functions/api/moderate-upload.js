@@ -4,23 +4,20 @@ import { json } from '../lib/http.js';
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 6;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-// A rejection has to be confident. Anything below this is treated as the model
-// hedging, and a hedge must never cost an artist their upload.
+// A rejection has to be confident. Below this is the model hedging, and a hedge must never cost an artist their upload.
 export const REJECT_CONFIDENCE = 0.75;
 
-// These stop an upload however the rest of the verdict reads.
+// these stop an upload however the rest of the verdict reads
 export const HARD_REJECT = [
   'ADULT_CONTENT', 'PROHIBITED_CONTENT', 'NSFW_CONTENT', 'GORE_CONTENT'
 ];
 
-// The codes the model reaches for when it is unsure rather than when it has
-// actually seen a photo, a screenshot, or a document. We accept on all of them.
+// Codes the model reaches for when unsure, not when it has seen a photo, screenshot or document. Accept on all
 export const SOFT_CODES = [
   'UNCLEAR', 'LOW_QUALITY', 'TEXT_ONLY', 'NOT_ARTWORK', 'NOT_RESOURCE'
 ];
 
-// Shown when the moderator could not be reached at all. The artwork is kept and
-// queued, so this is not a rejection and must never read like one.
+// Moderator unreachable. Artwork is kept and queued, so this is not a rejection and must never read like one
 export const DEFERRED_MESSAGE =
   'Moderation is temporarily unavailable. Your upload is saved and will be ' +
   'checked automatically as soon as it is back — you do not need to upload it again.';
@@ -282,8 +279,7 @@ export async function onRequestPost(context) {
       const v = verdicts[i];
       const call = calls[i];
 
-      // A real verdict outranks an outage on another image: if one image was
-      // actually refused, the upload is refused and nothing is queued.
+        // A real verdict outranks an outage on another image: if one image was refused, the upload is refused.
       if (!call.pass && !call.deferred && allowed) {
         allowed = false;
         failIndex = i;
@@ -307,9 +303,7 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Nothing was refused, but the moderator could not see every image. The
-    // upload is kept and queued for a re-check rather than turned away — the
-    // same for an artwork, a resource, a listing or a post.
+      // Nothing refused, but not every image was seen. Kept and queued for re-check rather than turned away
     if (allowed && calls.some(c => c.deferred)) {
       allowed = false;
       deferred = true;
@@ -360,36 +354,30 @@ export async function onRequestPost(context) {
   }
 }
 
-// Turns one Gemini verdict into a pass/fail. The gate is deliberately lopsided:
-// only a confident, specific rejection stops an upload. A hedge, a vague code, or
-// a low-confidence "no" lets the artwork through.
+  // One Gemini verdict into pass/fail, deliberately lopsided: only a confident specific rejection stops an upload
 export function decide(v, isResource) {
   const okCode = isResource ? 'RESOURCE_OK' : 'ARTWORK_OK';
 
-  // The call never reached the moderator, or came back unreadable. That is not a
-  // verdict on the artwork, so the upload is held rather than turned away.
+    // Never reached the moderator, or came back unreadable. Not a verdict on the artwork, so hold rather than refuse.
   if (!v.ok) return { pass: false, deferred: true, code: 'MODERATION_DEFERRED' };
 
   let code = (v.category && v.category !== okCode) ? v.category : null;
   if (v.rating === 'ADULT') code = isResource ? 'NSFW_CONTENT' : 'ADULT_CONTENT';
 
-  // Explicit and prohibited content stops here whatever else the verdict says.
+    // explicit and prohibited content stops here whatever else the verdict says
   if (code && HARD_REJECT.includes(code)) return { pass: false, code };
 
-  // AI art is not accepted anywhere on DigiArtz — not as an artwork, not as a
-  // resource preview. Only on a confident call, so that polished human work and
-  // 3D renders are not swept up with it.
+    // AI art accepted nowhere — not artwork, not resource preview. Confident calls only, or polished human work gets swept up
   if (v.ai_generated === true && v.confidence >= REJECT_CONFIDENCE) {
     return { pass: false, code: 'AI_GENERATED' };
   }
 
   if (v.allow === true) return { pass: true, code: okCode };
 
-  // A rejection with no code, or one of the codes the model reaches for when it
-  // is guessing, is not enough to turn an artist away.
+    // A rejection with no code, or one the model reaches for when guessing, is not enough to turn an artist away.
   if (!code || SOFT_CODES.includes(code)) return { pass: true, code: okCode };
 
-  // Neither is one it is not sure about.
+    // neither is one it is not sure about
   if (!(v.confidence >= REJECT_CONFIDENCE)) return { pass: true, code: okCode };
 
   return { pass: false, code };

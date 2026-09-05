@@ -700,9 +700,7 @@
     invalidateThread: noop2, invalidateAnalytics: noop2, invalidateUserList: noop2
   };
   function noop2(){ return Promise.resolve(); }
-  // Every path that fills dzArtistCache reads the same columns. They used to
-  // each name their own, and a card painted from a row fetched by one of the
-  // others had no follower_count and read 0.
+    // Every path filling dzArtistCache reads the same columns. They each named their own, and a card from another's row read 0
   var DZ_ARTIST_COLS = 'id,username,display_name,avatar_url,banner_url,bio,follower_count';
   window.DZ_ARTIST_COLS = DZ_ARTIST_COLS;
 
@@ -1195,8 +1193,7 @@
     ids.forEach(function(u){ _dzArtistFlight[u] = true; });
     sb.from('profiles').select(DZ_ARTIST_COLS).in('id', ids)
       .then(function(res){
-        // a failed query resolves with data:null; caching null for those ids
-        // would mean "no such profile" and the chips would never paint again
+          // a failed query resolves with data:null; caching null means "no such profile" and the chips never paint again
         if(res && res.error){
           ids.forEach(function(u){ delete _dzArtistFlight[u]; });
           return;
@@ -1358,8 +1355,7 @@
     try{
       var r = await sb.from('hidden_artworks').select('artwork_id')
         .eq('user_id', currentUser.id).limit(2000);
-      // a failed read resolves with data:null, and reading that as an empty
-      // list would put every hidden artwork back on the page
+        // a failed read resolves with data:null, and reading that as empty puts every hidden artwork back on the page
       if(r.error) throw r.error;
       var next = new Set();
       r.data.forEach(function(row){ next.add(String(row.artwork_id)); });

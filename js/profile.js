@@ -174,9 +174,7 @@
     try{
       let{data,error}=await sb.from('profiles').select(PF_PROFILE_COLS).eq('username',username).maybeSingle();
       if(error) throw error;
-      // The edge resolves /profile/<name> case-insensitively, so a link that
-      // differs only in case renders a page here; without the same second look
-      // the panel opened and then closed itself with "Profile not found".
+        // the edge resolves /profile/<name> case-insensitively; without the same second look the panel self-closed with "Profile not found"
       if(!data) data = await pfFindByName(username);
       if(!data && currentUser){
         var metaName = currentUser.user_metadata && currentUser.user_metadata.username;
@@ -197,9 +195,7 @@
     }
   }
 
-  // % and _ are wildcards to LIKE, and a username may hold an underscore, so
-  // the name is escaped before it is used as a pattern and the row that comes
-  // back has to be the same name — not merely one the pattern matched.
+    // % and _ are LIKE wildcards and a username may hold an underscore, so the name is escaped and the row must be the same name
   async function pfFindByName(username){
     var raw = String(username || '');
     if(!raw || !/^[\w.\-]{1,40}$/.test(raw)) return null;
@@ -374,8 +370,7 @@
   }
 
   var PF_TABS = ['gallery','album','resources','blog','marketplace','progress','about'];
-  // Level and About describe the account itself, so they are always there. The
-  // rest are sections: a tab appears when the artist has put something in it.
+    // Level and About describe the account, so always present. The rest appear when the artist has put something in them
   var PF_TABS_ALWAYS = ['progress','about'];
 
   function pfTabBtn(t){
@@ -407,18 +402,8 @@
     pfLoadTab(tab);
   }
 
-  // Which sections this artist actually has something in.
-  //
-  // Each question is asked the same way its tab asks it, so the rail cannot
-  // promise a tab that then opens empty: the owner's own unpublished artwork
-  // counts, because their gallery shows it; the lists are approved-only for
-  // everyone, because that is all they ever render; and Albums counts albums
-  // the artist made, plus — for a visitor — a Likes or Bookmarks collection
-  // they have chosen to make public. An owner reaches their own Likes and
-  // Bookmarks from the menu, so an empty Albums tab is not their only way in.
-  //
-  // A visitor is counted the published rows only; the owner is counted what
-  // their own tabs render, drafts and hidden items included.
+    // Which sections this artist has something in, each asked the way its tab asks it, so the rail cannot promise a tab
+    // that opens empty. A visitor is counted published rows only; the owner is counted what their own tabs render.
   async function pfSectionsWithContent(forId, isOwner){
     function count(q){
       return q.then(function(r){ return (r && !r.error && r.count) ? r.count : 0; },
@@ -431,17 +416,13 @@
 
     var res = await Promise.all([
       count(art),
-      // a portfolio is the public face of an artist, so a private album is not
-      // part of it: with nothing public there is nothing to show and no tab.
-      // The owner still reaches every album, private ones included, from the menu.
+        // a portfolio is an artist's public face: nothing public, no tab. The owner reaches every album from the menu
       sb.rpc('get_user_albums', { target: forId })
         .then(function(r){
           return (r && !r.error && Array.isArray(r.data))
             ? r.data.filter(function(a){ return a.is_public !== false; }).length : 0;
         }, function(){ return 0; }),
-      // the same question each tab asks: a draft is "kept, not listed" and a
-      // hidden item is reachable only by link, so neither belongs on a
-      // stranger's view of the portfolio nor in the count that raises its tab
+        // same question the tab asks: a draft is "kept, not listed" and a hidden item is link-only — neither is a stranger's to see
       count(pubOnly(sb.from('resources').select('id', { count:'exact', head:true })
               .eq('user_id', forId).eq('status', 'approved'))),
       count(pubOnly(sb.from('blog_posts').select('id', { count:'exact', head:true })
@@ -465,8 +446,7 @@
     };
   }
 
-  // Hide every section tab until we know, so the rail never shows a tab and
-  // then takes it away. Level and About are there from the first paint.
+    // Hide every section tab until we know, so the rail never shows one then takes it away
   function pfResetTabRail(){
     PF_TABS.forEach(function(t){
       var b = pfTabBtn(t);
@@ -479,7 +459,7 @@
       var b = pfTabBtn(t);
       if(b && PF_TABS_ALWAYS.indexOf(t) === -1) b.hidden = !has[t];
     });
-    // the open tab may have just been taken off the rail
+      // the open tab may have just been taken off the rail
     if(!pfTabShown(pf.tab)) pfSwitchTab(pfVisibleTabs()[0] || 'progress');
   }
 
@@ -492,7 +472,7 @@
       if(!pfStillOn(forId)) return;
       pfPaintTabRail(has);
     }catch(e){
-      // a profile with a tab too few is worse than one with a tab too many
+        // a profile with a tab too few is worse than one with a tab too many
       if(pfStillOn(forId)) pfPaintTabRail(
         { gallery:true, album:true, resources:true, blog:true, marketplace:true });
     }
@@ -598,9 +578,7 @@
     if(empty) empty.style.display='none';
     host.innerHTML='<div class="pfEmpty" style="display:block;">Loading…</div>';
     try{
-      // RLS hands a visitor every approved row whatever its visibility, so the
-      // draft and the hidden item have to be kept off a stranger's page here.
-      // The owner still sees their own, the way the artworks grid shows theirs.
+        // RLS hands a visitor every approved row whatever its visibility, so drafts and hidden items are kept off a stranger's page
       var own = !!currentUser && String(currentUser.id) === forId;
       var q = sb.from(cfg.table)
         .select(cfg.select())

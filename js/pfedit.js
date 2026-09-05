@@ -76,10 +76,7 @@
       if(usernameChanged){
         var nextChg = pfUsernameNextChange();
         if(nextChg){ showToast('You can change your @handle again on ' + pfFormatDate(nextChg.toISOString())); return; }
-        // "_" is a LIKE wildcard and a legal character in a username, so an
-        // unescaped ilike told anyone asking for "john_doe" it was taken
-        // whenever some "johnXdoe" existed — and matched several rows, which
-        // maybeSingle then refused outright.
+        // "_" is a LIKE wildcard and legal in a username: unescaped, "john_doe" read as taken whenever a "johnXdoe" existed
         var taken = newUsername.replace(/[\\%_]/g, '\\$&');
         const{data:existing,error:ce}=await sb.from('profiles').select('id').ilike('username',taken).neq('id',pf.profile.id).limit(1);
         if(ce) throw ce;

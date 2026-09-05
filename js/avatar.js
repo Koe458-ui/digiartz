@@ -148,8 +148,7 @@
         fileKind: null, url: publicUrl, path: path, file: blob
       });
 
-      // the new picture is already saved; a failed sweep of the old file is
-      // not a failed upload, so it must not reach the catch below
+        // new picture is already saved; a failed sweep of the old file is not a failed upload, so keep it out of the catch
       if(oldPath){
         try{ await s3Delete(BUCKET, oldPath); }
         catch(sweep){ console.warn('old '+kind+' not removed:', (sweep && sweep.message) || sweep); }

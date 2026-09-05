@@ -194,8 +194,7 @@ const ACTIONS = {
       if (!users.length) throw new Refused('No one by that name', 400);
     }
 
-    // dz_admin_notify raises unless the caller is staff, so the check is the
-    // database's, on the caller's own token
+      // dz_admin_notify raises unless the caller is staff, so the check is the database's, on the caller's own token
     const made = await rpc(env, request, 'dz_admin_notify', {
       p_title: title, p_message: message, p_url: url || null, p_users: users,
     });

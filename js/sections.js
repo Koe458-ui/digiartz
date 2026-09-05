@@ -1517,8 +1517,7 @@
     var q = sb.from(cfg.table).select(cols).eq('user_id', currentUser.id);
     if(cfg.where) Object.keys(cfg.where).forEach(function(k){ q = q.eq(k, cfg.where[k]); });
     q.order('created_at', {ascending:false}).limit(200).then(function(res){
-      // postgrest hands an error back on the success side, so an unread error
-      // would read here as "you have nothing" — which is a different sentence.
+        // postgrest hands an error back on the success side; unread, it reads here as "you have nothing" — a different sentence
       if(res && res.error) throw res.error;
       var rows = (res && res.data) || [];
       if(!rows.length){
@@ -2548,13 +2547,11 @@
     try{
       var got=await sb.from('scheduled_sections').select('storage_paths').eq('id', id).single();
       var paths=(got && got.data && got.data.storage_paths) || [];
-      // The row goes first and its failure stops here: sweeping the files off a
-      // schedule the database kept would leave it queued with nothing to publish.
+        // Row goes first and its failure stops here: sweeping files off a schedule the database kept leaves it queued with nothing
       var del=await sb.from('scheduled_sections').delete().eq('id', id);
       if(del && del.error) throw del.error;
       if(Array.isArray(paths) && paths.length && typeof s3Delete==='function'){
-        // s3Delete answers with a promise, so its failure is caught on the
-        // promise and not by a try around the call
+          // s3Delete answers with a promise, so its failure is caught on the promise, not by a try around the call
         paths.forEach(function(p){
           s3Delete(BUCKET, p).catch(function(sweep){
             console.warn('scheduled file not removed:', (sweep && sweep.message) || sweep);
@@ -2688,8 +2685,7 @@
 
     var btn = document.getElementById('dzSubmit-'+sec);
     var s = st(sec), row = {user_id: currentUser.id, tags: s.tags, status:'approved'};
-    // Reassigned below once the content check has run: an upload the moderator
-    // could not see is written as pending and waits its turn in the queue.
+      // Reassigned below once the content check has run: an upload the moderator could not see is written pending.
     function dzHoldRow(){ if(held) row.status = 'pending'; }
 
     var miss = FORMS[sec].fields.filter(function(fd){
@@ -2712,10 +2708,8 @@
     else if(sec === 'blog'){   modImg = st(sec).files.cover;   modMode = 'artwork'; modRecv = 'Cover image received'; }
     var moderated = !!modImg;
     var held = false;
-    // Every object this submit puts in storage, so a submit that fails on the
-    // way to the database can take them back out again — the failure panel says
-    // the transferred files were removed, and now they are. Declared out here
-    // because the catch below reads it however early the throw came.
+      // Every object this submit puts in storage, so a submit that fails on the way to the database takes them back out —
+      // the failure panel says so. Declared out here because the catch reads it however early the throw came.
     var landedFiles = [];
     try{
       if(moderated){
@@ -2748,8 +2742,7 @@
           throw new Error((mod && mod.error) || 'Content check failed — please try again.');
         }
         if(mod.deferred){
-          // The moderator could not be reached. The upload is kept and written
-          // as pending, and the queue picks it up when moderation is back.
+            // Moderator unreachable. Upload is kept and written pending; the queue picks it up when moderation is back.
           held = true;
           dzV.noun = SEC[sec].noun || 'upload';
           dzV.held = true;
@@ -2981,8 +2974,7 @@
       }
 
       var when = dzSchPicked();
-      // Same reason as the artwork queue: publish_due_scheduled_sections writes
-      // the row in as approved, so an unreviewed upload must not take that path.
+        // Same as the artwork queue: publish_due_scheduled_sections writes the row in as approved, so unreviewed must not take that path
       if(when && held) throw new Error('Moderation is temporarily unavailable, so this cannot be scheduled right now. Publish it now and it will be reviewed automatically as soon as moderation is back, or try scheduling again shortly.');
       if(when){
         if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
@@ -3029,9 +3021,7 @@
         }
       }
 
-      // The row is in, and the marketplace files either landed with it or took
-      // it back out again. Past this line the uploads belong to a published
-      // record, so the sweep in the catch must not reach for them.
+        // Row is in and the marketplace files landed with it. Past this line the uploads belong to a published record
       landedFiles.length = 0;
 
       if(res.data && res.data.id){
@@ -3196,9 +3186,7 @@
         headers:{ authorization:'Bearer '+session.access_token },
         cache:'no-store'
       });
-      // The edge answers this with JavaScript. Anything else — a routing miss
-      // that falls through to the SPA shell, an error page — is not a module,
-      // and injecting it would only raise a parse error nobody can act on.
+        // The edge answers with JavaScript. A routing miss falls through to the SPA shell and injecting that only raises a parse error
       if(!res.ok || !/javascript|ecmascript/i.test(res.headers.get('content-type') || '')) return false;
       await inject(await res.text());
       done = true;

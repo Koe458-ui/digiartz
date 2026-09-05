@@ -39,11 +39,7 @@
 .pfBanner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;z-index:0;}
 
 .pfId{padding:0 var(--pfPad) var(--sp-6);}
-/* The row is bottom-aligned to the avatar, so the name — the top of a stack
-   nearly as tall as the avatar — lands level with the banner's edge and reads
-   as if it is touching it. Nothing inside the row can move it down (a negative
-   margin on the avatar only moves the row's top, not the avatar), so the row
-   itself starts lower. */
+  /* Row bottom-aligns to the avatar so the name is level with the banner edge; a negative margin would move the row, not the avatar */
 .pfIdTop{display:flex;flex-wrap:wrap;align-items:flex-end;gap:var(--sp-5) var(--sp-6);padding-top:var(--sp-4);}
 .pfIdWho{display:flex;align-items:flex-end;gap:var(--sp-5);min-width:0;flex:1 1 auto;}
 .pfAvatarWrap{flex:0 0 auto;margin-top:calc(var(--pfAvSz) / -2.35);}
@@ -72,9 +68,7 @@
 }
 .pfHandle{
   font-family:var(--fm);font-size:var(--fs-sm);
-  /* A handle is a single-line label, not a paragraph: on the body's 1.6 it sat
-     in a box half again its own height, which is where the gap under the name
-     came from. --lh-snug is what the scale is for. */
+  /* A handle is a label, not a paragraph: on the body's 1.6 it sat in a box half again its height */
   line-height:var(--lh-snug);
   letter-spacing:var(--ls-wide);color:var(--txd);margin-top:.05rem;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
@@ -98,8 +92,7 @@
 .msRibbon[hidden]{display:none;}
 .msRibbon .msRibLvl{opacity:.62;margin-right:var(--sp-2);}
 
-/* The same prose the About tab sets: --fb at --fs-md on --lh-body. It is the
-   same sentence in both places and was two sizes. */
+  /* Same prose the About tab sets: --fb at --fs-md on --lh-body. Same sentence in both places, and it was two sizes */
 .pfHeadBio{
   font-family:var(--fb);font-size:var(--fs-md);line-height:var(--lh-body);
   color:var(--txd);margin-top:var(--sp-5);max-width:72ch;
@@ -151,17 +144,14 @@
   .pfActBtn{padding-inline:var(--sp-3);gap:var(--sp-2);font-size:var(--fs-sm);}
 }
 
-/* The profile reads its numbers as a sentence rather than a row of cards:
-   two lines under the avatar, the audience first and the work below it. */
+  /* The profile reads its numbers as a sentence, not a row of cards: two lines under the avatar, audience first */
 .pfStats{
   order:2;flex:1 1 100%;min-width:0;
   display:flex;flex-direction:column;gap:var(--sp-1);
   margin:var(--sp-1) 0 var(--sp-1);
 }
 .pfStats[hidden]{display:none;}
-/* Both lines at one size. The first was --fs-lg and the second --fs-md, which
-   is what made the block look unsettled — two rows of the same kind of thing,
-   set differently. They read at the body size, like the bio under them. */
+  /* Both lines one size. --fs-lg over --fs-md made the block look unsettled — same kind of thing, set differently */
 .pfStatLine{
   display:flex;flex-wrap:wrap;align-items:baseline;
   column-gap:var(--sp-5);row-gap:var(--sp-1);margin:0;
@@ -270,8 +260,7 @@
 .pfConnectItem--on:hover .pfConnectTxt{text-decoration:underline;}
 .pfConnectItem--off{color:var(--tc);cursor:default;opacity:.6;}
 
-/* Brand colours. Only applied once a link is actually saved, so a filled-in
-   platform reads at a glance against the greyed-out ones that are still empty. */
+  /* Brand colours, applied only once a link is saved, so a filled platform reads at a glance against the empty ones */
 .pfBrand--instagram{--brand:#E1306C;}
 .pfBrand--facebook {--brand:#1877F2;}
 .pfBrand--youtube  {--brand:#FF0000;}
@@ -308,11 +297,7 @@ html[data-theme="offwhite"] .pfBrand--youtube{--brand:#D40000;}
 .pfSrchHdr .tgSearch,
 .pfMenuTxt{flex:1 1 auto;min-width:0;}
 
-/* The gallery search page opens on a question rather than a bare field: a
-   small head in the section-head pattern, the sentence under it, then the
-   field, then one rail of everything you could narrow to. Small on purpose —
-   the field is what the page is for, and a section-sized headline would push
-   it under the fold on a phone. */
+  /* Gallery search opens on a question. Small on purpose — a section-sized headline pushes the field under the fold */
 .srchLead{
   padding:clamp(1.2rem,4vw,2.2rem) var(--pfPad) 0;
   text-align:center;
@@ -335,17 +320,13 @@ html[data-theme="offwhite"] .pfBrand--youtube{--brand:#D40000;}
   width:min(100%,34rem);
   margin:clamp(1rem,3vw,1.5rem) auto 0;
 }
-/* .fgCatWrap carries no padding of its own — under a section head the .fgHead
-   around it already pads to the shell. There is no such wrapper here, so this
-   rail pads itself, and the arrows pin to the same inset. */
+  /* .fgCatWrap has no padding of its own; there is no .fgHead wrapper here, so this rail pads itself */
 .fgCatWrap.srchRail{
   --ftPad:var(--pfPad);
   padding:0 var(--ftPad);
   margin-top:clamp(.6rem,2vw,1rem);
 }
-/* The script word sits mid-sentence here rather than at the end of the line,
-   and its exit stroke overhangs the glyph box, so the next word needs the gap
-   given back. */
+  /* script word sits mid-sentence here, not at line end, and its exit stroke overhangs the glyph box — give the gap back */
 .srchHead .fgHi{margin-right:.14em;}
 .pfSrchBdy{padding:0 0 var(--sp-8);}
 .pfSrchNote{

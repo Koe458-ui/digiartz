@@ -18,9 +18,7 @@
     if (diff < 10080)return Math.floor(diff / 1440) + 'd';
     return d.toLocaleDateString();
   }
-  // Looked up when they are called, not when this file runs: app-core.js
-  // defines them and loads after this one, so reading them here left both
-  // permanently undefined and every thread render threw into the catch below.
+    // Looked up when called: app-core.js defines them and loads after this file, so reading them here left both undefined
   function hhmm (iso) { return window.dzHHMM ? window.dzHHMM(iso) : ''; }
   function dayChip (d) { return window.dzDayChip ? window.dzDayChip(d) : ''; }
 
@@ -258,8 +256,7 @@
     var pr = await db().from('profiles')
       .select('id,username,avatar_url')
       .in('id', partners.map(function (p) { return p.id; }));
-    // a failed query resolves with data:null; without this the list would be
-    // cached with every name reduced to "Artist"
+      // a failed query resolves with data:null; without this the list caches with every name reduced to "Artist"
     if (pr.error) throw pr.error;
     var byId = {};
     (pr.data || []).forEach(function (p) { byId[p.id] = p; });
@@ -433,9 +430,7 @@
     } catch (e) {
       dmLoadingOlder = false;
       console.error('dm thread:', (e && e.message) || e);
-      // Only the opening read says so on screen. A poll that fails behind an
-      // already-painted thread leaves what is there alone, and the thread used
-      // to sit on LOADING… for good because nothing here said anything at all.
+        // Only the opening read says so on screen. A failing poll behind a painted thread leaves it alone
       var failed = scrollToEnd && $('dmBody');
       if (failed && !failed.querySelector('.dmMsg')) {
         failed.innerHTML = '<div class="dmSearchNote">COULDN\u2019T LOAD THIS CHAT — TRY AGAIN</div>';
@@ -528,8 +523,7 @@
     }
   }
 
-  // a short, order-independent stamp for a set of ids, so a cache key can name
-  // the members of a list without carrying every uuid in it
+    // short order-independent stamp for a set of ids, so a cache key can name a list's members without every uuid
   function frIdsTag (ids) {
     var h = 2166136261;
     ids.slice().sort().join(',').split('').forEach(function (ch) {
@@ -569,7 +563,7 @@
     if (blkHead) blkHead.style.display = 'none';
     try {
       await loadFriendships();
-      // an incoming request is a notification now, not a row here
+        // an incoming request is a notification now, not a row here
       var uid = me().id, sent = [], friends = [], blocked = [];
       Object.keys(frMap).forEach(function (pid) {
         var f = frMap[pid];
@@ -584,8 +578,7 @@
       if (!allIds.length) { empty.style.display = ''; return; }
       var byId = {};
       var c = dmc();
-      // keyed by who is in the list, not how many: swapping one friend for
-      // another kept the count the same and served the old names and faces
+        // keyed by who is in the list, not how many: swapping one friend for another kept the count and served old names
       var frpKey = c ? c.ukey('list', 'frprofiles', frIdsTag(allIds)) : null;
       var frpLoad = async function () {
         var pr = await db().from('profiles')

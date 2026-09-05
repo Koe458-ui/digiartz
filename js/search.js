@@ -37,11 +37,7 @@
   function fgSearchInput(v){ window.dzSearchUI.input(FG_SRCH_UI, v); }
   function fgSearchScope(scope){ window.dzSearchUI.scope(FG_SRCH_UI, scope); }
 
-  // After the five scopes the rail carries a handful of categories from each
-  // section. They are not a seventh scope — they fill the field and run, which
-  // is what a reader tapping "Sketches" on a search page is asking for. The
-  // scope chips keep their place at the head of the rail, so paintScopes, which
-  // walks the rail by position, still lands on the right ones.
+    // After the five scopes the rail carries a few categories per section — not a seventh scope; they fill the field and run
   (function(){
     var rail = document.getElementById('fgSrchScopes');
     if(!rail) return;
@@ -51,10 +47,8 @@
       if(!b) return;
       var q  = b.getAttribute('data-q') || '';
       var sc = b.getAttribute('data-scope');
-      // Each one belongs to a section, so it takes the reader there as well as
-      // filling the field — otherwise "Sketches" tapped under the Artists scope
-      // searches artists for it and finds nothing. Set directly rather than
-      // through scope(), which would run the old query on the way past.
+        // Each belongs to a section, so it takes the reader there as well as filling the field — otherwise "Sketches"
+        // under the Artists scope searches artists and finds nothing. Set directly; scope() would run the old query.
       if(sc && FG_SRCH_UI.st.scope !== sc){
         FG_SRCH_UI.st.scope = sc;
         window.dzSearchUI.paintScopes(FG_SRCH_UI);
@@ -65,9 +59,8 @@
     });
   })();
 
-  // Every section query goes through here: postgrest-js resolves rather than
-  // rejects when a query fails, and an error read as an empty list would be
-  // rendered as "nothing matches" and then cached under the search key.
+    // Every section query goes through here: postgrest resolves rather than rejects, and an error read as empty renders
+    // "nothing matches" and caches it under the search key.
   function fgSrchRows(key){
     return function(r){
       if(r && r.error) throw r.error;
@@ -224,8 +217,7 @@
         rows.forEach(function(p){
           if(typeof buildArtistCard === 'function') wrap.appendChild(buildArtistCard(p.id));
         });
-        // the cards carry an artist's whole published totals, which are a query
-        // of their own; it repaints them when it lands
+          // cards carry an artist's whole published totals, a query of their own; it repaints them when it lands
         if(typeof window.dzPaintPeople === 'function'){
           window.dzPaintPeople(rows.map(function(p){ return p && p.id; }).filter(Boolean));
         }

@@ -18,7 +18,9 @@
     if (diff < 10080)return Math.floor(diff / 1440) + 'd';
     return d.toLocaleDateString();
   }
-  var hhmm = window.dzHHMM, dayChip = window.dzDayChip;
+    // Looked up when called: app-core.js defines them and loads after this file, so reading them here left both undefined
+  function hhmm (iso) { return window.dzHHMM ? window.dzHHMM(iso) : ''; }
+  function dayChip (d) { return window.dzDayChip ? window.dzDayChip(d) : ''; }
 
   var FR_MAX_FRIENDS = 200;
   window.FR_MAX_FRIENDS = FR_MAX_FRIENDS;
@@ -254,6 +256,8 @@
     var pr = await db().from('profiles')
       .select('id,username,avatar_url')
       .in('id', partners.map(function (p) { return p.id; }));
+      // a failed query resolves with data:null; without this the list caches with every name reduced to "Artist"
+    if (pr.error) throw pr.error;
     var byId = {};
     (pr.data || []).forEach(function (p) { byId[p.id] = p; });
     return { partners: partners, profiles: byId };
@@ -423,7 +427,15 @@
       var mode = dmLoadingOlder ? 'older' : (scrollToEnd ? 'open' : 'poll');
       dmLoadingOlder = false;
       dmPaint(rows, dmHasMore, mode, uid);
-    } catch (e) { dmLoadingOlder = false;   }
+    } catch (e) {
+      dmLoadingOlder = false;
+      console.error('dm thread:', (e && e.message) || e);
+        // Only the opening read says so on screen. A failing poll behind a painted thread leaves it alone
+      var failed = scrollToEnd && $('dmBody');
+      if (failed && !failed.querySelector('.dmMsg')) {
+        failed.innerHTML = '<div class="dmSearchNote">COULDN\u2019T LOAD THIS CHAT — TRY AGAIN</div>';
+      }
+    }
   }
 
   function dmMaybeLoadOlder () {
@@ -511,6 +523,16 @@
     }
   }
 
+    // short order-independent stamp for a set of ids, so a cache key can name a list's members without every uuid
+  function frIdsTag (ids) {
+    var h = 2166136261;
+    ids.slice().sort().join(',').split('').forEach(function (ch) {
+      h ^= ch.charCodeAt(0);
+      h = (h * 16777619) >>> 0;
+    });
+    return ids.length + '.' + h.toString(36);
+  }
+
   var frdLastFocus = null, frdSearchTimer = null;
   function frdStartChat (p) {
     closeFriendsPage();
@@ -541,7 +563,7 @@
     if (blkHead) blkHead.style.display = 'none';
     try {
       await loadFriendships();
-      // an incoming request is a notification now, not a row here
+        // an incoming request is a notification now, not a row here
       var uid = me().id, sent = [], friends = [], blocked = [];
       Object.keys(frMap).forEach(function (pid) {
         var f = frMap[pid];
@@ -556,7 +578,8 @@
       if (!allIds.length) { empty.style.display = ''; return; }
       var byId = {};
       var c = dmc();
-      var frpKey = c ? c.ukey('list', 'frprofiles', allIds.length) : null;
+        // keyed by who is in the list, not how many: swapping one friend for another kept the count and served old names
+      var frpKey = c ? c.ukey('list', 'frprofiles', frIdsTag(allIds)) : null;
       var frpLoad = async function () {
         var pr = await db().from('profiles')
           .select('id,username,avatar_url')

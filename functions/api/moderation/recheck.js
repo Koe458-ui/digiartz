@@ -6,26 +6,18 @@ import {
   decide, moderateWithGemini, toBase64
 } from '../moderate-upload.js';
 
-// One upload per call, oldest first, across everything that goes through
-// moderation. When the moderator is unreachable an upload is kept as pending
-// instead of being turned away, and this drains the queue that leaves behind —
-// in the order people uploaded, one at a time, so the moderator is never handed
-// a batch it has to judge at once.
+// One upload per call, oldest first. An unreachable moderator keeps an upload pending; this drains that queue in order
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-// A global single-flight. Every caller shares this bucket, so a queue tick can
-// only start once every few seconds however many people have the site open.
+// Global single-flight: one tick every few seconds however many people have the site open
 const TICK_SECONDS = 6;
 
-// How many heads to look at before giving up for this tick. Bounds the work when
-// several queued rows in a row have an image that cannot be read.
+// heads to look at before giving up this tick; bounds the work when several queued rows have unreadable images
 const MAX_ATTEMPTS = 4;
 
-// Everything moderation gates. A listing and a resource are judged as previews;
-// an artwork and a blog cover are judged as artwork. Only artworks carry a
-// rating and an audit trail — the section tables have status and nothing else.
+// Everything moderation gates. Listing/resource judged as previews, artwork/blog cover as artwork. Only artworks carry a rating
 const QUEUES = [
   { table: 'artworks',          image: 'image_url',   resource: false, records: true  },
   { table: 'blog_posts',        image: 'cover_url',   resource: false, records: false },
@@ -66,20 +58,19 @@ export async function onRequestPost(context) {
     const verdict = await moderateWithGemini(env, image.b64, image.type, cfg);
     const call = decide(verdict, queue.resource);
 
-    // Still down. Nothing changes, and everything keeps its place in the queue.
+      // still down; nothing changes and everything keeps its place in the queue
     if (call.deferred) return json({ processed: 0, down: true, more: true }, 200);
 
     await apply(env, context, queue, row, verdict, call);
 
-    // Deliberately opaque: the caller is whoever had the site open, not the
-    // person who uploaded, so the response says a tick happened and no more.
+      // deliberately opaque: caller is whoever had the site open, not the uploader — says a tick happened, no more
     return json({ processed: 1, more, down: false }, 200);
   }
 
   return json({ processed: 0, skipped: true, more: waiting.length > MAX_ATTEMPTS }, 200);
 }
 
-// The oldest pending rows from every queue, merged into one upload order.
+// oldest pending rows from every queue, merged into one upload order
 async function pending(env) {
   const heads = await Promise.all(QUEUES.map(async (queue) => {
     const cols = ['id', 'user_id', 'created_at', queue.image].join(',');
@@ -126,8 +117,7 @@ async function apply(env, context, queue, row, verdict, call) {
     }
   }
 
-  // Filtered on the status it still has, so two ticks racing the same row cannot
-  // both apply a verdict.
+    // filtered on the status it still has, so two racing ticks cannot both apply a verdict
   await sbService(env,
     `/${queue.table}?id=eq.${encodeURIComponent(row.id)}&status=eq.pending`,
     { method: 'PATCH', body: JSON.stringify(patch) });

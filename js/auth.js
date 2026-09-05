@@ -612,8 +612,7 @@
     if(c){ try{ c.deleteByPrefix(c.ukey('notifications')); }catch(e){} }
   }
 
-  // One RPC for the window: rows, actor name and avatar, and this reader's
-  // read state, so a page of notifications is a single round trip.
+    // One RPC for the window: rows, actor name and avatar, and this reader's read state — one round trip per page.
   async function notifLoad(){
     if(!sb || !currentUser){ notifList=[]; notifRender(); return; }
     var c = notifCache();

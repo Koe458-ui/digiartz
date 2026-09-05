@@ -791,7 +791,6 @@ const FOOT = `
     b.className = 'pfMenuItem';
     b.textContent = C.menu;
     b.addEventListener('click', function(){
-      if(typeof closeMenu === 'function') closeMenu();
       if(typeof setGo === 'function') setGo(open, 'admPage');
       else open();
     });

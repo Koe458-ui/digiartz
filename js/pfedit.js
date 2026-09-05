@@ -76,9 +76,11 @@
       if(usernameChanged){
         var nextChg = pfUsernameNextChange();
         if(nextChg){ showToast('You can change your @handle again on ' + pfFormatDate(nextChg.toISOString())); return; }
-        const{data:existing,error:ce}=await sb.from('profiles').select('id').ilike('username',newUsername).neq('id',pf.profile.id).maybeSingle();
+        // "_" is a LIKE wildcard and legal in a username: unescaped, "john_doe" read as taken whenever a "johnXdoe" existed
+        var taken = newUsername.replace(/[\\%_]/g, '\\$&');
+        const{data:existing,error:ce}=await sb.from('profiles').select('id').ilike('username',taken).neq('id',pf.profile.id).limit(1);
         if(ce) throw ce;
-        if(existing){ showToast('That username is already taken'); return; }
+        if(existing && existing.length){ showToast('That username is already taken'); return; }
       }
       var updates = { username:newUsername, display_name:newDisplayName||null, bio:newBio||null, social_links:newSocialLinks };
       const{error:de}=await sb.from('profiles').update(updates).eq('id',pf.profile.id);

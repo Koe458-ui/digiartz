@@ -973,7 +973,9 @@
           headers: { authorization: 'Bearer ' + session.access_token },
           cache: 'no-store'
         }).then(function(res){
-          return res.ok ? res.text() : null;
+          // JavaScript or nothing: a routing miss falls to the SPA shell with a 200, and a bad blob script never fires onerror
+          var ct = res.headers.get('content-type') || '';
+          return (res.ok && /javascript|ecmascript/i.test(ct)) ? res.text() : null;
         }).then(function(code){
           if(!code) return false;
           if(opsFor && typeof dzOpsReset === 'function') dzOpsReset();

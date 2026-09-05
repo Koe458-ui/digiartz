@@ -148,7 +148,11 @@
         fileKind: null, url: publicUrl, path: path, file: blob
       });
 
-      if(oldPath) await s3Delete(BUCKET,oldPath);
+        // new picture is already saved; a failed sweep of the old file is not a failed upload, so keep it out of the catch
+      if(oldPath){
+        try{ await s3Delete(BUCKET, oldPath); }
+        catch(sweep){ console.warn('old '+kind+' not removed:', (sweep && sweep.message) || sweep); }
+      }
       if(window.dzCache){
         try{ window.dzCache.invalidateProfile(currentUser.id, pf.profile && pf.profile.username); }catch(e){}
       }
@@ -160,9 +164,12 @@
       if(pf.profile.username){
         pfMediaCache[pf.profile.username] = { avatar_url: pf.profile.avatar_url||null, banner_url: pf.profile.banner_url||null };
       }
+      // the artist cache behind every card and chip holds the old picture
+      if(typeof dzArtistCache !== 'undefined' && dzArtistCache && dzArtistCache[currentUser.id]){
+        dzArtistCache[currentUser.id][kind+'_url'] = publicUrl;
+      }
       if(kind==='avatar'){
         currentUserAvatarUrl = publicUrl;
-        avAuthorProfileCache[currentUser.id] = { username: pf.profile.username, avatar_url: publicUrl };
         syncAuthBtn();
         if(typeof cpAuthors !== 'undefined' && cpAuthors){
           cpAuthors[String(currentUser.id)] = {

@@ -9,7 +9,7 @@
   var albView = null;
   var albModMode = null, albModId = null, albModSrc = 'me';
 
-  // one picture stands for the album: the first thing put in it
+    // one picture stands for the album: the first thing put in it
   function albCoverHTML(cover){
     return cover
       ? '<span class="albCover"><img loading="lazy" decoding="async" src="'+
@@ -67,8 +67,7 @@
     }
     var pubOf = { like: flags.likes_public === true, bookmark: flags.bookmarks_public === true };
     var virt = ['like','bookmark'].map(function(k, i){
-      // these come back newest first, so the one that started the collection
-      // is the last row
+        // these come back newest first, so the one that started the collection is the last row
       var rows = res[i].data || [];
       return { id:k, key:k, virt:true, name:ALB_VIRT[k].name, ico:ALB_VIRT[k].ico,
                is_public:pubOf[k],
@@ -77,7 +76,7 @@
                rows:rows };
     }).filter(function(v){ return owner || v.is_public; });
     return virt.concat((res[2].data||[]).map(function(a){
-      // get_user_albums returns the earliest added image, and only that one
+        // get_user_albums returns the earliest added image, and only that one
       return { id:a.id, virt:false, name:a.name, item_count:a.item_count,
                cover:(a.covers && a.covers[0]) || null, is_public:a.is_public !== false };
     }));
@@ -233,14 +232,12 @@
     var a = albFind(src, id);
     if(!a) return;
     a.item_count = rows.length;
-    // an album view lists newest first, so the first thing added is last
+      // an album view lists newest first, so the first thing added is last
     a.cover = rows.length ? rows[rows.length - 1].image_url : null;
     if(src === 'me') albRenderManager(); else albRenderProfileTab();
   }
 
-  // One dialog does all of it: naming a new album, editing an existing one, and
-  // setting who can see it. Likes and Bookmarks come through here too — they
-  // cannot be renamed or deleted, but their visibility is the artist's to set.
+    // One dialog for all of it. Likes and Bookmarks come through too — not renameable or deletable, but visibility is the artist's
   var albModPublic = true, albModVirt = null;
 
   function albModSetVis(pub){
@@ -316,9 +313,7 @@
     albModMode = null; albModId = null; albModVirt = null;
   }
 
-  // Writing visibility and reading it straight back. A row that RLS will not let
-  // us touch comes back as no rows at all rather than an error, so without the
-  // read this would cheerfully report a change that never happened.
+    // Write visibility, read it back. A row RLS refuses returns no rows, not an error, so without this it reports a change that never happened
   async function albWriteVis(pub){
     if(albModVirt){
       var patch = {};
@@ -626,9 +621,14 @@
     openLB(art.image_url, art.name, cats[0]||'', art.description||'', String(art.id), true, pf.galleryRows);
   }
 
+    // Tile counts what the grid lists: RLS hands a visitor every approved row, so this read "12 Artworks" over nine
   async function pfLoadStats(){
     try{
-      const artC = await sb.from('artworks').select('id',{count:'exact',head:true}).eq('user_id',pf.profile.id).eq('kind',ART_KIND_ART);
+      var own = !!currentUser && String(currentUser.id) === String(pf.profile.id);
+      var q = sb.from('artworks').select('id',{count:'exact',head:true})
+                .eq('user_id',pf.profile.id).eq('kind',ART_KIND_ART);
+      if(!own) q = q.eq('visibility','published');
+      const artC = await q;
       window.pfSetArtCount(artC.count || 0);
     }catch(e){   }
   }
@@ -644,19 +644,17 @@
     return (isFinite(next) && next > Date.now()) ? new Date(next) : null;
   }
 
-  // A line of text wants the whole number, grouped — "1,284 Followers" reads;
-  // "1.3K Followers" is a dashboard tile talking.
+    // A line of text wants the whole number, grouped — "1,284 Followers" reads; "1.3K Followers" is a dashboard tile.
   window.pfStatNum = function(n){ return (+n || 0).toLocaleString(); };
 
-  // One number and its word. The label carries the plural so the line reads as
-  // a sentence — "1 Artwork", "23 Artworks" — rather than a heading and a figure.
+    // One number and its word. The label carries the plural so it reads as a sentence, not a heading and a figure
   function pfStatSet(numId, lblId, n, one, many){
     var e = document.getElementById(numId);
     if(e) e.textContent = window.pfStatNum(n);
     var l = lblId && document.getElementById(lblId);
     if(l) l.textContent = (Math.abs(+n || 0) === 1) ? one : many;
   }
-  // the artwork count is also bumped from the upload queue
+    // artwork count is also bumped from the upload queue
   window.pfSetArtCount = function(n){
     pfStatSet('pfStatArt', 'pfStatArtL', n, 'Artwork', 'Artworks');
   };
@@ -668,8 +666,7 @@
 
   function pfPaintStats(likes, views, bms, level, merit){
     function set(id, val){ var e=document.getElementById(id); if(e) e.textContent = val; }
-    // engagement.js owns the likes figure once it has the real total for this
-    // profile; do not paint over it with the page's own partial count
+      // engagement.js owns the likes figure once it has the real total; do not paint over it with a partial count
     var lk = document.getElementById('pfStatLikes');
     if(!(lk && pf.profile && lk.dataset.total === String(pf.profile.id))){
       pfStatSet('pfStatLikes', 'pfStatLikesL', likes, 'Like', 'Likes');
@@ -694,9 +691,12 @@
     var merit = (pf.profile.merit == null) ? 100 : (+pf.profile.merit);
 
     try{
-      var r = await sb.from('artworks')
+      var own = !!currentUser && String(currentUser.id) === String(forId);
+      var q = sb.from('artworks')
         .select('like_count,view_count,bookmark_count')
-        .eq('user_id', forId).limit(1000);
+        .eq('user_id', forId);
+      if(!own) q = q.eq('visibility','published');
+      var r = await q.limit(1000);
       if(!pf.profile || pf.profile.id !== forId) return;
       if(r.error) console.error('pfLoadHeadStats artworks:', r.error.message);
       (r.data || []).forEach(function(a){
@@ -717,9 +717,7 @@
 
   var pfFollowing = false, pfFollowBusy = false, pfFrBusy = false;
 
-  // the audience line. The counts live on the profile row, so this is a repaint
-  // rather than a query. A row out of an older cache has no counters yet; leave
-  // the last painted figures alone rather than claiming this artist has nobody.
+    // audience line: counts live on the profile row, so a repaint not a query. An older cached row has no counters — leave the last figures
   function pfPaintAudience(){
     if(!pf.profile || pf.profile.follower_count == null) return;
     pfStatSet('pfFollowers', 'pfFollowersL', pf.profile.follower_count, 'Follower', 'Followers');
@@ -795,7 +793,7 @@
     var forId = pf.profile.id;
     pfFollowBusy = true;
     var was = pfFollowing;
-    // paint the button and the counts now; dzFollow reports what actually landed
+      // paint button and counts now; dzFollow reports what actually landed
     pfSetFollowState(!was);
     try{
       var now = await window.dzFollow.set(forId, !was);
@@ -803,7 +801,7 @@
     }finally{ pfFollowBusy = false; }
   }
 
-  // the button, the header line and the tile all move together
+    // button, header line and tile all move together
   function pfSetFollowState(on){
     if(!pf.profile) return;
     if(on === pfFollowing) return;
@@ -813,7 +811,7 @@
     pfPaintAudience();
   }
 
-  // a follow taken from the artwork card, or anywhere else, lands here too
+    // a follow taken from the artwork card, or anywhere else, lands here too
   document.addEventListener('dz:follow', function(ev){
     var d = ev && ev.detail;
     if(!d || !pf.profile || pf.isOwner) return;

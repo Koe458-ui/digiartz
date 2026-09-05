@@ -81,6 +81,8 @@
       .or('username.ilike.' + pattern + ',display_name.ilike.' + pattern)
       .order('username', { ascending:true }).limit(HS_WHO_CAP)
       .then(function(r){
+        // a failed query resolves with data:null; memoising it as empty tells this reader there are no such artists all session
+        if(r && r.error){ done(null); return; }
         var rows = (r && r.data) || [];
         hsMemoPut(key, rows);
         done(rows);

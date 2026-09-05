@@ -145,9 +145,15 @@
   function sparkline(values, hex) {
     var W = 120, H = 34, P = 2;
     var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, preserveAspectRatio: 'none', 'aria-hidden': 'true' });
-    var max = Math.max.apply(null, values.concat([1]));
-    var n = values.length;
-    var pts = values.map(function (v, i) {
+      // Empty series on a new account, and one bad row makes every number NaN — the fill path read pts[-1] and threw
+    var nums = (Array.isArray(values) ? values : []).map(function (v) {
+      var n = Number(v);
+      return isFinite(n) ? n : 0;
+    });
+    if (!nums.length) return svg;
+    var max = Math.max.apply(null, nums.concat([1]));
+    var n = nums.length;
+    var pts = nums.map(function (v, i) {
       var x = n === 1 ? W / 2 : P + (i / (n - 1)) * (W - P * 2);
       var y = H - P - (Number(v) / max) * (H - P * 2);
       return [Math.round(x * 10) / 10, Math.round(y * 10) / 10];
@@ -550,6 +556,8 @@
   }
 
   function watchNav() {
+      // buildShell() runs on every open, so the last observer is dropped first, the way anListStop() retires the list's
+    if (state.navIo) { try { state.navIo.disconnect(); } catch (e) {} state.navIo = null; }
     if (!window.IntersectionObserver) return;
     var nav = $('anNav');
     if (!nav) return;
@@ -563,6 +571,7 @@
         });
       });
     }, { rootMargin: '-120px 0px -70% 0px', threshold: 0 });
+    state.navIo = io;
     sectionsFor(state.scope).forEach(function (s) {
       var t = $('anSec_' + s.id);
       if (t) io.observe(t);
@@ -611,7 +620,8 @@
 
     var cache = window.dzCached ? window.dzCached() : null;
     var key = cache ? cache.ukey('analytics', sc, d + 'd') : null;
-    var load = function () {
+      // named apart from load(): it was `load` too, and the retry below reached the inner one — four RPCs going nowhere
+    var fetchAll = function () {
       return Promise.all([
         c.rpc('dz_analytics_overview', { p_days: d, p_scope: sc }),
         c.rpc('dz_analytics_content',  { p_days: d, p_scope: sc }),
@@ -623,7 +633,7 @@
     };
 
     var out;
-    try { out = (cache && key) ? await cache.getOrSet(key, load, 'user:analytics') : await load(); }
+    try { out = (cache && key) ? await cache.getOrSet(key, fetchAll, 'user:analytics') : await fetchAll(); }
     catch (e) {
       if (seq !== state.seq) return;
       state.loading = false;
@@ -1283,8 +1293,7 @@
     b.appendChild(g);
   }
 
-  // The two audience lists. Newest edge first, the first CARD_ROWS shown and the
-  // rest a tap away, so a long list does not push the rest of the section down.
+    // Two audience lists. Newest first, CARD_ROWS shown and the rest a tap away, so a long list does not push the section down
   function peopleCard(host, title, list, emptyMsg) {
     var body = cardBody(host, title,
       { note: list.length >= 100 ? 'MOST RECENT 100' : (list.length ? full(list.length) : '') });
@@ -1837,6 +1846,7 @@
     if (!pg) return;
     var lp = $('anListPage');
     if (lp && lp.parentNode) { anListStop(); clearTimeout(anListGone); lp.parentNode.removeChild(lp); }
+    if (state.navIo) { try { state.navIo.disconnect(); } catch (e) {} state.navIo = null; }
     state.open = false;
     stopLive();
     pg.classList.remove('open');

@@ -108,7 +108,11 @@
         window.dzAnTrack('comment', String(id), { scope: kind });
       }
       window.dzCmLoad(kind, id, listId);
-    }catch(e){ showToast((e && e.message) || 'Could not post the comment'); }
+    }catch(e){
+      showToast(typeof safeErr === 'function'
+        ? safeErr(e, 'Could not post the comment')
+        : 'Could not post the comment');
+    }
     finally{ if(input) input.disabled = false; }
   };
   window.dzCmDelAsk = function(cid, kind, id, listId){
@@ -165,8 +169,10 @@
     var out = '';
     try{
       if(art.length){
+        // published only, the way the related listings ask: linking a draft from a post must not put it on a public rail
         var a = await sb.from('artworks').select('id,name,title,image_url')
-                  .in('id', art).eq('status','approved').limit(10);
+                  .in('id', art).eq('status','approved')
+                  .eq('visibility','published').limit(10);
         var arows = (a && a.data) || [];
         if(arows.length){
           out += '<div><div class="avBlockH">Related artwork</div><div class="dzvRelRow">'+
@@ -252,7 +258,8 @@
     var dl = sec === 'blog' ? (r.cover_url ? imgResize(r.cover_url, 1600) : '')
            : sec === 'resources' ? (r.file_storage_path ? '1' : '')
            : '';
-    var title = String(r.title || '').replace(/'/g, '');
+    // title is dropped into a single-quoted JS string inside an onclick, where a backslash ends it as surely as a quote
+    var title = String(r.title || '').replace(/['\\]/g, '');
     return vwActRow([
       { k:'like', c:'red',   id:'vwAct_like', press:1, label:'Like',
         on:'dzVwEng(\'like\',\''+kind+'\',\''+id+'\')' },

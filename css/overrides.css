@@ -178,46 +178,24 @@
   }
 }
 
-.subPgTitle{ color:var(--pg); }
-
-/* Every panel header is one thing: Inter, one weight, one size, one colour,
-   sitting on one baseline. The script is the brand's, not the navigation's —
-   it stays on the wordmark and the hero headline and comes no further.
-
-   The caps these titles carry in the markup come down to sentence case here
-   rather than there, because half of them are written by JS (FG_TITLE, the
-   ranking board name, the legal document name) and would each need their own
-   change to stay in step.
-
-   Lives in overrides because the rules it beats are spread across hero,
-   panels and widgets. */
+  /* Every panel header: Inter, one weight, one size, one colour, one baseline. Caps come down to sentence case here,
+     not in the markup, because half are written by JS. In overrides because it beats hero, panels and widgets */
 .fgTopTitle,.pfTopTitle,.upTopTitle,
 #frdPage .subPgTitle,
 .subPgTitle{
   font-family:var(--fn);font-weight:600;
   letter-spacing:-.01em;
   text-transform:lowercase;
-  /* An explicit line-height is what makes the row align: the bars are flex
-     with align-items:center, so the title centres on its line box, and a box
-     left to the font's own metrics differs from bar to bar. */
+    /* Explicit line-height aligns the row: bars are flex-centred, and font metrics differ bar to bar */
   line-height:1.25;
-  /* ::first-letter needs a block box, and a span in a flex row is not one
-     everywhere; inline-block makes it one without changing the row. */
+    /* ::first-letter needs a block box, and a span in a flex row is not one everywhere; inline-block makes it one */
   display:inline-block;
 }
 .fgTopTitle::first-letter,.pfTopTitle::first-letter,.upTopTitle::first-letter,
 .subPgTitle::first-letter{text-transform:uppercase;}
-/* One of these headers is not ours to case: the album view puts the member's
-   own album name in it. albums.js no longer uppercases it, and it is left
-   alone here, so "NASA Renders" stays that and does not come back as
-   "Nasa renders". */
+  /* One header is not ours to case: the album view carries the member's own name. "NASA Renders" stays that */
 #albViewTitle{text-transform:none;}
-/* One size and one colour for the lot. These titles used to be set at three
-   sizes in three files — the panel bars at --fs-xl, the sub-pages at --fs-sm,
-   Friends at its own — and in two colours, which read as a dimmer heading on
-   the sub-pages than on the panels. The size is its own clamp rather than a
-   step on the type scale: 18px on the narrowest phone up to 22px, so it holds
-   a 3.5rem bar at every width without a breakpoint of its own. */
+  /* One size, one colour. Was three sizes in three files. Own clamp, 18px to 22px, holding a 3.5rem bar at every width */
 .fgTopTitle,.pfTopTitle,.upTopTitle,
 #frdPage .subPgTitle,
 .subPgTitle{
@@ -386,7 +364,7 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 }
 
 #fg,#subPage,#rankHub,#rankPage,
-#profilePage,#pfSearchPage,#pfEditPage,#pfMyWorkPage,#pfUpMod,
+#profilePage,#pfEditPage,#pfMyWorkPage,#pfUpMod,
 #notifPage,#admPage,
 #communityPage,#cmChatPanel,#cmInfoPage,#cmBrowsePage,
 #fgSearchPage,#albPage,#albViewPage,#bmPage,#cartPage,#frdPage,
@@ -424,23 +402,16 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
   width:40px;height:40px;
   flex-shrink:0;
 }
-/* The mode toggle is a button the size of the field's other round controls,
-   with the glyph inside drawn at the same size as the search glyph beside it —
-   the two read as a pair rather than as one icon twice the other. */
+  /* Mode toggle sized to the field's other round controls, glyph matching the search glyph — the two read as a pair */
 .hsMode{width:var(--srchBtn);height:var(--srchBtn);margin-right:-.5rem;}
-/* Centred at a fixed size rather than by inset, so the 44px floor a coarse
-   pointer puts on the button grows the tap area without growing the glyph. */
+  /* Centred at a fixed size rather than by inset, so the 44px coarse-pointer floor grows the tap area, not the glyph */
 .hsMode .hsIco{inset:0;margin:auto;width:var(--srchIco);height:var(--srchIco);}
 
 .rkDot{position:relative;}
 .rkDot::after{content:'';position:absolute;inset:-9px;border-radius:50%;}
 .rkDots{gap:var(--sp-5);}
 
-/* Touch targets. This block already existed but its floors were 36-40px, under
-   the 44px a finger actually needs, and it missed the controls in the header,
-   the hero search and the footer. Everything a coarse pointer can hit is 44px
-   here; pointer:coarse keeps it off mouse-driven layouts, where 34px nav links
-   are fine. */
+  /* Touch targets. Floors were 36-40px, under the 44px a finger needs. pointer:coarse keeps it off mouse layouts */
 @media (pointer:coarse){
   .dzIcon,
 .hsMode,
@@ -455,14 +426,10 @@ input[type=date].upIn:focus::-webkit-calendar-picker-indicator{opacity:1;}
 .albActBtn,
 .tgSearchIn{min-height:44px;}
 
-  /* A 44px row for a 15px link is mostly empty, and six of them stacked read
-     as a gap-toothed list. The link is its own height now and takes its touch
-     area from an overlay instead — inset to exactly the row's pitch, so the
-     targets tile without overlapping each other. */
+    /* A 44px row for a 15px link is mostly empty. The link keeps its height and takes its target from an inset overlay */
   .ftColLink{display:inline-flex;align-items:center;}
   .ftColLink::before{content:'';position:absolute;inset:-2px -10px;}
-  /* the wordmark is the home link: de-leading it left the text 32px tall, so the
-     hit area is restored explicitly rather than by padding it back out */
+    /* wordmark is the home link: de-leading left the text 32px tall, so the hit area is restored explicitly */
   .dzBrand{min-height:44px;align-items:center;}
   .avCmDel{padding:var(--sp-3) var(--sp-3);}
 }

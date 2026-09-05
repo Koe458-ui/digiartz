@@ -36,8 +36,8 @@ function page(slug, doc, navTitle) {
 <meta property="og:title" content="${esc(navTitle)} — DigiArtz">
 <meta property="og:url" content="${esc(url)}">
 <meta property="og:site_name" content="DigiArtz">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" sizes="any">
-<link rel="icon" href="/favicon.ico?v=2">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" sizes="any">
+<link rel="icon" href="/favicon.ico?v=4">
 <style>
   :root{
     --bg:#ffffff; --fg:#1a1a1f; --muted:#5b5b6b; --line:#e4e4ec;

@@ -1083,9 +1083,10 @@
         '<rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M16 2.5v4"/>'+
         '<path d="M8 2.5v4"/><path d="M3 10h18"/><path d="M12 13.5v3l2 1"/></svg></span>'+
       '<div class="upFBody">'+
-      '<label class="upLbl">Schedule <span class="upOpt">optional</span></label>'+
+      '<span class="upLbl" id="dzSchedFieldLbl">Schedule <span class="upOpt">optional</span></span>'+
       '<div class="upCatDd" id="dzSchedDd">'+
-        '<button type="button" class="upCatTrigger" id="dzSchedTrigger" onclick="dzSchToggle(event)">'+
+        '<button type="button" class="upCatTrigger" id="dzSchedTrigger" onclick="dzSchToggle(event)" '+
+          'aria-haspopup="dialog" aria-labelledby="dzSchedFieldLbl dzSchedLbl">'+
           '<span id="dzSchedLbl" class="upSchedPh">__/__/____&nbsp;&nbsp;__:__</span><span class="upChev">⌄</span>'+
         '</button>'+
         '<input type="hidden" id="dzSchedVal" value=""/>'+
@@ -1413,7 +1414,7 @@
         '<input type="hidden" id="'+id+'" value="">';
     } else if(fd.t === 'auto'){
       return fcard(fd.k, fd.t,
-        '<label class="upLbl">'+esc(fd.label)+' <span class="upOpt">automatic</span></label>'+
+        '<span class="upLbl">'+esc(fd.label)+' <span class="upOpt">automatic</span></span>'+
         '<div class="dzvMeta upAutoList" style="margin-top:.35rem">'+
           (fd.items||[]).map(function(x){
             return '<div class="dzvMetaRow"><span>'+esc(x[1])+'</span>'+
@@ -1516,6 +1517,8 @@
     var q = sb.from(cfg.table).select(cols).eq('user_id', currentUser.id);
     if(cfg.where) Object.keys(cfg.where).forEach(function(k){ q = q.eq(k, cfg.where[k]); });
     q.order('created_at', {ascending:false}).limit(200).then(function(res){
+        // postgrest hands an error back on the success side; unread, it reads here as "you have nothing" — a different sentence
+      if(res && res.error) throw res.error;
       var rows = (res && res.data) || [];
       if(!rows.length){
         pn.innerHTML = '<div class="dzHint" style="padding:.4rem .5rem">'+esc(cfg.empty)+'</div>';
@@ -1531,7 +1534,7 @@
       }).join('');
       if(dd) dd.dataset.loaded = '1';
       dzPickLabel(id, cap);
-    }, function(){
+    }).catch(function(){
       pn.innerHTML = '<div class="dzHint" style="padding:.4rem .5rem">Could not load your work.</div>';
     });
   }
@@ -2544,9 +2547,16 @@
     try{
       var got=await sb.from('scheduled_sections').select('storage_paths').eq('id', id).single();
       var paths=(got && got.data && got.data.storage_paths) || [];
-      await sb.from('scheduled_sections').delete().eq('id', id);
+        // Row goes first and its failure stops here: sweeping files off a schedule the database kept leaves it queued with nothing
+      var del=await sb.from('scheduled_sections').delete().eq('id', id);
+      if(del && del.error) throw del.error;
       if(Array.isArray(paths) && paths.length && typeof s3Delete==='function'){
-        paths.forEach(function(p){ try{ s3Delete(BUCKET, p); }catch(e){} });
+          // s3Delete answers with a promise, so its failure is caught on the promise, not by a try around the call
+        paths.forEach(function(p){
+          s3Delete(BUCKET, p).catch(function(sweep){
+            console.warn('scheduled file not removed:', (sweep && sweep.message) || sweep);
+          });
+        });
       }
       showToast('Schedule cancelled');
       dzSchedStrip(sec);
@@ -2675,8 +2685,7 @@
 
     var btn = document.getElementById('dzSubmit-'+sec);
     var s = st(sec), row = {user_id: currentUser.id, tags: s.tags, status:'approved'};
-    // Reassigned below once the content check has run: an upload the moderator
-    // could not see is written as pending and waits its turn in the queue.
+      // Reassigned below once the content check has run: an upload the moderator could not see is written pending.
     function dzHoldRow(){ if(held) row.status = 'pending'; }
 
     var miss = FORMS[sec].fields.filter(function(fd){
@@ -2699,6 +2708,9 @@
     else if(sec === 'blog'){   modImg = st(sec).files.cover;   modMode = 'artwork'; modRecv = 'Cover image received'; }
     var moderated = !!modImg;
     var held = false;
+      // Every object this submit puts in storage, so a submit that fails on the way to the database takes them back out —
+      // the failure panel says so. Declared out here because the catch reads it however early the throw came.
+    var landedFiles = [];
     try{
       if(moderated){
         dzV.open(val(sec,'title') || SEC[sec].noun, modRecv);
@@ -2730,8 +2742,7 @@
           throw new Error((mod && mod.error) || 'Content check failed — please try again.');
         }
         if(mod.deferred){
-          // The moderator could not be reached. The upload is kept and written
-          // as pending, and the queue picks it up when moderation is back.
+            // Moderator unreachable. Upload is kept and written pending; the queue picks it up when moderation is back.
           held = true;
           dzV.noun = SEC[sec].noun || 'upload';
           dzV.held = true;
@@ -2754,6 +2765,7 @@
         var ext = safeSlug((f.name.split('.').pop()||'bin'), 10);
         var path = prefix+'/'+currentUser.id+'/'+stamp+'_'+base+'.'+ext;
         var url  = await s3Upload(BUCKET, path, f);
+        landedFiles.push({bucket: BUCKET, path: path});
         return {url:url, path:path, name:f.name, ext:ext, size:f.size};
       }
 
@@ -2763,11 +2775,13 @@
         var opts = {private:true};
         await s3Upload(BUCKET, path, f, opts);
         var landed = opts.landed || {};
-        return {
+        var out = {
           bucket: landed.bucket || 'koe-originals',
           path: landed.path || path,
           name: f.name, ext: ext, size: f.size, mime: f.type || null
         };
+        landedFiles.push({bucket: out.bucket, path: out.path});
+        return out;
       }
 
       var pendingMedia = [];
@@ -2960,8 +2974,7 @@
       }
 
       var when = dzSchPicked();
-      // Same reason as the artwork queue: publish_due_scheduled_sections writes
-      // the row in as approved, so an unreviewed upload must not take that path.
+        // Same as the artwork queue: publish_due_scheduled_sections writes the row in as approved, so unreviewed must not take that path
       if(when && held) throw new Error('Moderation is temporarily unavailable, so this cannot be scheduled right now. Publish it now and it will be reviewed automatically as soon as moderation is back, or try scheduling again shortly.');
       if(when){
         if(moderated){ dzV.step('transfer','pass'); dzV.step('publish','run'); }
@@ -3008,6 +3021,9 @@
         }
       }
 
+        // Row is in and the marketplace files landed with it. Past this line the uploads belong to a published record
+      landedFiles.length = 0;
+
       if(res.data && res.data.id){
         for(var pmi=0; pmi<pendingMedia.length; pmi++){
           pendingMedia[pmi].parentId = res.data.id;
@@ -3024,6 +3040,10 @@
       var cPub = dzc();
       if(cPub){ try{ await cPub.invalidateSection(sec, res.data && res.data.id); }catch(e3){} }
     }catch(err){
+      for(var ci=0; ci<landedFiles.length; ci++){
+        try{ await s3Delete(landedFiles[ci].bucket, landedFiles[ci].path); }
+        catch(sweep){ console.error('publish cleanup:', (sweep && sweep.message) || sweep); }
+      }
       if(sec === 'jobs') dzJobQuotaForget();
       if(moderated){ dzV.fail((err && err.message) ? err.message : 'Could not publish'); }
       else { showToast((err && err.message) ? err.message : 'Could not publish'); }
@@ -3166,7 +3186,8 @@
         headers:{ authorization:'Bearer '+session.access_token },
         cache:'no-store'
       });
-      if(!res.ok) return false;
+        // The edge answers with JavaScript. A routing miss falls through to the SPA shell and injecting that only raises a parse error
+      if(!res.ok || !/javascript|ecmascript/i.test(res.headers.get('content-type') || '')) return false;
       await inject(await res.text());
       done = true;
       return true;

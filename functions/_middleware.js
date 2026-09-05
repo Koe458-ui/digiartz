@@ -48,8 +48,9 @@ async function fetchArtworks(env) {
   if (!sbReady(env)) return [];
   try {
     return await sbGet(env,
+        // published only, like the gallery this stands in for: a draft, a scheduled piece and a link-only one are not a listing
       'artworks?select=id,name,image_url,created_at' +
-      '&status=eq.approved&kind=eq.art&order=created_at.desc&limit=60',
+      '&status=eq.approved&visibility=eq.published&kind=eq.art&order=created_at.desc&limit=60',
       CACHE_SECONDS);
   } catch { return []; }
 }
@@ -187,7 +188,8 @@ async function resolve(env, pathname) {
   try {
     const rows = await sbGet(env,
       'artworks?select=id,name,description,image_url,created_at,category,software,user_id' +
-      `&id=eq.${raw}&status=eq.approved&kind=eq.art&limit=1`,
+        // a link-only artwork opens from its own address, so it renders here; a draft or scheduled one is not published
+      `&id=eq.${raw}&status=eq.approved&visibility=in.(published,hidden)&kind=eq.art&limit=1`,
       ROW_CACHE_SECONDS);
     if (!rows.length) return { type, status: 'gone' };
     const row = rows[0];

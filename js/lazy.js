@@ -3,7 +3,7 @@
 
   var CHUNKS = {
     analytics: {
-      src: ['/js/analytics.js?v=21'],
+      src: ['/js/analytics.js?v=22'],
       css: ['/css/analytics.css?v=17'],
       api: ['openAnalyticsPage']
     },
@@ -21,7 +21,7 @@
       api: ['zeoOpen', 'zeoHide']
     },
     secview: {
-      src: ['/js/secview.js?v=6'],
+      src: ['/js/secview.js?v=7'],
       warm: true,
       api: ['dzOpenById', 'dzOpenRow', 'dzOpenView', 'dzOpenArtwork', 'dzOpenListing',
             'dzVwFill', 'dzVwCard', 'dzVwActRow', 'dzResourceDownload', 'dzReportItem',

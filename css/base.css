@@ -16,29 +16,16 @@
   --vpg:#8E939C; --vpb:#BCC0C6; --vps:#D2D5D9;
   --fbg:#131318; --fsur:#1C1C23; --fsur2:#23232B;
   --fbdr:#31313D; --fbdrh:#43434F;
-  /* One family across the site. --fd/--fb/--fm stay as separate names because
-     the roles differ in weight and tracking, not in typeface; dropping Sora also
-     drops a whole font request. */
+      /* One family. --fd/--fb/--fm differ in weight and tracking, not typeface; dropping Sora also drops a font request */
   --fd:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   --fb:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   --fm:'Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-  /* Two wordmark faces, and nothing else uses either. --fw is the caps lockup
-     the footer sets: Syne, drawn for the art centre Synesthésie, which reads as
-     an art-world face rather than a product one. --fsig is the signature in the
-     top bar — a brush script, because the mark up there is a signature on the
-     work rather than a label for it. Both kept off --fd so neither can leak
-     into headings. */
+      /* Wordmark faces only. --fw = Syne caps (footer), --fsig = brush script (top bar). Off --fd so neither leaks into headings */
   --fw:'Syne','Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-  /* Every panel header. Inter is drawn for exactly this — short labels at UI
-     sizes, read at a glance — and its even widths let one size sit true in
-     bars of different heights. Kept off --fd so the body copy is unaffected. */
+      /* Panel headers. Inter is drawn for short labels at UI sizes, and its even widths sit true in bars of any height */
   --fn:'Inter','Open Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --fsig:'Kaushan Script','Syne','Open Sans',-apple-system,BlinkMacSystemFont,cursive;
-  /* Kaushan ships one weight and it is lighter than the 800-weight grotesque it
-     replaced, so everywhere the script appears it is inked by a stroke rather
-     than a synthesised bold, which smears a script this slanted. One knob, in
-     em so it holds from a 20px panel header to a 152px headline. Past about
-     .06em the counters in e, a and p start to close. */
+      /* Kaushan single-weight: ink from stroke, not synth bold (smears the slant). Past ~.06em the e/a/p counters close */
   --sigInk:.05em;
 
   --danger:#fca5a5;
@@ -52,10 +39,7 @@
   --role-srmod:#60a5fa;  --role-srmod-bd:rgba(96,165,250,.45);
   --role-jrmod:#34d399;  --role-jrmod-bd:rgba(52,211,153,.45);
 
-  /* Milestone tiers. The badge is near-black ink on a solid fill, so every fill
-     has to be bright enough to carry it — the old violet and red sat at 4.6 and
-     5.2 against the ink and looked muddy for it. These run 7.2 and up, and the
-     ramp climbs silver, green, sky, violet, amber, rose, cyan, gold. */
+      /* Milestone tiers. Near-black ink on solid fill, so every fill carries it — old violet/red at 4.6 and 5.2 read muddy */
   --ms1:#D6DEEB;  --ms1-name:#D6DEEB;
   --ms2:#4ADE80;  --ms2-name:#4ADE80;
   --ms3:#60A5FA;  --ms3-name:#60A5FA;
@@ -98,8 +82,7 @@ html[data-theme="offwhite"]{
   --role-srmod:#1D4ED8;  --role-srmod-bd:rgba(29,78,216,.38);
   --role-jrmod:#046B4E;  --role-jrmod-bd:rgba(4,107,78,.38);
 
-  /* the name is read on a pale background here, so it takes the deep end of the
-     same hue; the old set all landed near 4.1 against it, just under readable */
+    /* name reads on a pale background, so it takes the deep end of the hue; old set landed ~4.1, just under readable */
   --ms1-name:#54627D;
   --ms2-name:#15803D;
   --ms3-name:#1D4ED8;
@@ -145,11 +128,7 @@ html[data-theme="offwhite"]{
   --shellPad:max(3%,var(--safeX));
   --fgPad:var(--shellPad);
   --pfPad:var(--shellPad);
-  /* One search field, wherever it appears — the hero, a section head, the
-     search page, the community browser. The icons were drawn at a third of the
-     bar's height, which reads as an undersized glyph in an oversized field
-     rather than as a pair; at 40% they sit in it. The round buttons are sized
-     to the 36px they need to stay tappable without crowding the field. */
+      /* One search field everywhere. Icons were a third of bar height — undersized glyph in an oversized field; 40% sits right */
   --srchH:50px;
   --srchIco:20px;
   --srchBtn:36px;
@@ -168,25 +147,7 @@ html[data-theme="offwhite"]{
 @media(min-width:700px){  :root{ --artGap:4px; } }
 @media(min-width:1280px){ :root{ --artGap:5px; } }
 
-/* ============================================================================
-   Type & spacing scale
-   ----------------------------------------------------------------------------
-   Before this existed the site carried ~110 distinct font-size values, and 68%
-   of rendered text sat under 14px — the point where small-vision readers start
-   losing it — with the single biggest cluster (57 nodes) at 11.5px and the
-   floor at 8.6px. Body text is 16px because that is the browser default and the
-   accepted minimum for reading; supplementary text bottoms out at 14px and only
-   tracked uppercase micro-labels go to 12px.
-
-   The ramp is 12 / 13 / 14 / 15 / 16 / 18 / 20 / 24 / 28 / 34 / 44. It is tight
-   at the bottom, where a dense art UI genuinely needs to separate a counter from
-   a caption from a label, and opens up above body where the steps have to be
-   felt rather than measured. The shape generalises the --an-fs-* ramp that
-   analytics.css already proved out; those names now alias into this scale.
-
-   The small end does NOT shrink on mobile — a phone is where the readability
-   floor matters most. Only --fs-2xl and up scale down, via clamp.
-   ========================================================================== */
+  /* Type scale. Was ~110 sizes, 68% under 14px. Ramp 12/13/14/15/16/18/20/24/28/34/44; only --fs-2xl and up clamp down */
 :root{
   --fs-3xs:.75rem;    /* 12px  tracked uppercase micro-labels only */
   --fs-2xs:.8125rem;  /* 13px  counters, timestamps */
@@ -195,24 +156,16 @@ html[data-theme="offwhite"]{
   --fs-md:1rem;       /* 16px  body, inputs (also keeps iOS from zooming) */
   --fs-lg:1.125rem;   /* 18px  lead text, artwork/card titles */
   --fs-xl:1.25rem;    /* 20px  h4, section titles */
-  /* Display steps are anchored at the PHONE end, not the desktop end. The
-     readability problem this scale exists to fix was in the small text; a 27px
-     headline on a 390px screen was never hard to read, and lifting it to 41px
-     just made the hero wrap to three lines and swallow the fold. So these floors
-     stay close to what the old per-element clamps produced on a phone, and the
-     growth happens across the viewport instead. */
+      /* Display steps anchored at the PHONE end. 27px→41px wrapped the hero to three lines and ate the fold */
   --fs-2xl:clamp(1.25rem,1.05rem + .55vw,1.5rem);     /* 20 → 24 */
   --fs-3xl:clamp(1.375rem,1.05rem + 1.1vw,1.75rem);   /* 22 → 28 */
   --fs-4xl:clamp(1.5rem,1.05rem + 1.6vw,2.125rem);    /* 24 → 34 */
   --fs-5xl:clamp(1.6875rem,1.05rem + 2.4vw,2.75rem);  /* 27 → 44 */
   --fs-hero:clamp(1.875rem,1rem + 3.6vw,3.875rem);    /* 30 → 62 display */
 
-  /* Note: a glyph centred in a fixed-px box (avatar initials, icon placeholders)
-     is sized as a fraction of that box in px, NOT from this scale — a clamp
-     there shrinks the mark away from a circle whose size never moved. */
+      /* Glyph centred in a fixed-px box (avatar initials, icon slots) sizes off that box, NOT this scale — a clamp shrinks it away from a fixed circle */
 
-  /* Line height. Long measures need air; a single-line chip or a numeral in a
-     badge needs none, or it inflates its own box. */
+    /* Line height. Long measures need air; a chip or badge numeral needs none or it inflates its box */
   --lh-flat:1;
   --lh-tight:1.15;   /* display + h1/h2 */
   --lh-snug:1.3;     /* h3/h4, card and artwork titles */
@@ -220,8 +173,7 @@ html[data-theme="offwhite"]{
   --lh-body:1.6;     /* descriptions, paragraphs */
   --lh-loose:1.75;   /* long-form legal / help copy */
 
-  /* Letter spacing. Big type tightens, small tracked uppercase opens up.
-     Replaces 29 hand-picked values. */
+    /* Letter spacing: big tightens, small tracked uppercase opens. Replaces 29 hand-picked values */
   --ls-tighter:-.02em; /* display */
   --ls-tight:-.01em;   /* headings */
   --ls-normal:0;
@@ -229,10 +181,7 @@ html[data-theme="offwhite"]{
   --ls-wider:.1em;     /* uppercase labels */
   --ls-widest:.16em;   /* rare: tiny uppercase eyebrows */
 
-  /* Spacing scale. The old gap values clustered at .5/.55/.6/.65/.7rem — five
-     near-duplicates inside 4px that read as noise rather than rhythm. The low
-     end stays 2px-granular so collapsing them does not inflate tight rows
-     (chip strips, icon+label pairs); above 16px the steps widen out. */
+      /* Spacing. Old gaps clustered .5/.55/.6/.65/.7rem — noise, not rhythm. Low end 2px-granular so tight rows don't inflate */
   --sp-1:.25rem;    /*  4 */
   --sp-2:.375rem;   /*  6 */
   --sp-3:.5rem;     /*  8 */
@@ -244,7 +193,7 @@ html[data-theme="offwhite"]{
   --sp-9:3rem;      /* 48 */
   --sp-10:4rem;     /* 64 */
 
-  /* Vertical rhythm between stacked sections */
+    /* vertical rhythm between stacked sections */
   --stack-sm:var(--sp-5);
   --stack-md:var(--sp-7);
   --stack-lg:var(--sp-9);
@@ -260,8 +209,7 @@ footer.siteFooter{contain-intrinsic-size:auto 480px;}
 
 body{font-size:var(--fs-md);line-height:var(--lh-body);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
 
-/* Default sizes for bare headings, so an element that never got a class still
-   lands on the ramp instead of the browser's own h1..h6 defaults. */
+  /* bare headings land on the ramp, not UA h1..h6 defaults */
 h1,h2,h3,h4,h5,h6{color:var(--heading-color);line-height:var(--lh-tight);}
 h1{font-size:var(--fs-4xl);font-weight:800;letter-spacing:var(--ls-tighter);}
 h2{font-size:var(--fs-3xl);font-weight:700;letter-spacing:var(--ls-tight);}
@@ -272,10 +220,7 @@ h6{font-size:var(--fs-md);font-weight:600;line-height:var(--lh-snug);}
 a{color:var(--link-color);}
 kbd{font-variant-numeric:tabular-nums;}
 
-/* Form controls inherit the body face rather than the UA's, and never sit below
-   16px on a phone — Safari auto-zooms the page on focus when they do, which then
-   strands the user at a scrolled-in viewport. The :not() chain keeps this ahead
-   of the per-component classes without needing !important. */
+  /* Controls: body face, never under 16px on phones — Safari auto-zooms on focus. :not() beats components, no !important */
 input,textarea,select,button{font-family:inherit;}
 @media(max-width:767px){
   input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),
@@ -308,9 +253,7 @@ body{
 .iTxt{font-family:var(--fm);font-size:var(--fs-xs);letter-spacing:var(--ls-widest);color:var(--tx);text-shadow:0 1px 6px rgba(0,0,0,.35);}
 @media(prefers-reduced-motion:reduce){.iSpin{animation-duration:1.6s;}}
 
-/* The bar is sized off its tallest child, and on touch that is a 44px icon —
-   so 52px is the floor, not a preference. The wordmark was the reason it felt
-   heavy: it inherited the 1.6 body leading, so a 28px logo occupied 45px. */
+  /* 52px floor = tallest child (44px touch icon). Wordmark inherited 1.6 leading, so a 28px logo ate 45px */
 :root{ --dzTopH:52px; }
 @media(min-width:768px){ :root{ --dzTopH:56px; } }
 @media(min-width:1280px){ :root{ --dzTopH:58px; } }
@@ -326,16 +269,14 @@ body{
   box-sizing:border-box;
   display:flex;align-items:center;gap:var(--sp-5);
   padding:var(--sat) var(--shellPad) 0;
-  /* no rule under the bar — the hero reads as one surface with the nav */
+    /* no rule under the bar — hero and nav read as one surface */
   background:color-mix(in srgb,var(--bg) 92%,transparent);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
 }
 .dzBrand{
   flex:0 0 auto;
   display:inline-flex;align-items:baseline;
-  /* Kaushan ships one weight, so the little extra the mark wants comes from a
-     stroke rather than a synthesised bold, which smears a script this slanted.
-     In em, so it holds at every step of the clamp. */
+    /* Kaushan single-weight: ink from stroke, not synth bold (smears slant). em, holds across the clamp */
   font-family:var(--fsig);font-weight:400;
   font-size:clamp(1.75rem,1.4rem + 1.35vw,2.125rem);
   line-height:var(--lh-flat);

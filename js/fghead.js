@@ -12,12 +12,7 @@
     return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
-  // One line and one sentence per section, built the same way every time: the
-  // section's own word carried in the signature, then eight of the things that
-  // are actually in it and "and more". The eight are drawn from the section's
-  // own category list, so the sentence and the rail under it agree. The verb
-  // is the section's own — you discover artwork, buy from the marketplace,
-  // read the blog, download a resource, apply for work.
+    // One line per section: its word in the signature, eight things in it, "and more". The eight come from its own category list
   var HEADS = {
     artworks: {
       lead: 'Browse *artworks*',
@@ -197,8 +192,7 @@
     for (var sec in HEADS) fgHeadSyncCat(sec);
   }
 
-  // Both arrows stay on screen at every width, dimmed once the rail has no
-  // more room to travel that way, so the rail never shifts under a tap.
+    // both arrows stay on screen at every width, dimmed once the rail cannot travel, so it never shifts under a tap
   function ends(rail) {
     var wrap = rail.parentNode;
     var prev = wrap.querySelector('.fgCatPrev');
@@ -273,8 +267,7 @@
     ends(rail);
   }
 
-  // The search page builds a rail of the same chips, so it takes the same
-  // watcher rather than growing a second copy of the arrow and drag logic.
+    // the search page builds the same chips, so it takes the same watcher rather than a second copy of the arrow logic
   window.dzRailWatch       = railWatch;
   window.fgHeadBuild       = fgHeadBuild;
   window.fgHeadSearch      = fgHeadSearch;

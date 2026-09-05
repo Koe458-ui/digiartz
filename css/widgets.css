@@ -265,8 +265,7 @@ html.thmFade #themePage{
 }
 .avTitleRow{display:flex;align-items:flex-start;gap:var(--sp-5);}
 .avTitleRow .avTitle{flex:1 1 auto;min-width:0;}
-/* the friends header reads as one of the section headers (COMMUNITIES,
-   ARTWORKS), not as a small sub-page label */
+  /* friends header reads as a section header (COMMUNITIES, ARTWORKS), not a small sub-page label */
 #frdPage .subPgHdr{min-height:3.5rem;padding-block:var(--sp-2);gap:var(--sp-4);}
 #frdPage .subPgX{
   width:42px;height:42px;border-radius:12px;margin-left:-.55rem;
@@ -437,8 +436,7 @@ html.thmFade #themePage{
   position:absolute;inset:0;display:block;overflow:hidden;
   background:var(--sur2);
 }
-/* the hatch marks an album with nothing in it yet, so it belongs only where
-   there is no cover to show */
+  /* the hatch marks an album with nothing in it, so it belongs only where there is no cover */
 .albCover--empty{
   background:
     repeating-linear-gradient(45deg,
@@ -446,8 +444,7 @@ html.thmFade #themePage{
       transparent 6px 12px),
     var(--sur2);
 }
-/* the whole picture, not a crop of it: a cover is shown in full inside the
-   square and keeps its own proportions */
+  /* the whole picture, not a crop: a cover shows in full inside the square and keeps its proportions */
 .albCover img{
   width:100%;height:100%;object-fit:contain;display:block;
   transition:transform .4s cubic-bezier(.22,1,.36,1);
@@ -471,9 +468,7 @@ html.thmFade #themePage{
   color:rgba(255,255,255,.74);
 }
 .albCardWrap{position:relative;display:block;}
-/* The dots sit in the dim band at the foot of the card, so they need no plate
-   of their own to be seen. No background, then -- just the glyph, and a 44px
-   box around it so it is a comfortable target on a phone. */
+  /* Dots sit in the card's dim foot band, so no plate — just the glyph, in a 44px box for a phone target */
 .albDots{
   position:absolute;right:.1rem;bottom:.05rem;z-index:2;
   width:44px;height:44px;padding:0;
@@ -534,8 +529,7 @@ html.thmFade #themePage{
 @media(hover:none){.albItemX{opacity:1;}}
 .albItemX:hover{border-color:#e0564f;color:#e0564f;}
 
-/* both album dialogs keep their width on a desktop rather than stretching to
-   the .upPopBox default */
+  /* both album dialogs keep their width on desktop rather than stretching to the .upPopBox default */
 #albMod .albModBox,
 #albCfm .albModBox{max-width:420px;padding:var(--sp-7) var(--sp-7) var(--sp-6);gap:var(--sp-1);}
 .albModTitle{
@@ -573,8 +567,7 @@ html.thmFade #themePage{
   font-family:var(--fb);font-size:var(--fs-xs);color:var(--txd);margin-top:var(--sp-3);
 }
 .albModDel{margin-right:auto;color:var(--danger);}
-/* the confirmation is asked on top of the editor that raised it, and both are
-   .upPop, so it needs to win the stack */
+  /* the confirmation is asked on top of the editor that raised it, and both are .upPop, so it must win the stack */
 #albCfm{z-index:20010;}
 .albCfmTxt{
   font-family:var(--fb);font-size:var(--fs-md);line-height:var(--lh-normal);color:var(--tx);

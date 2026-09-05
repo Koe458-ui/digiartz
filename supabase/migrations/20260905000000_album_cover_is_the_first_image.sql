@@ -1,12 +1,9 @@
 -- An album's cover is one image: the first one put in it.
 --
--- get_user_albums returned up to four image_urls, newest first, because the
--- card drew them as a 2x2 mosaic. The card is a single cover now, and the
--- picture that represents an album should be the one that started it -- so this
--- returns exactly one, the earliest added.
+-- get_user_albums returned up to four image_urls for a 2x2 mosaic. The card is a single cover now, and the picture that
+-- represents an album should be the one that started it — so this returns exactly one, the earliest added.
 --
--- The column stays a text[] so the shape of the result does not change; it just
--- carries one element instead of four.
+-- Column stays text[] so the result shape does not change; it carries one element instead of four.
 
 CREATE OR REPLACE FUNCTION public.get_user_albums(target uuid)
 RETURNS TABLE(id uuid, name text, item_count integer, created_at timestamp with time zone,

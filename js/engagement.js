@@ -53,13 +53,23 @@
     var m = /^\/artwork\/([^/]+)$/.exec(path || '');
     return m ? decodeURIComponent(m[1]) : null;
   }
-  var origPush = history.pushState.bind(history);
-  history.pushState = function (state, title, url) {
-    var out = origPush(state, title, url);
+    // Both writers count: the modal's arrows move with replaceState and those views went uncounted. registerView dedupes
+  function countAddress(url) {
     try {
       var id = idFromPath(typeof url === 'string' ? url : (url && url.pathname));
       if (id) registerView(id);
     } catch (e) {}
+  }
+  var origPush = history.pushState.bind(history);
+  history.pushState = function (state, title, url) {
+    var out = origPush(state, title, url);
+    countAddress(url);
+    return out;
+  };
+  var origReplace = history.replaceState.bind(history);
+  history.replaceState = function (state, title, url) {
+    var out = origReplace(state, title, url);
+    countAddress(url);
     return out;
   };
   document.addEventListener('DOMContentLoaded', function () {
@@ -85,10 +95,13 @@
       var l = await db().from('artwork_likes').select('artwork_id').eq('user_id', uid).limit(3000);
       var b = await db().from('artwork_bookmarks').select('artwork_id').eq('user_id', uid).limit(3000);
       if (!me() || String(me().id) !== String(uid)) return;
-      liked  = new Set((l.data || []).map(function (r) { return String(r.artwork_id); }));
-      marked = new Set((b.data || []).map(function (r) { return String(r.artwork_id); }));
+        // postgrest answers a failed read with data:null on the success side. Emptying the sets repaints every heart hollow
+      if (l.error) throw l.error;
+      if (b.error) throw b.error;
+      liked  = new Set(l.data.map(function (r) { return String(r.artwork_id); }));
+      marked = new Set(b.data.map(function (r) { return String(r.artwork_id); }));
     } catch (e) {
-      liked.clear(); marked.clear();
+      // keep whatever is already known; clearSets() is what empties them
     }
     setsReady = true;
     paintSoon();

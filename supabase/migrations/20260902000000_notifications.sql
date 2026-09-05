@@ -1,11 +1,9 @@
 -- Notifications, widened.
 --
--- The table, the read table and the bell were already here; what was missing was
--- everywhere a notification should come from. This adds the target columns, one
--- helper every event goes through, and a trigger per event. Nothing writes to
--- public.notifications from the client: every insert below happens inside a
--- SECURITY DEFINER function attached to a trusted row change, and the admin path
--- checks staff itself.
+-- The table, the read table and the bell existed; what was missing was everywhere a notification should come from.
+-- This adds the target columns, one helper every event goes through, and a trigger per event. Nothing writes to
+-- public.notifications from the client: every insert below runs inside a SECURITY DEFINER function attached to a
+-- trusted row change, and the admin path checks staff itself.
 
 set check_function_bodies = off;
 
@@ -57,7 +55,7 @@ alter table public.notifications add constraint notifications_type_check CHECK (
   'comic_approved', 'comic_rejected', 'post_published', 'post_rejected'
 ]::text[]));
 
--- one live row per (reader, group_key): the grouping key and the retry guard at once
+-- one live row per (reader, group_key): grouping key and retry guard at once
 create unique index if not exists notifications_group_uniq
   on public.notifications (user_id, group_key) where group_key is not null;
 create index if not exists notifications_user_recent_idx
@@ -67,13 +65,10 @@ create index if not exists notifications_broadcast_idx
 
 -- ----------------------------------------------------------------- helper ---
 
--- Every event funnels through here. A repeat under the same group_key updates
--- the row in place and bumps the count instead of adding another line, which is
--- the grouping ("Zeo and 4 others") and the duplicate guard in one move; a
--- regrouped line goes back to unread. p_regroup is the message to show from the
--- second one on: {n} is how many others besides the newest actor, {t} the total,
--- {s} the plural 's' for {n}. Nothing here raises — a notification is never
--- worth failing the action that caused it.
+-- Every event funnels through here. A repeat under the same group_key updates the row in place and bumps the count
+-- instead of adding a line — grouping ("Zeo and 4 others") and duplicate guard in one move; a regrouped line goes back
+-- to unread. p_regroup is the message from the second one on: {n} others besides the newest actor, {t} total,
+-- {s} plural 's' for {n}. Nothing here raises — a notification is never worth failing the action that caused it.
 CREATE OR REPLACE FUNCTION public.dz_notify(
   p_user uuid, p_type text, p_title text, p_message text,
   p_actor uuid DEFAULT NULL, p_group_key text DEFAULT NULL,
@@ -106,7 +101,7 @@ begin
   values (p_user, p_type, left(p_title, 120), left(coalesce(p_message, ''), 500),
           p_actor, p_artwork, p_comment, p_community, p_conversation, p_order, p_url,
           p_group_key)
-  -- the index is partial, so the predicate has to be repeated for inference
+    -- index is partial, so the predicate must be repeated for inference
   on conflict (user_id, group_key) where group_key is not null do update
     set group_count          = public.notifications.group_count + 1,
         actor_id             = excluded.actor_id,
@@ -150,7 +145,7 @@ RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', '
   select coalesce(nullif((select username from public.profiles where id = p_user), ''), 'Someone');
 $function$;
 
--- the "@handle" mentions in a body, capped so one comment cannot fan out
+-- "@handle" mentions in a body, capped so one comment cannot fan out
 CREATE OR REPLACE FUNCTION public.dz_notif_mentions(p_body text)
 RETURNS setof uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
   select p.id from public.profiles p
@@ -224,9 +219,8 @@ create trigger dz_notify_artwork_state after update on public.artworks
 
 -- --------------------------------------------------------------- comments ---
 
--- item_comments carries every section's comments (artwork, blog, marketplace,
--- resource, job). The owner gets COMMENT, one line per comment because the text
--- is the point. An @handle who already commented on the same subject gets
+-- item_comments carries every section's comments (artwork, blog, marketplace, resource, job). Owner gets COMMENT,
+-- one line per comment because the text is the point. An @handle who already commented on the same subject gets
 -- COMMENT_REPLY; anyone else mentioned gets MENTION.
 CREATE OR REPLACE FUNCTION public.dz_notify_item_comment() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
@@ -248,7 +242,7 @@ begin
            when 'resource'    then (select coalesce(nullif(title, ''), 'your resource')  from public.resources where id = new.subject_id)
            when 'job'         then (select coalesce(nullif(title, ''), 'your posting')   from public.jobs where id = new.subject_id)
          end into v_title;
-  -- the deep-link segments the router knows (marketplace items live at /listing/)
+    -- deep-link segments the router knows (marketplace items live at /listing/)
   v_url := case new.kind
              when 'artwork'     then '/artwork/'
              when 'marketplace' then '/listing/'
@@ -292,10 +286,9 @@ create trigger dz_notify_item_comment after insert on public.item_comments
 
 -- -------------------------------------------------------------- community ---
 
--- public.comments is community chat. A message in a user community tells the
--- other members, one grouped line each and at most one refresh every ten
--- minutes, so a busy channel cannot flood a bell. An @handle in it is addressed
--- to a person, so that one is its own line.
+-- public.comments = community chat. A message in a user community tells the other members, one grouped line each,
+-- at most one refresh per ten minutes, so a busy channel cannot flood a bell. An @handle is addressed to a person,
+-- so that one is its own line.
 CREATE OR REPLACE FUNCTION public.dz_notify_community_post() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare
@@ -391,7 +384,7 @@ CREATE OR REPLACE FUNCTION public.dz_notify_friend_change() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
   if new.status = 'accepted' and old.status <> 'accepted' then
-    -- the request has been answered; its line has done its job
+      -- request answered; its line has done its job
     delete from public.notifications
      where user_id = new.addressee_id
        and group_key = 'friendreq:' || new.requester_id::text;
@@ -415,7 +408,7 @@ drop trigger if exists dz_notify_friend_change on public.friendships;
 create trigger dz_notify_friend_change after update on public.friendships
   for each row execute function public.dz_notify_friend_change();
 
--- A declined request deletes the friendship row; take its line with it.
+-- a declined request deletes the friendship row; take its line with it
 CREATE OR REPLACE FUNCTION public.dz_notify_friend_gone() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 begin
@@ -431,8 +424,8 @@ drop trigger if exists dz_notify_friend_gone on public.friendships;
 create trigger dz_notify_friend_gone after delete on public.friendships
   for each row execute function public.dz_notify_friend_gone();
 
--- One line per sender, carrying the latest message and how many are waiting.
--- The thread is the transcript; the bell only says who is waiting.
+-- One line per sender, carrying the latest message and how many wait. The thread is the transcript; the bell only
+-- says who is waiting.
 CREATE OR REPLACE FUNCTION public.dz_notify_message() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
 declare v_who text := public.dz_notif_who(new.sender_id);
@@ -507,8 +500,7 @@ create trigger dz_notify_payment after update on public.payments
 
 -- ---------------------------------------------------- what the bell reads ---
 
--- One round trip for the window: the rows, the actor's name and avatar, and
--- whether this reader has read each one. No per-row profile lookup.
+-- One round trip: rows, actor name and avatar, and whether this reader has read each. No per-row profile lookup.
 CREATE OR REPLACE FUNCTION public.dz_notifications(p_limit integer DEFAULT 40)
 RETURNS TABLE (
   id bigint, type text, title text, message text, created_at timestamptz,
@@ -562,10 +554,9 @@ begin
 end;
 $function$;
 
--- A SECURITY DEFINER function is EXECUTE-able by PUBLIC unless told otherwise,
--- which would put every one of these on /rest/v1/rpc for a signed-out caller.
--- The trigger bodies belong to their triggers and the helpers to those; only
--- the three the bell calls are a member's to reach.
+-- SECURITY DEFINER is EXECUTE-able by PUBLIC unless told otherwise, which would put every one of these on
+-- /rest/v1/rpc for a signed-out caller. Trigger bodies belong to their triggers, helpers to those; only the three
+-- the bell calls are a member's to reach.
 revoke all on function public.dz_notif_who(uuid)            from public, anon, authenticated;
 revoke all on function public.dz_notif_mentions(text)       from public, anon, authenticated;
 revoke all on function public.dz_notifications(integer)     from public, anon, authenticated;
@@ -587,8 +578,7 @@ grant execute on function public.dz_notifications(integer)  to authenticated;
 grant execute on function public.dz_notif_unread()          to authenticated;
 grant execute on function public.dz_notif_read_all()        to authenticated;
 
--- Staff-only fan-out for the admin NOTIFY tab. A broadcast stays one row with a
--- null user_id, as it already was; a targeted send is one row per recipient.
+-- Staff-only fan-out for the admin NOTIFY tab. Broadcast = one row, null user_id; targeted = one row per recipient.
 CREATE OR REPLACE FUNCTION public.dz_admin_notify(
   p_title text, p_message text, p_url text DEFAULT NULL, p_users uuid[] DEFAULT NULL
 ) RETURNS integer LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public', 'pg_temp' AS $function$
@@ -617,9 +607,8 @@ grant execute on function public.dz_admin_notify(text, text, text, uuid[]) to au
 
 -- ------------------------------------------------------------------- RLS ---
 
--- Reading stays "mine, or everyone's"; the read marks stay "mine only". No
--- client may insert a notification at all now: the triggers above run as
--- definer, and the admin path goes through dz_admin_notify, which checks staff.
+-- Reading stays "mine, or everyone's"; read marks stay "mine only". No client may insert a notification: the triggers
+-- run as definer, and the admin path goes through dz_admin_notify, which checks staff.
 alter table public.notifications      enable row level security;
 alter table public.notification_reads enable row level security;
 

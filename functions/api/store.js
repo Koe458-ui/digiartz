@@ -1032,20 +1032,20 @@ const MODULE = `
 
   var METHOD_FORMS = {
     paypal_email:
-      '<label class="dzBkLbl">PayPal email</label>' +
-      '<input class="dzBkIn" data-f="paypalEmail" type="email" autocomplete="off" placeholder="you@example.com">',
+      '<label class="dzBkLbl" for="dzBk_paypalEmail">PayPal email</label>' +
+      '<input class="dzBkIn" id="dzBk_paypalEmail" data-f="paypalEmail" type="email" autocomplete="off" placeholder="you@example.com">',
     upi:
-      '<label class="dzBkLbl">UPI ID</label>' +
-      '<input class="dzBkIn" data-f="upi" type="text" autocomplete="off" placeholder="name@bank">',
+      '<label class="dzBkLbl" for="dzBk_upi">UPI ID</label>' +
+      '<input class="dzBkIn" id="dzBk_upi" data-f="upi" type="text" autocomplete="off" placeholder="name@bank">',
     bank_account:
-      '<label class="dzBkLbl">Account holder name</label>' +
-      '<input class="dzBkIn" data-f="holderName" type="text" autocomplete="off" placeholder="As it appears on the account">' +
-      '<label class="dzBkLbl">Bank name</label>' +
-      '<input class="dzBkIn" data-f="bankName" type="text" autocomplete="off" placeholder="Bank">' +
-      '<label class="dzBkLbl">Account number</label>' +
-      '<input class="dzBkIn" data-f="accountNumber" type="text" inputmode="numeric" autocomplete="off" placeholder="Account number">' +
-      '<label class="dzBkLbl">IFSC</label>' +
-      '<input class="dzBkIn" data-f="ifsc" type="text" autocomplete="off" placeholder="ABCD0123456">' +
+      '<label class="dzBkLbl" for="dzBk_holderName">Account holder name</label>' +
+      '<input class="dzBkIn" id="dzBk_holderName" data-f="holderName" type="text" autocomplete="off" placeholder="As it appears on the account">' +
+      '<label class="dzBkLbl" for="dzBk_bankName">Bank name</label>' +
+      '<input class="dzBkIn" id="dzBk_bankName" data-f="bankName" type="text" autocomplete="off" placeholder="Bank">' +
+      '<label class="dzBkLbl" for="dzBk_accountNumber">Account number</label>' +
+      '<input class="dzBkIn" id="dzBk_accountNumber" data-f="accountNumber" type="text" inputmode="numeric" autocomplete="off" placeholder="Account number">' +
+      '<label class="dzBkLbl" for="dzBk_ifsc">IFSC</label>' +
+      '<input class="dzBkIn" id="dzBk_ifsc" data-f="ifsc" type="text" autocomplete="off" placeholder="ABCD0123456">' +
       '<p class="dzBkNote">Only the last four digits are kept, so you can tell your ' +
       'accounts apart. The full number is never stored.</p>'
   };
@@ -1230,7 +1230,7 @@ const MODULE = `
     openSheet('Request ' + cur + ' payout');
     sheet.body.innerHTML =
       '<div class="dzBkForm">' +
-        '<label class="dzBkLbl">Amount in ' + esc(cur) + '</label>' +
+        '<label class="dzBkLbl" for="dzWlAmt">Amount in ' + esc(cur) + '</label>' +
         '<input class="dzBkIn" id="dzWlAmt" type="text" inputmode="decimal" placeholder="' +
           esc(majorOf(max, cur)) + '">' +
         '<p class="dzBkNote">Minimum ' + esc(moneyMinor(min, cur)) + '. You can withdraw up to ' +
@@ -1298,10 +1298,10 @@ const MODULE = `
 
         '<div class="dzBkHead">Tax details</div>' +
         '<div class="dzBkForm">' +
-          '<label class="dzBkLbl">Country of tax residence</label>' +
+          '<label class="dzBkLbl" for="dzTxC">Country of tax residence</label>' +
           '<input class="dzBkIn" id="dzTxC" type="text" maxlength="2" placeholder="IN" value="' +
             esc((d.tax && d.tax.country) || 'IN') + '">' +
-          '<label class="dzBkLbl">PAN (India only)</label>' +
+          '<label class="dzBkLbl" for="dzTxP">PAN (India only)</label>' +
           '<input class="dzBkIn" id="dzTxP" type="text" maxlength="10" placeholder="ABCDE1234F" value="' +
             esc((d.tax && d.tax.pan) || '') + '">' +
           '<p class="dzBkNote">Indian sellers: we are required to deduct tax at source ' +
@@ -1347,8 +1347,8 @@ const MODULE = `
     openSheet('Add payout method');
     sheet.body.innerHTML =
       '<div class="dzBkForm">' + METHOD_FORMS[kind] +
-        '<label class="dzBkLbl">Label (optional)</label>' +
-        '<input class="dzBkIn" data-f="label" type="text" placeholder="e.g. Main account">' +
+        '<label class="dzBkLbl" for="dzBk_label">Label (optional)</label>' +
+        '<input class="dzBkIn" id="dzBk_label" data-f="label" type="text" placeholder="e.g. Main account">' +
         '<div class="dzWlMsg" hidden></div>' +
         '<button type="button" class="dzWlReq" id="dzBkSave">Save</button>' +
       '</div>';

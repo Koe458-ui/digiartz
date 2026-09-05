@@ -1,5 +1,8 @@
 -- Two hardening invariants the codebase asserts had quietly stopped holding.
 --
+-- Applied to production 2026-09-05 as remote migration
+-- 20260905055547 restore_function_hardening.
+--
 -- security/rls-regression.sql runs both of these as counts that must be zero.
 -- Against the live catalogue on 2026-09-05 they read 1 and 1.
 

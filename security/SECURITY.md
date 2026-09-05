@@ -7,9 +7,14 @@ Summary of the security review and the changes made.
 ## Audit — 2026-09-05
 
 A full pass over the repository and, again, over the live catalogue rather than
-over what the migrations say about it. Five things were wrong. Four are fixed in
-code; two of those need the new migration applied, and one needs the edge
-function redeployed.
+over what the migrations say about it. Five things were wrong. Four are fixed
+and one needs the edge function redeployed before its fix means anything.
+
+The database changes are **applied to production** (remote migration
+`20260905055547 restore_function_hardening`) and re-read from the catalogue
+afterwards rather than taken from the tool's success message. The JavaScript
+changes are on the branch and go out with the next Pages deploy. The
+smart-function change is **not deployed** and is inert until it is.
 
 ### The edge rate limit did not limit anyone who did not want it to
 
@@ -97,14 +102,40 @@ search_path to redirect. Firing a trigger does not check `EXECUTE` on its
 function, so that grant conferred nothing a member could use; every other
 trigger function in the schema is `service_role` only.
 
-Both are restored by `20260907000000_restore_function_hardening.sql`. The revoke
-names `PUBLIC` as well as the two roles, because revoking the roles alone would
-leave `PUBLIC` still conferring it on both.
+Both are restored by `20260907000000_restore_function_hardening.sql`, applied on
+2026-09-05. The revoke names `PUBLIC` as well as the two roles, because revoking
+the roles alone would leave `PUBLIC` still conferring it on both.
+
+Re-read from the catalogue after applying:
+
+| | before | after |
+|---|---|---|
+| functions with no pinned `search_path` | `xp_level_thresholds` | none |
+| trigger functions executable by `anon`/`authenticated` | 1 | 0 |
+| `dz_mod_token_clear` ACL | `{=X, postgres=X, anon=X, authenticated=X, service_role=X}` | `{postgres=X, service_role=X}` |
+| `function_search_path_mutable` advisor | 1 | 0 |
+
+And the curve itself is untouched, which is the part that would have mattered
+if the replace had gone wrong: `xp_level_thresholds()` still returns 100 levels,
+`[100]` is still 10000, `xp_to_level(0)=1`, `xp_to_level(10000)=100`, and
+`get_xp_leaderboard(5)` still returns five rows.
+
+This is the second time this pair has regressed — remote migration
+`20260710074623` is named `verification_cleanup_xp_search_path_and_trigger_grants`.
+Which is the argument for the CI job below rather than for a third fix.
 
 The lesson is the same one as 2026-08-30, one level up: the suite that would
-have caught these is not wired into CI. Six of the seven CI jobs test the
-JavaScript; the SQL suite is run by hand. Nothing failed here because nothing
-ran.
+have caught these is not wired into CI. Every CI job tested the JavaScript; the
+SQL suite is run by hand. Nothing failed here because nothing ran.
+
+`rls-regression.sql` cannot be wired in — it needs a live database and
+credentials CI has no business holding. But the mistake is made in the
+migrations, not in the catalogue, and that can be read statically.
+`scripts/check-sql-functions.mjs` replays the migrations in filename order and
+judges only the state they add up to, so a later migration that re-pins or
+revokes settles an earlier one instead of being shouted at for history. It fails
+on both of today's regressions with `20260907` removed and passes with it back,
+which is the only evidence a new check is worth having. It runs as the `sql` job.
 
 ### smart-function signed uploads into folders it never checked
 

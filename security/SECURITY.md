@@ -4,6 +4,171 @@ Summary of the security review and the changes made.
 
 ---
 
+## Audit — 2026-09-05
+
+A full pass over the repository and, again, over the live catalogue rather than
+over what the migrations say about it. Five things were wrong. Four are fixed in
+code; two of those need the new migration applied, and one needs the edge
+function redeployed.
+
+### The edge rate limit did not limit anyone who did not want it to
+
+`underEdgeLimit` keyed its bucket on a SHA-256 of the `Authorization` header.
+Nothing at the edge verifies a token — `sbUser` does that later, and the webhook
+paths never do — so the key was attacker-chosen. A fresh random `Bearer` on
+every request minted a fresh bucket every time, and *every* `/api/` limit in
+`LIMITS` fell away: 20/min on `/api/rzp`, 20 on `/api/moderate-upload` (which
+forwards up to six 10 MB images to Gemini per call), 90 on the catch-all. The
+address fallback only ran when no token was sent at all, so sending one was the
+whole bypass.
+
+**Severity: HIGH.** Not a data-disclosure bug — an abuse-control bug that made
+every other number in that file decorative.
+
+Fixed: the bucket is the connecting address, which the caller cannot rotate.
+Because one address can carry several people, the per-route number is multiplied
+by `SHARED` (3) before it is applied. It is still a bound, which is the point.
+Per-member limits are unaffected — those are counted on `user.id` inside the
+handlers, on a token Supabase has actually verified, and that is where fairness
+between members belongs. `scripts/security-test.mjs` now asserts that two
+different bearers from one address land in one bucket.
+
+### A failed payout handed back money that had already been paid
+
+`payoutItem` in the PayPal webhook, on FAILED / BLOCKED / RETURNED / DENIED /
+REFUNDED, ran:
+
+```
+marketplace_earnings?seller_id=eq.<seller>&currency=eq.<cur>&status=eq.paid_out
+  → status = available
+```
+
+Every `paid_out` earning the seller had in that currency, not the ones this
+payout retired. `admin-send` retires earnings oldest-first and stores no link
+back to the request, so a seller with one successful payout behind them and one
+that PayPal bounced would have had *both* sets returned — and could withdraw the
+first a second time.
+
+**Severity: HIGH, exposure nil so far.** `payout_requests` and
+`marketplace_earnings` are both empty in production, so no payout has ever run.
+It would have bitten on the first bounce after a first success.
+
+Fixed: the request is reopened first and the return only proceeds if that PATCH
+claimed the row, so a retried webhook cannot return the same earnings twice.
+The set is then reconstructed the way `admin-send` built it — newest-first until
+the amount is covered — which returns what this payout took and leaves earlier
+payouts alone. Returning earnings also appends an `adjustment` credit for
+exactly what went back: sending the payout wrote a `payout_debit`, and without
+the matching credit `dz_reconcile` would see more balance than the ledger
+accounts for and freeze the seller's withdrawals over PayPal's failure.
+
+The real fix is a `payout_request_id` on `marketplace_earnings`. That is a
+schema change and is not in this pass; the reconstruction above is exact under
+the ordering `admin-send` actually uses.
+
+### Yen, forint and Taiwan dollars were recorded at a hundred times their value
+
+Both PayPal capture paths turned the provider's decimal string into minor units
+with `Math.round(parseFloat(value) * 100)`. JPY, HUF and TWD have no minor unit
+— `toValue` already knew that, and `ppFee` already handled it — so a ¥1000 sale
+was written to the ledger as `provider_amount = 100000`.
+
+**Severity: MEDIUM.** Ledger accuracy, not money movement: the charge itself is
+built from `subscription_prices` and `price_cents`, and the amount check against
+`toValue(row.amount, row.currency)` was already correct, so nobody was over- or
+under-charged. The wrong number is the one the ledger keeps for reconciliation.
+
+Fixed: `money.js` grows `toMinor` as the stated inverse of `toValue`, both
+capture paths use it, and `ppFee` now shares it instead of restating the rule.
+
+### Two catalogue invariants the suite checks had stopped holding
+
+`security/rls-regression.sql` asserts both as counts that must be zero. Against
+the live catalogue on 2026-09-05 they read 1 and 1:
+
+| invariant | observed | why |
+|---|---|---|
+| `functions_without_pinned_search_path_expect_0` | `xp_level_thresholds` | `20260906000000_xp_curve_to_10k.sql` rewrote it with `CREATE OR REPLACE` and did not carry `SET search_path` across. `CREATE OR REPLACE` drops settings the new statement omits. |
+| `trigger_fns_executable_expect_0` | `dz_mod_token_clear` | the baseline's grant list at line 5573 swept this trigger function in beside the real RPCs, on `PUBLIC` as well as `anon` and `authenticated`. |
+
+Neither was exploitable. `xp_level_thresholds` is SECURITY INVOKER and its body
+is a constant array — it resolves no objects, so there is nothing for a
+search_path to redirect. Firing a trigger does not check `EXECUTE` on its
+function, so that grant conferred nothing a member could use; every other
+trigger function in the schema is `service_role` only.
+
+Both are restored by `20260907000000_restore_function_hardening.sql`. The revoke
+names `PUBLIC` as well as the two roles, because revoking the roles alone would
+leave `PUBLIC` still conferring it on both.
+
+The lesson is the same one as 2026-08-30, one level up: the suite that would
+have caught these is not wired into CI. Six of the seven CI jobs test the
+JavaScript; the SQL suite is run by hand. Nothing failed here because nothing
+ran.
+
+### smart-function signed uploads into folders it never checked
+
+`action: "upload"` validated the path's shape and its `koe-media/` prefix and
+nothing else, then minted signed upload URLs for it. `action: "delete"` beside
+it has always checked that the second path segment is the caller's id.
+
+**Severity: LOW.** Storage RLS carries the same rule as a `WITH CHECK` on both
+buckets (`(storage.foldername(name))[2] = auth.uid()::text`), and a signed
+upload URL is created through the caller's own client, so the write was refused
+at the storage layer. Nothing was reachable — but the check belongs here too,
+which is the whole argument for the layer below not being the only one.
+
+Fixed: both actions now share one `ownsPath()`, with the same admin/dev
+exception `delete` already had (dev template uploads land outside any member
+folder). Its signing failure also stops returning the storage error, which can
+name the policy that refused. **Needs redeploying to Supabase** — editing the
+file in the repo does not change what is running.
+
+### Looked at and found sound
+
+No secret has ever been committed: the working tree and the full history are
+clean of JWT, `rzp_live_*`, `sk_live_*`, `AIzaSy*`, `sb_secret_*`, AWS and PEM
+shapes, and `config.js` has never been tracked. The publishable key in
+`config.example.js` and `lib/sb.js` is the anon key and is meant to be public.
+
+Every HTML sink in `js/` was traced: 248 assignments, and every interpolation
+that could carry member text goes through `esc`, `dzThumbAttrs` (which escapes
+both `src` and `srcset`), or `safeHref` (which requires `^https?://`, so
+`javascript:` cannot survive it). The unescaped interpolations that remain are
+icon constants, integers and ids the code itself generates.
+
+`dz_market_file_grant` scopes the file to `and f.item_id = p_item`, so knowing
+another listing's file id buys nothing. The analytics RPCs take no user
+parameter at all and read `auth.uid()`, so there is no id to tamper with. Every
+`collab` and `payouts` action delegates to a SECURITY DEFINER RPC called with
+the member's own JWT. The service worker caches only
+`/storage/v1/object/public/`, never a signed URL. No `eval`, no `new Function`,
+no `document.write`, no `console.log` outside `scripts/` and the deliberate
+cache inspector, no TODO/FIXME, no duplicate ids and no dangling `for`,
+`aria-labelledby` or `aria-controls` target in `index.html`.
+
+### Left alone, and why
+
+- **`'unsafe-inline'` and `'unsafe-eval'` in `script-src`.** Real weaknesses.
+  The first needs every inline `onclick=` in `index.html` replaced before a
+  nonce would mean anything; the second is likely there for the Razorpay and
+  PayPal SDKs, and removing it blind would break checkout for everyone. Both
+  want a staged test, not a guess.
+- **Supabase Auth captcha and leaked-password protection.** `js/auth.js` passes
+  `captchaToken` to Supabase, which is the right place to verify it — but if the
+  captcha toggle is off in the Auth settings the token is ignored and the widget
+  is decoration. The `auth_leaked_password_protection` advisor still reports
+  disabled. Both are dashboard settings; neither can be fixed from the
+  repository. **Confirm both in the Supabase dashboard.**
+- **Three dead CSS declarations** (`hero.css:462` ×2, `overrides.css:181`).
+  Removing them means a new `?v=` on two stylesheets, so every visitor
+  re-downloads 2,276 lines of CSS to drop three lines nobody was reading. Not
+  worth the invalidation.
+- **`underLimit` fails open** when `dz_rate_take` is unreachable. Deliberate:
+  the alternative is that a database blip takes the API down.
+
+---
+
 ## Deployment check — 2026-08-30
 
 Run against the branch before merge: git state, every CI job, both regression

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { limitFor, actorKey } from '../functions/lib/ratelimit.js';
+import { limitFor, actorKey, SHARED } from '../functions/lib/ratelimit.js';
 import { sameOrigin, allowedHost, storedFileName, storedFileNameAscii } from '../functions/lib/http.js';
 import { toMinor, toValue, ppFee } from '../functions/lib/money.js';
 
@@ -38,6 +38,8 @@ check('most specific prefix wins', limitFor('/api/download').bucket, '/api/downl
         actorKey(from({ 'X-Forwarded-For': '198.51.100.4, 203.0.113.1' })), 'ip:198.51.100.4');
   check('no address at all still shares one bucket', actorKey(from({})), 'anon');
   falsy('no address does not mean no limit', actorKey(from({})) === '');
+
+  truthy('the shared-address allowance is finite', SHARED >= 1 && SHARED <= 10);
 }
 
 const req = (headers) => ({ url: 'https://digiartz.net/api/download', headers: new Headers(headers) });

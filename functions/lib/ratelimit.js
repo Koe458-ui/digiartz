@@ -43,12 +43,21 @@ export function actorKey(request) {
   return ip ? 'ip:' + ip.slice(0, 64) : 'anon';
 }
 
+// One address can carry several people -- an office, a campus, a phone network
+// behind carrier NAT -- so the address bucket is widened to hold a handful of
+// them at once. It is still a bound, which is the whole point: the numbers in
+// LIMITS are what one person should need, and SHARED is how many of them an
+// address is assumed to speak for. What each member may do individually is
+// still counted per user.id inside the handlers that care, on a token Supabase
+// has verified.
+export const SHARED = 3;
+
 export async function underEdgeLimit(env, request, pathname) {
   const rule = limitFor(pathname);
   if (!rule) return true;
 
   const actor = actorKey(request);
-  return underLimit(env, 'edge:' + rule.bucket + ':' + actor, rule.limit, 60);
+  return underLimit(env, 'edge:' + rule.bucket + ':' + actor, rule.limit * SHARED, 60);
 }
 
 export function tooManyRequests() {

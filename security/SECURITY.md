@@ -4,6 +4,125 @@ Summary of the security review and the changes made.
 
 ---
 
+## Audit — 2026-09-05 (second pass: database, GitHub, dependencies)
+
+The first pass read the JavaScript. This one went at the database the way an
+attacker with a signed-in account would, by running the attacks rather than
+reading the policies, and it found the worst thing in the codebase.
+
+**Note on this file.** The repository is public. Everything below is fixed and
+verified, which is why it can be written down in this much detail. Anything
+still open is recorded in the operator's notes, not here.
+
+### CRITICAL — moderation was a gate on the way in with no wall around it
+
+Covered in full by `20260908000000_status_is_not_the_authors_to_set.sql`. In
+short: every mod gate is `BEFORE INSERT`, `status` is an ordinary column, and
+the RLS on artworks, blog_posts, marketplace_items, resources and jobs lets the
+owner update their own row. One `PATCH` with `{"status":"approved"}` took a
+pending or rejected row live and skipped Gemini, the HMAC ticket and the replay
+table entirely. Proven against production and rolled back.
+
+Fixed by a `BEFORE UPDATE` trigger on all five tables that pins `status` for any
+write with a member behind it. Re-verified after applying: self-approval pins at
+`pending` on all four tables that have rows, an edit carrying `status` still
+saves the edit and holds the status, `visibility` still moves so members are not
+over-blocked, the service-role drain still approves, and staff still approve by
+hand.
+
+The first cut of that trigger was itself wrong and the re-run is what caught it:
+`current_user` inside a `SECURITY DEFINER` function is the function's owner, not
+the caller, so the `current_user not in ('authenticated','anon')` test that
+`dz_protect_social_counters` uses correctly would have read `postgres` every
+time and exempted everybody. The trigger tests `auth.uid()` instead. Every other
+`current_user` test in the schema was then checked: all four are in
+`SECURITY INVOKER` functions, so all four are right.
+
+### HIGH — two dashboard helpers answered questions about anybody, to anybody
+
+`dz_an_achievements` and `dz_an_goal_progress` take the user to report on as a
+parameter, are `SECURITY DEFINER`, and were granted to `anon`. Neither checked
+who was asking, and the `sales` metric reads `marketplace_earnings`, whose
+SELECT policy is deliberately `auth.uid() = seller_id`. An anonymous caller
+could read any seller's sales count for any period, and any account's uploads,
+views, likes, bookmarks, downloads and comments per section.
+
+They are internals of the four readers the dashboard actually calls
+(`dz_analytics_overview`, `_content`, `_reach`, `_activity`), which take no user
+parameter and scope to `auth.uid()`. Nothing else referenced them -- checked
+against every policy expression, every check constraint, every other function
+body, and every `sb.rpc()` call in the client. Their only callers are other
+`SECURITY DEFINER` functions, which execute as the owner and need no grant.
+`20260909000000` revokes them, along with `dz_an_viewer_key`, `dz_an_country`
+and `dz_actor_key` for the same reason.
+
+Verified: `anon` and `authenticated` can no longer execute either; the four
+public readers are still callable; `dz_analytics_overview` still returns an
+object for the calling member, which proves the helpers still run internally.
+
+### MEDIUM — jobs had no counter guard
+
+`register_item_view` only knows `marketplace`, `blog` and `resource`, so nothing
+ever incremented `jobs.view_count` and its poster could write it directly. The
+same guard the other three sections use is now on jobs.
+
+### What the attack suite found already correct
+
+Run as a real member against production, all rolled back: a member cannot edit
+another member's artwork, promote themselves to admin, grant themselves Max,
+inflate a like, view, bookmark, download or sales counter, self-accept a friend
+request (`friendships_guard` requires the addressee), or forge a payment, payout
+or earning. `dz_admin_notify` checks `dz_is_staff` on its first line.
+`dz_analytics_track` ignores the caller's `p_owner` and derives the owner from
+the subject's own table, so analytics cannot be poisoned onto someone else.
+`get_user_liked_artworks` and its siblings honour `likes_public`.
+
+Every write policy in the schema is ownership-scoped -- there is no `USING
+(true)` on any INSERT, UPDATE or DELETE -- and every UPDATE policy's WITH CHECK
+matches its USING. `payments`, `payout_requests`, `payout_methods`,
+`marketplace_earnings`, `seller_tax`, `ledger_entries`, `direct_messages`,
+`analytics_events`, `cart_items` and `scheduled_uploads` are all
+`auth.uid()`-bound for SELECT, and `authenticated` holds no UPDATE on any of the
+money tables at all. `profiles` is world-readable by policy but `email`,
+`currency`, `max_claimed` and `partner_since` are withheld at the column grant.
+
+### GitHub
+
+The repository is **public**, with one write collaborator besides the owner and
+one fork. No secret has ever been committed -- the full history is clean of JWT,
+`rzp_live_*`, `sk_live_*`, `AIzaSy*`, `sb_secret_*`, AWS and PEM shapes, and
+`config.js` has never been tracked. The single workflow declares
+`permissions: contents: read`, uses `pull_request` rather than
+`pull_request_target`, and consumes no secrets, so a pull request from a fork
+gets a read-only token and nothing to steal.
+
+`main` carries **no branch protection**: no required review, no required status
+check, and force-push is not blocked. The eight CI jobs therefore advise but do
+not gate, and `main` deploys to production.
+
+### Dependencies
+
+There are none. No `package.json`, no lockfile, no `node_modules` -- the entire
+runtime is hand-written JavaScript plus one vendored file,
+`js/vendor/supabase-js-2.112.2.min.js`, served from our own origin rather than a
+CDN, so there is no third-party fetch to compromise and no SRI to get wrong.
+Scanned for tampering: no `eval`, no `new Function`, no dynamic `import`, and
+the only absolute URLs in it are documentation links and a localhost default.
+That is close to the best supply-chain position a site like this can be in.
+
+### Not verifiable from this environment
+
+The network policy denies egress to both `digiartz.net` and
+`tmqzqlrpjpydiftlrzmj.supabase.co`; only the Postgres connection is reachable.
+So nothing in this pass tested live HTTP. **Unverified, and still worth
+checking by hand:** the response headers Cloudflare actually serves against what
+`_headers` says, CORS on the deployed API routes, whether anything unintended is
+reachable under the web root, and the two Supabase Auth dashboard settings
+(captcha enforcement and leaked-password protection -- the advisor still reports
+the latter disabled).
+
+---
+
 ## Audit — 2026-09-05
 
 A full pass over the repository and, again, over the live catalogue rather than
